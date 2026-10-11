@@ -436,6 +436,12 @@ function incrementDimensionCount(dimKey, dimension) {
           try {
             buildThemedIsland(dimension, theme, islandLoc.center);
 
+            // 1. PRELOAD CHUNK: Add a ticking area around the island so its Lodestone is loaded in memory for client compass rendering
+            const areaName = `island_${theme.id}`;
+            try {
+              dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
+            } catch (tce) {}
+
             // Store active island target in world dynamic properties for radar navigation
             world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
             world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
@@ -454,13 +460,21 @@ function incrementDimensionCount(dimKey, dimension) {
               p.sendMessage(`§aFollow the compass needle across the void to find the island and claim its rewards!\n`);
               p.playSound("ambient.weather.thunder", { pitch: 1.1, volume: 1.0 });
 
-              // Award Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
+              // Award Authentic Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
               try {
-                const compass = new ItemStack("minecraft:compass", 1);
-                compass.nameTag = `${theme.color}§lCompass: ${theme.name}§r`;
+                // In Bedrock, lodestone_compass is the dedicated attuned item ID with purple animated texture
+                let compass;
+                try {
+                  compass = new ItemStack("minecraft:lodestone_compass", 1);
+                } catch (lce) {
+                  compass = new ItemStack("minecraft:compass", 1);
+                }
+
+                compass.nameTag = `${theme.color}§lLodestone Compass: ${theme.name}§r`;
                 compass.setLore([
                   `§7Mystical Lodestone Compass`,
-                  `§eAttuned directly to this island!`,
+                  `§eLocked directly to this island!`,
+                  `§aHold in hand for direction indicator.`,
                   `§aRight-click the island Lodestone with this`,
                   `§acompass to register discovery!`
                 ]);
@@ -1197,8 +1211,9 @@ system.runInterval(() => {
           try {
             const equippable = player.getComponent("minecraft:equippable");
             const heldItem = equippable?.getEquipment("Mainhand");
-            if (heldItem && heldItem.typeId === "minecraft:compass" && heldItem.nameTag && heldItem.nameTag.includes("Compass:")) {
-              const islandTitle = heldItem.nameTag.replace(/§[0-9a-fk-or]/gi, "").replace("Compass: ", "");
+            const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
+            if (isCompass && heldItem.nameTag && (heldItem.nameTag.includes("Compass:") || heldItem.nameTag.includes("Lodestone Compass:"))) {
+              const islandTitle = heldItem.nameTag.replace(/§[0-9a-fk-or]/gi, "").replace("Lodestone Compass: ", "").replace("Compass: ", "").trim();
               // Find matching island theme
               const matchedTheme = ISLAND_THEMES.find(t => t.name.toLowerCase() === islandTitle.toLowerCase());
               if (matchedTheme) {
@@ -1236,10 +1251,11 @@ world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
   const { block, itemStack, player } = event;
   if (!block || !itemStack) return;
 
-  if (block.typeId === "minecraft:lodestone" && itemStack.typeId === "minecraft:compass") {
+  const isCompassItem = itemStack.typeId === "minecraft:compass" || itemStack.typeId === "minecraft:lodestone_compass";
+  if (block.typeId === "minecraft:lodestone" && isCompassItem) {
     // Check if this compass is a Secret Island Compass
     const customName = itemStack.nameTag || "";
-    if (customName.includes("Compass:")) {
+    if (customName.includes("Compass:") || customName.includes("Lodestone Compass:")) {
       event.cancel = true; // Prevent default Lodestone re-attunement
 
       system.run(() => {
