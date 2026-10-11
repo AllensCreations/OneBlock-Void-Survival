@@ -432,20 +432,21 @@ function incrementDimensionCount(dimKey, dimension) {
         world.setDynamicProperty(propKey, true);
         const islandLoc = getIslandLocation(newState.phaseIndex, 42, theme);
 
+        // 1. PRELOAD CHUNK: Add ticking area first so the chunk is actively loaded in memory
+        const areaName = `isl_${theme.id}`.slice(0, 16);
+        try {
+          dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
+        } catch (tce) {}
+
+        // Store active island target in world dynamic properties for radar navigation
+        world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
+        world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
+        world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
+
+        // 2. Build the themed Skyblock island and award compass
         system.runTimeout(() => {
           try {
             buildThemedIsland(dimension, theme, islandLoc.center);
-
-            // 1. PRELOAD CHUNK: Add a ticking area around the island so its Lodestone is loaded in memory for client compass rendering
-            const areaName = `island_${theme.id}`;
-            try {
-              dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
-            } catch (tce) {}
-
-            // Store active island target in world dynamic properties for radar navigation
-            world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
-            world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
-            world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
 
             // Broadcast Discovery Alert with exact coordinates inscribed on compass
             for (const p of world.getAllPlayers()) {
@@ -462,7 +463,6 @@ function incrementDimensionCount(dimKey, dimension) {
 
               // Award Authentic Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
               try {
-                // In Bedrock, lodestone_compass is the dedicated attuned item ID with purple animated texture
                 let compass;
                 try {
                   compass = new ItemStack("minecraft:lodestone_compass", 1);
@@ -503,7 +503,7 @@ function incrementDimensionCount(dimKey, dimension) {
               } catch (ce) {}
             }
           } catch (ie) {}
-        }, 60); // 3 seconds after phase transition starts
+        }, 10);
       }
     }
   }
@@ -1239,6 +1239,14 @@ system.runInterval(() => {
                 if (targetX !== undefined && targetZ !== undefined) {
                   const nav = calculateNavIndicator(player.location, player.getRotation(), { x: targetX, y: targetY, z: targetZ });
                   navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §6to ${matchedTheme.name}]`;
+
+                  // Proactive Materialization: If player is within 60 blocks of island target, ensure island blocks are materialized in the newly loaded chunk!
+                  if (nav.dist <= 60 && !world.getDynamicProperty(`island_built_${matchedTheme.id}`)) {
+                    world.setDynamicProperty(`island_built_${matchedTheme.id}`, true);
+                    try {
+                      buildThemedIsland(player.dimension, matchedTheme, { x: targetX, y: targetY - 1, z: targetZ });
+                    } catch (pbe) {}
+                  }
                 }
               }
             }

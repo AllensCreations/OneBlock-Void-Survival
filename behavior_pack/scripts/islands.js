@@ -728,12 +728,12 @@ export const ISLAND_THEMES = [
 export function getIslandLocation(index, total, theme) {
   const angle = (index * 360) / total;
   const rad = (angle * Math.PI) / 180;
-  // Vary radial distance from 140 to 240 blocks so islands don't crowd in a single circle
-  const distance = 140 + (index % 6) * 20;
+  // Radial distance from 80 to 120 blocks: Visible with normal render distance, feels like a real voyage!
+  const distance = 80 + (index % 5) * 10;
   const cx = Math.round(distance * Math.cos(rad));
   const cz = Math.round(distance * Math.sin(rad));
-  // Thematic Y Level: High in the sky for Celestial/Spires (Y=80-96), Ground level for Villages/Gardens (Y=64-76), Sunken deep for Crypts/Caverns/Nether (Y=32-54)
-  const cy = (theme && typeof theme.y === "number") ? theme.y : 64;
+  // Thematic Y Level: Skyblock height kept accessible (Y=62 to Y=74)
+  const cy = (theme && typeof theme.y === "number") ? Math.min(74, Math.max(62, theme.y)) : 64;
 
   let cardinal = "North";
   if (Math.abs(cx) > Math.abs(cz)) {
@@ -766,32 +766,78 @@ function safeAirOnlySetBlock(dimension, loc, typeId) {
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
-  // 1. Foundation: 7x7 elliptical tiered platform (3 layers deep)
-  for (let dx = -3; dx <= 3; dx++) {
-    for (let dz = -3; dz <= 3; dz++) {
+  // 1. Foundation: 9x9 natural tiered Skyblock floating island platform (downward cone)
+  for (let dx = -4; dx <= 4; dx++) {
+    for (let dz = -4; dz <= 4; dz++) {
       const distSq = dx * dx + dz * dz;
-      if (distSq <= 12) {
-        // Deep base
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 2, z: cz + dz }, theme.base);
-        // Middle subfloor
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, theme.subfloor);
-        // Top walking floor
+      // Top surface (radius ~4)
+      if (distSq <= 16) {
         safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, theme.floor);
+      }
+      // Layer -1 (radius ~3.5)
+      if (distSq <= 12) {
+        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, theme.subfloor);
+      }
+      // Layer -2 (radius ~2.8)
+      if (distSq <= 8) {
+        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 2, z: cz + dz }, theme.base);
+      }
+      // Layer -3 hanging bedrock/stone root tip (radius ~1.5)
+      if (distSq <= 3) {
+        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 3, z: cz + dz }, theme.base);
+      }
+      // Island bottom point
+      if (distSq <= 1) {
+        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 4, z: cz + dz }, theme.base);
       }
     }
   }
 
   // 2. Center Lodestone beacon (compass tracking destination)
-  // Check if lodestone can be placed, else fallback to surface
   safeAirOnlySetBlock(dimension, { x: cx, y: cy + 1, z: cz }, "minecraft:lodestone");
 
   // 3. Thematic Corner Lanterns / Torches
-  const corners = [[-2, -2], [2, -2], [-2, 2], [2, 2]];
+  const corners = [[-3, -3], [3, -3], [-3, 3], [3, 3]];
   for (const [ox, oz] of corners) {
     safeAirOnlySetBlock(dimension, { x: cx + ox, y: cy + 1, z: cz + oz }, "minecraft:lantern");
   }
 
-  // 4. Guaranteed Treasure Chest
+  // 4. Compact Thematic Skyblock Feature / Micro-Structure
+  try {
+    const feat = theme.feature;
+    if (feat === "blossom_tree" || feat === "bamboo_grove") {
+      // Natural Tree feature
+      const log = feat === "blossom_tree" ? "minecraft:cherry_log" : "minecraft:oak_log";
+      const leaves = feat === "blossom_tree" ? "minecraft:cherry_leaves" : "minecraft:oak_leaves";
+      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, log);
+      for (let lx = -3; lx <= -1; lx++) {
+        for (let lz = -3; lz <= -1; lz++) {
+          safeAirOnlySetBlock(dimension, { x: cx + lx, y: cy + 4, z: cz + lz }, leaves);
+          safeAirOnlySetBlock(dimension, { x: cx + lx, y: cy + 5, z: cz + lz }, leaves);
+        }
+      }
+    } else if (feat === "huge_mushroom") {
+      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, "minecraft:mushroom_stem");
+      for (let mx = -3; mx <= -1; mx++) {
+        for (let mz = -3; mz <= -1; mz++) {
+          safeAirOnlySetBlock(dimension, { x: cx + mx, y: cy + 4, z: cz + mz }, "minecraft:red_mushroom_block");
+        }
+      }
+    } else if (feat === "copper_spire" || feat === "pillars") {
+      const spireMat = feat === "copper_spire" ? "minecraft:copper_block" : "minecraft:chiseled_sandstone";
+      for (let h = 1; h <= 3; h++) {
+        safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, spireMat);
+        safeAirOnlySetBlock(dimension, { x: cx + 2, y: cy + h, z: cz - 2 }, spireMat);
+      }
+    } else if (feat === "well" || feat === "sand_well") {
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 1, z: cz - 2 }, "minecraft:water");
+    } else if (feat === "amethyst_crystal") {
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 1, z: cz - 2 }, "minecraft:amethyst_block");
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 2, z: cz - 2 }, "minecraft:amethyst_cluster");
+    }
+  } catch (fe) {}
+
+  // 5. Guaranteed Treasure Chest with resource progression loot
   const chestPos = { x: cx, y: cy + 1, z: cz + 2 };
   safeAirOnlySetBlock(dimension, chestPos, "minecraft:chest");
   try {
@@ -808,7 +854,7 @@ export function buildThemedIsland(dimension, theme, center) {
     }
   } catch (e) {}
 
-  // 5. Thematic Mob Spawn (if specified)
+  // 6. Thematic Mob Spawn (if specified)
   if (theme.mob) {
     try {
       dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1, z: cz - 1.5 });
