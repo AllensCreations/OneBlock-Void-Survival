@@ -293,6 +293,14 @@ function startPhaseTransition(dimKey, dimension, newPhaseIdx, isGameComplete) {
   let secondsLeft = 5;
 
   const timerId = system.runInterval(() => {
+    // Keep bedrock locked firmly at (0,64,0) throughout the entire countdown
+    try {
+      const ob = dimension.getBlock(ONEBLOCK_POS);
+      if (ob && ob.typeId !== "minecraft:bedrock") {
+        ob.setType("minecraft:bedrock");
+      }
+    } catch (be) {}
+
     if (secondsLeft > 0) {
       for (const p of world.getAllPlayers()) {
         try {
@@ -411,10 +419,24 @@ function incrementDimensionCount(dimKey, dimension) {
                 compass.nameTag = `${theme.color}§lCompass: ${theme.name}§r`;
                 compass.setLore([
                   `§7Mystical Lodestone Compass`,
-                  `§eFollow the compass needle into the void.`,
+                  `§eAttuned directly to this island!`,
                   `§aRight-click the island Lodestone with this`,
                   `§acompass to register discovery!`
                 ]);
+
+                // Attune Compass to the island Lodestone location via Bedrock Script API
+                const lodestonePos = { x: islandLoc.center.x, y: islandLoc.center.y + 1, z: islandLoc.center.z };
+                try {
+                  const tracker = compass.getComponent("minecraft:lodestone_tracker");
+                  if (tracker) {
+                    if (typeof tracker.setLodestonePosition === "function") {
+                      tracker.setLodestonePosition(lodestonePos);
+                    } else if ("trackingPosition" in tracker) {
+                      tracker.trackingPosition = lodestonePos;
+                    }
+                  }
+                } catch (te) {}
+
                 const inv = p.getComponent("minecraft:inventory")?.container;
                 if (inv && inv.emptySlotsCount > 0) {
                   inv.addItem(compass);
@@ -862,7 +884,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
 
   try {
     const targetBlock = dimension.getBlock(ONEBLOCK_POS);
-    if (targetBlock) {
+    if (targetBlock && !activeCountdowns.get(dimKey)) {
       targetBlock.setType(nextBlockType);
     }
   } catch (e) {}
@@ -870,7 +892,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
   system.run(() => {
     try {
       const targetBlock = dimension.getBlock(ONEBLOCK_POS);
-      if (targetBlock) {
+      if (targetBlock && !activeCountdowns.get(dimKey)) {
         targetBlock.setType(nextBlockType);
       }
     } catch (e) {}
