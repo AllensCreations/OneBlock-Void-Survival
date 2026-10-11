@@ -437,7 +437,15 @@ function incrementDimensionCount(dimKey, dimension) {
 
       if (!world.getDynamicProperty(propKey)) {
         world.setDynamicProperty(propKey, true);
-        const islandLoc = getIslandLocation(newState.phaseIndex, 42, theme);
+        const lastX = world.getDynamicProperty("last_island_x");
+        const lastZ = world.getDynamicProperty("last_island_z");
+        const lastPos = (lastX !== undefined && lastZ !== undefined) ? { x: lastX, z: lastZ } : null;
+
+        const islandLoc = getIslandLocation(newState.phaseIndex, 42, theme, lastPos);
+
+        // Record this island as the last materialized island
+        world.setDynamicProperty("last_island_x", islandLoc.center.x);
+        world.setDynamicProperty("last_island_z", islandLoc.center.z);
 
         // 1. PRELOAD CHUNK: Add ticking area first so the chunk is actively loaded in memory
         const areaName = `isl_${theme.id}`.slice(0, 16);

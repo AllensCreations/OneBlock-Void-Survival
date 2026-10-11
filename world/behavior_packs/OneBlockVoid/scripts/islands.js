@@ -766,14 +766,32 @@ export const ISLAND_THEMES = [
   }
 ];
 
-// Computes non-overlapping coordinates in unloaded void chunks (140 to 250 blocks from spawn)
-export function getIslandLocation(index, total, theme) {
-  const angle = (index * 360) / total;
-  const rad = (angle * Math.PI) / 180;
-  // Radial distance from 80 to 120 blocks: Visible with normal render distance, feels like a real voyage!
-  const distance = 80 + (index % 5) * 10;
-  const cx = Math.round(distance * Math.cos(rad));
-  const cz = Math.round(distance * Math.sin(rad));
+// Computes non-overlapping coordinates in void space (80 to 125 blocks away)
+// Calculates distance to guarantee no new island is placed near the previously materialized island!
+export function getIslandLocation(index, total, theme, lastPos = null) {
+  // Golden Angle spiral (137.508°): Guaranteed to distribute points as far apart as possible
+  // so each consecutive island appears in an entirely different cardinal quadrant!
+  const GOLDEN_ANGLE = 137.50776405;
+  let angle = (index * GOLDEN_ANGLE) % 360;
+
+  // Stagger radial distance between 85 and 120 blocks
+  let distance = 85 + (index % 4) * 11;
+  let rad = (angle * Math.PI) / 180;
+  let cx = Math.round(distance * Math.cos(rad));
+  let cz = Math.round(distance * Math.sin(rad));
+
+  // Distance validation against last materialized island:
+  // If too close to previous island (< 100 blocks), rotate angle by 90 degrees
+  if (lastPos && typeof lastPos.x === "number" && typeof lastPos.z === "number") {
+    let separation = Math.sqrt(Math.pow(cx - lastPos.x, 2) + Math.pow(cz - lastPos.z, 2));
+    if (separation < 100) {
+      angle = (angle + 90) % 360;
+      rad = (angle * Math.PI) / 180;
+      cx = Math.round(distance * Math.cos(rad));
+      cz = Math.round(distance * Math.sin(rad));
+    }
+  }
+
   // Thematic Y Level: Skyblock height kept accessible (Y=62 to Y=74)
   const cy = (theme && typeof theme.y === "number") ? Math.min(74, Math.max(62, theme.y)) : 64;
 
