@@ -1,103 +1,114 @@
-# OneBlock Void Survival (Minecraft Bedrock Edition)
+# 🌌 OneBlock Void Survival [Bedrock Edition]
 
-**Creator**: AllensCreations  
-**Compatibility**: Minecraft Bedrock v1.20 – v1.26+ (MCPE, Windows, Xbox, PlayStation, Switch)  
-**Type**: Pure Vanilla Map (`experiments_ever_used: 0`)  
-
----
-
-## 🌟 Map Overview
-**OneBlock Void Survival** is a feature-complete infinite OneBlock experience built purely for Minecraft Bedrock with `@minecraft/server` Script API v1.8.0.
-
-Players spawn at `(0, 65, 0)` standing directly above an infinite regenerative block at `(0, 64, 0)` in the Overworld, Nether, and The End void.
+**Created by**: AllensCreations  
+**Supported Versions**: Minecraft Bedrock v1.20 – v1.26+ (MCPE, Windows 10/11, iOS, Android, Xbox, PlayStation, Switch)  
+**Vanilla Purity**: 100% Pure Vanilla Survival (`experiments_ever_used: 0` — **Achievements Compatible & No Experimental Flags!**)
 
 ---
 
-## 🚀 Key Features
+## 🌟 Introduction & Welcome
+Welcome to **OneBlock Void Survival**, an ultra-polished, feature-rich infinite OneBlock adventure built from the ground up for Minecraft Bedrock! 
 
-### 1. 100% Pure Vanilla Survival (No Experimental Flags)
-- Zero experimental toggles needed (`experiments_ever_used: 0`).
-- No experimental warning banners or world corruption risks on Bedrock updates.
-- Fast, smooth, and lightweight for mobile (MCPE) devices.
+You spawn floating in an empty void above a single magical regenerative block. Mine it to progress through **27 complete biome phases**, build your floating empire, unlock authentic **42+ Secret Void Islands**, trade with the mystical **Dimension Shifter**, and conquer the void across all 3 dimensions!
 
-### 2. Balanced 15-Step Starter Foundation Tutorial
-- **Blocks 1 to 8 (Platform Auto-Build)**: 
-  - Each broken dirt block auto-places into one of the 8 perimeter spots around the center to form a safe 3x3 platform.
-  - **No Item Duplication**: Broken dirt is not collected into player inventory during these 8 steps.
-  - **Temporary Anti-Clip Elevation**: Automatically prevents players from falling through the block during foundation building, and turns off permanently after block 8.
-- **Blocks 9 to 11**: Oak Logs (Crafting Table, Sticks, Wooden Pickaxe).
-- **Blocks 12 to 14**: Stone (gather Cobblestone for a Stone Pickaxe).
-- **Block 15 (Completion)**: Spawns Coal Ore and gifts a **Starter Chest** containing **2x Ice Blocks** to create an infinite water source pool.
-
-### 3. Dynamic Phase Progression
-- **27 Comprehensive Phases across Dimensions**:
-  - **15 Overworld Phases**: Plains, Birch & Flower Forest, Cherry Grove, Taiga, Underground Caves, Desert, Savanna, Jungle & Bamboo, Swamp & Mangrove, Pale Garden & Creaking, Trial Chambers & Tuff, Deepslate & Caverns, Snowy Tundra, Ocean & Lush Caves, and End Portal Prep.
-  - **7 Nether Phases**: Nether Wastes, Crimson Forest, Warped Forest, Soul Sand Valley, Basalt Deltas, Nether Fortress, and Bastion Remnants.
-  - **5 End Phases**: End Void, End Highlands, Chorus Plantations, End City, and Void Pinnacle.
-- **Progressive Phase Length Scaling**:
-  - Phases 0–4 (Early Biomes): 50 blocks.
-  - Phases 5–9 (Mid Biomes): 100 blocks.
-  - Phases 10+ (Late Biomes): 150 blocks.
-- **5-Second Transition Countdown**: Bedrock lock, countdown titles (`5..4..3..2..1`), and celebration fireworks.
-
-### 4. Interactive Physical Reward Chests
-- **Mid-Phase Mystery Chests (2% Chance)**: Real `minecraft:chest` placed on top of the OneBlock with 2–4 themed items.
-- **Jackpot Chests (0.1% Chance)**: Filled with 3 to 5 valuable mineral blocks (Diamonds, Emeralds, Gold, Iron).
-- **Ancient Relic Chests (0.1% Chance)**: Holds Ancient Enchantment Books (Mending, Unbreaking III, Efficiency V), Totems of Undying, or Dragon Egg trophies.
-- **Lucky Rush & Void Surges**:
-  - **Lucky Rush (0.5% chance)**: 10 seconds of high-value mineral block spawning.
-  - **Void Surge (0.5% chance)**: 10 seconds of dark rift storm events spawning hostile waves.
-
-### 5. 42+ Unique Secret Void Islands & Lodestone Compass Quests
-- **Unloaded Chunk Distances ($R = 140$ to $240$ blocks away)**: Spawns far out in the void in radial angular positions.
-- **Zero Overlapping / Air-Only Build Protection**: Strict air-only placement preserves all player-placed bridges, platforms, and farms.
-- **Thematic Y Level Heights**:
-  - **Celestial & Peaks ($Y=80–96$)**: Glacial Ice Spire, End City Spire, Glowstone Meteor, Pantheon of the Gods, Observatory.
-  - **Surface & Gardens ($Y=62–76$)**: Cherry Blossom Sanctuary, Pale Garden Spire, Floral Oasis Village, Panda Sanctuary.
-  - **Sunken Crypts & Depths ($Y=32–60$)**: Ancient Sandstone Crypt, Trial Vault, Bastion Treasury, Nether Fortress Outpost, Deepslate Forge, Sculk Laboratory.
-- **Mystical Lodestone Compass Tracking**:
-  - Exact $(X, Y, Z)$ coordinates are kept hidden for authentic exploration.
-  - Players receive an attuned **Lodestone Compass** whose needle points toward the island's central Lodestone block across the void.
-- **Island Claiming & Discovery Registration**:
-  - Right-clicking the island's Lodestone with its respective Compass launches fireworks, plays a victory fanfare, consumes the compass, and transforms the Lodestone into a **Gilded Blackstone** monument.
-
-### 6. Dual Display HUD & Scoreboard System
-- **Sidebar Scoreboard (Right Screen)**: Displays live Overworld Phase, Phase Progress (`[X/Length]`), Nether Phase, End Phase, and Total Blocks Mined.
-- **Actionbar HUD (Above Hotbar)**: Minimalist HUD showing dimension, phase name, progress, and total block count.
-- **Toggle Command**: Type `!hud` in chat to toggle the Actionbar HUD on or off.
+> 💬 *"Thank you so much for playing my map! I put endless love and care into balancing every single phase, tutorial step, and island exploration to give you the ultimate Bedrock Skyblock experience. Please leave a rating on MCPEDL.COM and share with your friends!"* — **AllensCreations**
 
 ---
 
-## 📁 Repository Structure
-```
-├── behavior_pack/
-│   ├── manifest.json
-│   ├── pack_icon.png
-│   ├── scripts/
-│   │   ├── main.js         # Core OneBlock generation engine & event listeners
-│   │   ├── phases.js       # All 27 phase block & chest loot tables
-│   │   ├── islands.js      # 42+ themed secret void islands generator
-│   │   └── rarities.js     # Dimension shifters & rarity trade pools
-│   └── dimensions/
-├── world/
-│   ├── level.dat           # Clean level data (experiments_ever_used: 0)
-│   ├── world_behavior_packs.json
-│   └── db/                 # World storage
-└── releases/
-    ├── OneBlock_Void_Survival.mcworld  # Ready-to-import Bedrock world
-    └── OneBlock_Void_Survival.mcpack   # Standalone behavior pack
-```
+## 🔥 Key Features
+
+### 🛠️ 1. Smart 15-Step Auto-Build Starter Tutorial
+Never fall into the void on your first minute again!
+- **Blocks 1 to 8 (Auto-Platform Construction)**: Every piece of dirt you mine automatically places into one of the 8 perimeter spots around the center, assembling a secure 3×3 platform foundation under your feet without dropping duplicate items.
+- **Blocks 9 to 11 (Starter Wood)**: Oak logs for your Crafting Table, Sticks, and Wooden Pickaxe.
+- **Blocks 12 to 14 (Cobblestone Mining)**: Smooth stone blocks to craft a sturdy Stone Pickaxe.
+- **Block 15 (Tutorial Milestone)**: Spawns Coal Ore for torches, unlocks Phase 1, and gifts a Starter Chest with **2x Ice Blocks** to create an infinite water source pool!
 
 ---
 
-## 🎮 How to Install and Play
+### 🗺️ 2. 42+ Unique Secret Void Islands (Procedural Micro-Continents)
+Every island that materializes is a unique, natural floating micro-continent:
+- **No Identical Islands**: Each island uses procedural seed-based contours, natural elevation bluffs, ponds, and hanging stalactite roots.
+- **Genuine Biome Painting (`fillbiome`)**: Islands automatically paint their true native Minecraft biome (`cherry_grove`, `lush_caves`, `meadow`, `desert`, `dripstone_caves`, etc.) with authentic foliage tinting and ambient skies!
+- **Natural Underground Ore Veins**: Mine beneath the island surface to discover real embedded Coal, Copper, Iron, Gold, Redstone, Diamond, and Ancient Debris veins!
+- **Balanced 4-Tier Progression**:
+  - **Tier 1 (Phases 1–4)**: Starter agriculture, trees, crops, bees, and livestock (Floral Oasis, Cherry Blossom Sanctuary, Honey Apiary, Windmill Grain Haven).
+  - **Tier 2 (Phases 5–8)**: Mining & metals (Sandstone Crypt, Badlands Mesa, Glacial Ice Spire, Sky Blacksmith Forge, Deepslate Forge).
+  - **Tier 3 (Phases 9–12)**: Nether flora, brewing, and magic (Nether Fortress Outpost, Amethyst Geode, Witch Brew Hut, Soul Sand Valley).
+  - **Tier 4 (Phases 13+)**: Relics & the End (Trial Chamber Vaults, Breeze Spires, Piglin Treasury, Sculk Laboratory, Void Gateway Shrine).
+- **Anti-Clustering Golden Ratio Spacing**: Islands spawn between **80 to 120 blocks away** distributed across different horizons via the Golden Ratio ($137.5^\circ$), ensuring they are visible without crowding your base.
 
-### Option 1: One-Click `.mcworld` Import (Recommended)
-1. Download `releases/OneBlock_Void_Survival.mcworld`.
-2. Tap / open the file on your device (Android, iOS, Windows, etc.).
-3. Minecraft will launch automatically and import the world into your world list!
+---
 
-### Option 2: Add Behavior Pack to Existing World
-1. Download `releases/OneBlock_Void_Survival.mcpack`.
-2. Import it into Minecraft.
-3. Apply the **OneBlock Void Behavior Pack** under **Behavior Packs** in your world settings.
+### 🧭 3. Dual Compass Navigation & Instant Discovery
+- **Exact Coordinates on Compass Tooltip**: Every island delivery awards an Explorer Compass with the exact $(X, Y, Z)$ coordinates inscribed directly on its tooltip lore!
+- **Actionbar HUD Nav-Radar**: Holding the compass displays a live directional radar:
+  `[Radar: ⬆ 95m to Cherry Blossom Sanctuary]` with dynamic turn arrows.
+- **End-Rod Light Guide**: Emits an in-game shining particle beam pointing toward the island.
+- **Dual Discovery Registration**: 
+  - **Auto-Walk Proximity**: Step within 5 blocks of the Lodestone, and fireworks burst into the sky, granting discovery completion automatically!
+  - **Manual Interaction**: Right-clicking the Lodestone with your compass transforms it into a golden monument and consumes the compass as an exploration trophy!
+
+---
+
+### 📊 4. Live Sidebar Scoreboard & Clean HUD
+- **Sidebar Scoreboard (Right Screen)**: Displays real-time stats:
+  - Overworld Phase & Progress (`[X/Length]`)
+  - Nether Phase
+  - The End Phase
+  - Total Blocks Mined
+- **Minimalist Actionbar HUD**: Clean progress indicator above your hotbar (`Phase 3: Cherry Grove [42/50]`).
+- **Chat Command**: Type `!hud` in chat anytime to show or hide the Actionbar HUD.
+
+---
+
+### 💎 5. Dynamic Events & Dimension Shifter
+- **Physical Loot Chests (2% Chance)**: Real wooden chests spawn directly on the OneBlock with phase loot.
+- **Jackpot & Relic Chests (0.1% Chance)**: Rare drops of mineral blocks, Ancient Enchantment Books (Mending, Unbreaking III), and Totems.
+- **Lucky Rush (0.5% Chance)**: 10 seconds of pure golden/mineral block frenzies!
+- **Dimension Shifter (Wandering Merchant)**: Arrives every 10–15 minutes for 3 minutes carrying rare biome trades, saplings, and fabled treasures!
+- **Phase Climax Mini-Bosses**: Defeat the Zombie King, Skeleton Captain, or Nether Warlord in late phases to advance!
+- **Endgame Title**: Mine through all phases to claim the permanent **`[Void Champion]`** title and celebration fireworks!
+
+---
+
+## 🏆 10 Fun In-Game Challenges
+1. 🌉 **Void Architect**: Connect your main base to 3 different secret islands with aesthetic bridges.
+2. 🧭 **Cartographer of the Unknown**: Discover and claim 5 different Secret Void Islands.
+3. 🚜 **Self-Sustaining Colony**: Build an automated tree, crop, and animal farm using Tier 1 Island resources.
+4. 💰 **Trader’s Fortune**: Complete 3 trades with the Dimension Shifter.
+5. 🌋 **Into the Depths**: Enter the Nether portal and advance to Nether Phase 2.
+6. ⚔️ **Climax Conqueror**: Defeat a Phase Climax Mini-Boss without falling into the void.
+7. ⏱️ **Golden Rush Hour**: Mine at least 8 mineral blocks during a single Lucky Rush event.
+8. 🛡️ **Tier 4 Relic Hunter**: Claim loot from the Trial Vault or Piglin Treasury and obtain a Heavy Core.
+9. 🌌 **Prestige of the Void**: Conquer all 20 Overworld phases to unlock `[Void Champion]`.
+10. 🪽 **Master of Flight**: Glide with the Elytra from the Void Gateway Shrine all the way back to spawn!
+
+---
+
+## 📥 How to Install & Play
+
+### Option 1: Automatic `.mcworld` Import (Easiest)
+1. Download **`OneBlock_Void_Survival.mcworld`**.
+2. Open or tap the file on your device (Android, iOS, Windows 10/11, etc.).
+3. Minecraft will launch automatically and import the world into your Worlds list.
+4. Tap Play and enjoy!
+
+### Option 2: Add Behavior Pack (`.mcpack`) to an Existing World
+1. Download **`OneBlock_Void_Survival.mcpack`**.
+2. Open the file to import the behavior pack into Minecraft.
+3. Edit your world settings > **Behavior Packs** > Activate **OneBlock Void Survival**.
+4. Set your world spawn at `(0, 65, 0)` and start mining at `(0, 64, 0)`!
+
+---
+
+## 🔒 Vanilla Compatibility & Performance
+- **Zero Experimental Flags Needed** (`experiments_ever_used: 0`).
+- **Achievements Compatible**: Safe for vanilla survival.
+- **Lightweight**: Optimized Script API execution designed for 60 FPS performance on low-end mobile devices and consoles.
+- **Multiplayer Ready**: Fully supports LAN, Realms, and Dedicated Bedrock Servers!
+
+---
+
+**Map Created by AllensCreations**  
+*Don't forget to leave a review and rate ⭐⭐⭐⭐⭐ on MCPEDL.COM if you enjoyed your void adventure!*
