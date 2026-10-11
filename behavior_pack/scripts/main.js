@@ -420,12 +420,19 @@ function incrementDimensionCount(dimKey, dimension) {
     startPhaseTransition(dimKey, dimension, newState.phaseIndex, isGameComplete);
 
     // Check for Secret Island Materialization across 42+ Unique Void Islands
-    // Islands materialize every 2 phase advances (and every 1000 mined blocks)
+    // Islands materialize based on Progression Tiers (Tier 1: Starter, Tier 2: Mining, Tier 3: Nether/Magic, Tier 4: End/Relics)
     if (dimKey === "overworld") {
-      const islandSpawnIndex = Math.floor(newState.phaseIndex / 1); // Triggers on phase transitions
-      const totalThemes = ISLAND_THEMES.length;
-      const themeIndex = (newState.phaseIndex * 3 + Math.floor(newCount / 100)) % totalThemes;
-      const theme = ISLAND_THEMES[themeIndex];
+      // Determine allowed Tier based on player's current phase:
+      // Phase 1-4 (idx 0-3): Tier 1
+      // Phase 5-8 (idx 4-7): Tier 2
+      // Phase 9-12 (idx 8-11): Tier 3
+      // Phase 13+ (idx 12+): Tier 4
+      const targetTier = newState.phaseIndex < 4 ? 1 : (newState.phaseIndex < 8 ? 2 : (newState.phaseIndex < 12 ? 3 : 4));
+      const tierThemes = ISLAND_THEMES.filter(t => t.tier === targetTier);
+
+      // Pick theme from the appropriate tier pool
+      const themeIndex = (newState.phaseIndex + Math.floor(newCount / 200)) % tierThemes.length;
+      const theme = tierThemes[themeIndex] || ISLAND_THEMES[0];
       const propKey = `island_spawned_phase_${newState.phaseIndex}_${theme.id}`;
 
       if (!world.getDynamicProperty(propKey)) {
@@ -470,10 +477,11 @@ function incrementDimensionCount(dimKey, dimension) {
                   compass = new ItemStack("minecraft:compass", 1);
                 }
 
-                compass.nameTag = `${theme.color}§lLodestone Compass: ${theme.name}§r`;
+                const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
+                compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
                 compass.setLore([
                   `§7Mystical Island Explorer Compass`,
-                  `§eIsland: §f${theme.name}`,
+                  `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
                   `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`,
                   `§7-----------------------`,
                   `§aHold in hand for Radar HUD & Light Trail!`,
@@ -1229,57 +1237,56 @@ system.runInterval(() => {
             const heldItem = equippable?.getEquipment("Mainhand");
             const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
             if (isCompass && heldItem.nameTag && (heldItem.nameTag.includes("Compass:") || heldItem.nameTag.includes("Lodestone Compass:"))) {
-              const islandTitle = heldItem.nameTag.replace(/§[0-9a-fk-or]/gi, "").replace("Lodestone Compass: ", "").replace("Compass: ", "").trim();
-              // Find matching island theme
-              const matchedTheme = ISLAND_THEMES.find(t => t.name.toLowerCase() === islandTitle.toLowerCase());
-              if (matchedTheme) {
-                const targetX = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
-                const targetY = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
-                const targetZ = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
-                if (targetX !== undefined && targetZ !== undefined) {
-                  const nav = calculateNavIndicator(player.location, player.getRotation(), { x: targetX, y: targetY, z: targetZ });
-                  navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §6to ${matchedTheme.name}]`;
+            const heldName = heldItem.nameTag || "";
+            const matchedTheme = ISLAND_THEMES.find(t => heldName.toLowerCase().includes(t.name.toLowerCase()));
+            if (matchedTheme) {
+              const targetX = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
+              const targetY = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
+              const targetZ = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
+              if (targetX !== undefined && targetZ !== undefined) {
+                const nav = calculateNavIndicator(player.location, player.getRotation(), { x: targetX, y: targetY, z: targetZ });
+                navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §6to ${matchedTheme.name}]`;
 
-                  // Proactive Materialization: If player is within 60 blocks of island target, ensure island blocks are materialized in the newly loaded chunk!
-                  if (nav.dist <= 60 && !world.getDynamicProperty(`island_built_${matchedTheme.id}`)) {
-                    world.setDynamicProperty(`island_built_${matchedTheme.id}`, true);
-                    try {
-                      buildThemedIsland(player.dimension, matchedTheme, { x: targetX, y: targetY - 1, z: targetZ });
-                    } catch (pbe) {}
-                  }
+                // Proactive Materialization: If player is within 60 blocks of island target, ensure island blocks are materialized in the newly loaded chunk!
+                if (nav.dist <= 60 && !world.getDynamicProperty(`island_built_${matchedTheme.id}`)) {
+                  world.setDynamicProperty(`island_built_${matchedTheme.id}`, true);
+                  try {
+                    buildThemedIsland(player.dimension, matchedTheme, { x: targetX, y: targetY - 1, z: targetZ });
+                  } catch (pbe) {}
                 }
               }
             }
-          } catch (ne) {}
+          }
+        } catch (ne) {}
 
-          player.onScreenDisplay.setActionBar(
-            `${dimPrefix} §ePhase ${state.phaseIndex + 1}: §f${phaseName} §7[§b${progressInPhase}§7/§b${BLOCKS_PER_PHASE}§7] §eTotal: §6${state.count}${navHUD}`
-          );
-        }
-      } catch (e) {}
-    }
+        player.onScreenDisplay.setActionBar(
+          `${dimPrefix} §ePhase ${state.phaseIndex + 1}: §f${phaseName} §7[§b${progressInPhase}§7/§b${BLOCKS_PER_PHASE}§7] §eTotal: §6${state.count}${navHUD}`
+        );
+      }
+    } catch (e) {}
+  }
 
-    if (tickCounter % 2 === 0) {
-      try {
-        const nether = world.getDimension("nether");
-        if (nether) nether.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
-      } catch (e) {}
-      try {
-        const end = world.getDimension("the_end");
-        if (end) end.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
-      } catch (e) {}
-      // Compass Particle Guide: emit a trail of shining particles extending in front of player towards island
-      try {
-        for (const player of world.getAllPlayers()) {
-          const equippable = player.getComponent("minecraft:equippable");
-          const heldItem = equippable?.getEquipment("Mainhand");
-          const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
-          if (isCompass && heldItem.nameTag && (heldItem.nameTag.includes("Compass:") || heldItem.nameTag.includes("Lodestone Compass:"))) {
-            const islandTitle = heldItem.nameTag.replace(/§[0-9a-fk-or]/gi, "").replace("Lodestone Compass: ", "").replace("Compass: ", "").trim();
-            const matchedTheme = ISLAND_THEMES.find(t => t.name.toLowerCase() === islandTitle.toLowerCase());
-            if (matchedTheme) {
-              const tx = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
-              const ty = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
+  if (tickCounter % 2 === 0) {
+    try {
+      const nether = world.getDimension("nether");
+      if (nether) nether.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
+    } catch (e) {}
+    try {
+      const end = world.getDimension("the_end");
+      if (end) end.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
+    } catch (e) {}
+    // Compass Particle Guide: emit a trail of shining particles extending in front of player towards island
+    try {
+      for (const player of world.getAllPlayers()) {
+        const equippable = player.getComponent("minecraft:equippable");
+        const heldItem = equippable?.getEquipment("Mainhand");
+        const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
+        if (isCompass && heldItem.nameTag) {
+          const heldName = heldItem.nameTag || "";
+          const matchedTheme = ISLAND_THEMES.find(t => heldName.toLowerCase().includes(t.name.toLowerCase()));
+          if (matchedTheme) {
+            const tx = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
+            const ty = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
               const tz = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
               if (tx !== undefined && tz !== undefined) {
                 const px = player.location.x;
@@ -1323,7 +1330,8 @@ world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
   if (block.typeId === "minecraft:lodestone" && isCompassItem) {
     // Check if this compass is a Secret Island Compass
     const customName = itemStack.nameTag || "";
-    if (customName.includes("Compass:") || customName.includes("Lodestone Compass:")) {
+    const isSecretCompass = customName.includes("Compass") || customName.includes("Tier ") || customName.includes("Lodestone Compass");
+    if (isSecretCompass) {
       event.cancel = true; // Prevent default Lodestone re-attunement
 
       system.run(() => {

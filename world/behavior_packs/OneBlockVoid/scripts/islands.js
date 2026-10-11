@@ -7,6 +7,7 @@ import { ItemStack } from "@minecraft/server";
 export const ISLAND_THEMES = [
   {
     id: "sky_oasis",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 68,
     name: "Lush Floral Oasis",
     color: "§a",
@@ -25,6 +26,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ancient_crypt",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 54,
     name: "Ancient Sandstone Crypt",
     color: "§6",
@@ -43,6 +45,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "trial_vault",
+    tier: 4, // Tier 4 (End/Relics)
     y: 48,
     name: "Trial & Breeze Vault",
     color: "§b",
@@ -61,6 +64,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "stronghold_portal",
+    tier: 4, // Tier 4 (End/Relics)
     y: 40,
     name: "Stronghold End Chamber",
     color: "§d",
@@ -78,6 +82,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "cherry_sanctuary",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 76,
     name: "Cherry Blossom Sanctuary",
     color: "§d",
@@ -95,6 +100,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pale_garden_spire",
+    tier: 4, // Tier 4 (End/Relics)
     y: 74,
     name: "Pale Garden Eerie Spire",
     color: "§7",
@@ -112,6 +118,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "mushroom_haven",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 62,
     name: "Giant Mushroom Haven",
     color: "§c",
@@ -129,6 +136,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "badlands_mesa",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 60,
     name: "Badlands Gold Mesa",
     color: "§6",
@@ -146,6 +154,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ice_spike_peak",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 96,
     name: "Glacial Ice Spire",
     color: "§b",
@@ -163,6 +172,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "jungle_temple",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 58,
     name: "Jungle Ruined Temple",
     color: "§2",
@@ -180,6 +190,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "nether_fortress_spire",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 44,
     name: "Nether Fortress Outpost",
     color: "§4",
@@ -197,6 +208,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bastion_treasury",
+    tier: 4, // Tier 4 (End/Relics)
     y: 42,
     name: "Bastion Piglin Treasury",
     color: "§e",
@@ -214,6 +226,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "crimson_forest_isle",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 46,
     name: "Crimson Fungus Atoll",
     color: "§4",
@@ -231,6 +244,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "warped_forest_isle",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 46,
     name: "Warped Void Grove",
     color: "§3",
@@ -248,6 +262,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "soul_sand_valley",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 40,
     name: "Soul Sand Catacomb",
     color: "§8",
@@ -265,6 +280,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "amethyst_geode",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 50,
     name: "Celestial Amethyst Geode",
     color: "§d",
@@ -282,6 +298,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "witch_swamp_hut",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 58,
     name: "Witch Brew Hut",
     color: "§5",
@@ -299,6 +316,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pillager_watchtower",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 88,
     name: "Pillager Sky Outpost",
     color: "§8",
@@ -316,6 +334,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "desert_well_oasis",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 62,
     name: "Desert Mirage Well",
     color: "§e",
@@ -333,6 +352,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bamboo_monastery",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 66,
     name: "Bamboo Panda Sanctuary",
     color: "§a",
@@ -350,6 +370,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "deepslate_forge",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 36,
     name: "Ancient Deepslate Forge",
     color: "§7",
@@ -367,6 +388,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ocean_monument_shrine",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 52,
     name: "Prismarine Ocean Shrine",
     color: "§3",
@@ -384,6 +406,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "glowstone_meteor",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 90,
     name: "Fallen Glowstone Meteor",
     color: "§e",
@@ -401,6 +424,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "end_city_tower",
+    tier: 4, // Tier 4 (End/Relics)
     y: 92,
     name: "End City Spire",
     color: "§5",
@@ -418,6 +442,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "fossil_excavation",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 54,
     name: "Prehistoric Fossil Dig",
     color: "§f",
@@ -435,6 +460,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "blacksmith_workshop",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 64,
     name: "Sky Blacksmith Forge",
     color: "§8",
@@ -452,6 +478,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "library_observatory",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 82,
     name: "Arcane Sky Observatory",
     color: "§9",
@@ -469,6 +496,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "alchemist_laboratory",
+    tier: 3, // Tier 3 (Nether/Magic)
     y: 60,
     name: "Void Alchemist Laboratory",
     color: "§d",
@@ -486,6 +514,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "spider_nest",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 44,
     name: "Cobweb Cave Nest",
     color: "§f",
@@ -503,6 +532,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "creeper_dungeon",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 46,
     name: "Volatile Gunpowder Depot",
     color: "§2",
@@ -520,6 +550,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "slime_biosphere",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 50,
     name: "Gelatinous Slime Isle",
     color: "§a",
@@ -537,6 +568,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bee_apiary",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 70,
     name: "Sunlit Honey Apiary",
     color: "§6",
@@ -554,6 +586,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pumpkin_patch",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 64,
     name: "Haunted Pumpkin Patch",
     color: "§6",
@@ -571,6 +604,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "melon_greenhouse",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 64,
     name: "Tropical Melon Greenhouse",
     color: "§a",
@@ -588,6 +622,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "sculk_laboratory",
+    tier: 4, // Tier 4 (End/Relics)
     y: 32,
     name: "Ancient Sculk Laboratory",
     color: "§1",
@@ -605,6 +640,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "armory_vault",
+    tier: 2, // Tier 2 (Mining/Iron)
     y: 52,
     name: "Knight Sky Armory",
     color: "§7",
@@ -622,6 +658,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bakery_windmill",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 70,
     name: "Windmill Grain Haven",
     color: "§e",
@@ -639,6 +676,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "aquarium_atoll",
+    tier: 1, // Tier 1 (Starter/Agri)
     y: 56,
     name: "Coral Reef Biosphere",
     color: "§3",
@@ -656,6 +694,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "tuff_golem_sanctuary",
+    tier: 4, // Tier 4 (End/Relics)
     y: 42,
     name: "Tuff Golem Sanctuary",
     color: "§8",
@@ -673,6 +712,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "meteorite_crater",
+    tier: 4, // Tier 4 (End/Relics)
     y: 48,
     name: "Starlight Meteorite Crater",
     color: "§5",
@@ -690,6 +730,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "golden_pantheon",
+    tier: 4, // Tier 4 (End/Relics)
     y: 95,
     name: "Pantheon of the Gods",
     color: "§6",
@@ -707,6 +748,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "void_gateway_outpost",
+    tier: 4, // Tier 4 (End/Relics)
     y: 86,
     name: "Void Gateway Shrine",
     color: "§5",
@@ -766,78 +808,108 @@ function safeAirOnlySetBlock(dimension, loc, typeId) {
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
-  // 1. Foundation: 9x9 natural tiered Skyblock floating island platform (downward cone)
-  for (let dx = -4; dx <= 4; dx++) {
-    for (let dz = -4; dz <= 4; dz++) {
-      const distSq = dx * dx + dz * dz;
-      // Top surface (radius ~4)
-      if (distSq <= 16) {
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, theme.floor);
-      }
-      // Layer -1 (radius ~3.5)
-      if (distSq <= 12) {
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, theme.subfloor);
-      }
-      // Layer -2 (radius ~2.8)
-      if (distSq <= 8) {
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 2, z: cz + dz }, theme.base);
-      }
-      // Layer -3 hanging bedrock/stone root tip (radius ~1.5)
-      if (distSq <= 3) {
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 3, z: cz + dz }, theme.base);
-      }
-      // Island bottom point
-      if (distSq <= 1) {
-        safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 4, z: cz + dz }, theme.base);
+  // 1. Natural Organic Micro-Continent Layout:
+  // Asymmetrical shape with organic contours, elevated bluff ridge, scenic pond, and cliffside alcove
+  // We compute an organic radius per angle around center
+  for (let dx = -6; dx <= 6; dx++) {
+    for (let dz = -6; dz <= 6; dz++) {
+      // Noise/harmonic contour to produce natural coastline shape (not a plain circle)
+      const angle = Math.atan2(dz, dx);
+      // Shape modulation: wider on North-East/South-West axis, cliff on North-West
+      const shapeMod = 4.8 + 1.2 * Math.cos(2 * angle) + 0.6 * Math.sin(3 * angle);
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist <= shapeMod) {
+        // Natural Elevation: Ridge/hill rises on the North side (+1 height), gentle beach slope on South
+        let surfaceY = cy;
+        if (dz <= -2 && dx >= -1 && dx <= 3) {
+          surfaceY = cy + 1; // Elevated bluff / cliff ridge
+        } else if (dz >= 3) {
+          surfaceY = cy; // Lower plateau
+        }
+
+        // POND ALCOVE: Small natural pool at (dx: -2, dz: 1)
+        const isPond = (dx === -2 && dz === 1) || (dx === -3 && dz === 1) || (dx === -2 && dz === 2);
+
+        // Place top surface layer
+        if (isPond) {
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, "minecraft:water");
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, "minecraft:clay");
+        } else {
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: surfaceY, z: cz + dz }, theme.floor);
+          // If elevated bluff, fill step underneath with subfloor
+          if (surfaceY > cy) {
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, theme.subfloor);
+          }
+        }
+
+        // Tiered Underside & Hanging Roots (Tapers down naturally)
+        const depth = Math.max(1, Math.round((shapeMod - dist) * 1.2));
+        for (let d = 1; d <= depth; d++) {
+          const mat = d === 1 ? theme.subfloor : theme.base;
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - d, z: cz + dz }, mat);
+        }
+
+        // Occasional stalactite root hanging into the void
+        if (dist <= 2.2 && (dx + dz) % 2 === 0) {
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 1, z: cz + dz }, theme.base);
+          if (dist <= 1.2) {
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 2, z: cz + dz }, theme.base);
+          }
+        }
       }
     }
   }
 
-  // 2. Center Lodestone beacon (compass tracking destination)
-  safeAirOnlySetBlock(dimension, { x: cx, y: cy + 1, z: cz }, "minecraft:lodestone");
+  // 2. Scenic Bluff Overlook: Raised Lodestone Beacon (X: +1, Z: -2 on the ridge)
+  safeAirOnlySetBlock(dimension, { x: cx + 1, y: cy + 2, z: cz - 2 }, "minecraft:lodestone");
 
-  // 3. Thematic Corner Lanterns / Torches
-  const corners = [[-3, -3], [3, -3], [-3, 3], [3, 3]];
-  for (const [ox, oz] of corners) {
-    safeAirOnlySetBlock(dimension, { x: cx + ox, y: cy + 1, z: cz + oz }, "minecraft:lantern");
+  // 3. Natural Thematic Lighting: Lanterns on cobblestone/wood posts along the cliffs
+  const lightPosts = [
+    { x: cx + 3, y: cy + 1, z: cz - 3 },
+    { x: cx - 4, y: cy + 1, z: cz - 1 },
+    { x: cx + 2, y: cy + 1, z: cz + 3 }
+  ];
+  for (const lp of lightPosts) {
+    safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y, z: lp.z }, "minecraft:oak_fence");
+    safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y + 1, z: lp.z }, "minecraft:lantern");
   }
 
-  // 4. Compact Thematic Skyblock Feature / Micro-Structure
+  // 4. Thematic Micro-Structure & Flora on the Western bluff
   try {
     const feat = theme.feature;
-    if (feat === "blossom_tree" || feat === "bamboo_grove") {
-      // Natural Tree feature
+    if (feat === "blossom_tree" || feat === "bamboo_grove" || feat === "beehive") {
       const log = feat === "blossom_tree" ? "minecraft:cherry_log" : "minecraft:oak_log";
       const leaves = feat === "blossom_tree" ? "minecraft:cherry_leaves" : "minecraft:oak_leaves";
-      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, log);
-      for (let lx = -3; lx <= -1; lx++) {
-        for (let lz = -3; lz <= -1; lz++) {
+      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 1, y: cy + h, z: cz - 3 }, log);
+      for (let lx = -2; lx <= 0; lx++) {
+        for (let lz = -4; lz <= -2; lz++) {
           safeAirOnlySetBlock(dimension, { x: cx + lx, y: cy + 4, z: cz + lz }, leaves);
           safeAirOnlySetBlock(dimension, { x: cx + lx, y: cy + 5, z: cz + lz }, leaves);
         }
       }
+      if (feat === "beehive") {
+        safeAirOnlySetBlock(dimension, { x: cx - 1, y: cy + 2, z: cz - 4 }, "minecraft:bee_nest");
+      }
     } else if (feat === "huge_mushroom") {
-      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, "minecraft:mushroom_stem");
-      for (let mx = -3; mx <= -1; mx++) {
-        for (let mz = -3; mz <= -1; mz++) {
+      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 1, y: cy + h, z: cz - 3 }, "minecraft:mushroom_stem");
+      for (let mx = -2; mx <= 0; mx++) {
+        for (let mz = -4; mz <= -2; mz++) {
           safeAirOnlySetBlock(dimension, { x: cx + mx, y: cy + 4, z: cz + mz }, "minecraft:red_mushroom_block");
         }
       }
-    } else if (feat === "copper_spire" || feat === "pillars") {
-      const spireMat = feat === "copper_spire" ? "minecraft:copper_block" : "minecraft:chiseled_sandstone";
+    } else if (feat === "copper_spire" || feat === "pillars" || feat === "gold_monolith") {
+      const mat = feat === "copper_spire" ? "minecraft:copper_block" : feat === "gold_monolith" ? "minecraft:gold_block" : "minecraft:chiseled_sandstone";
       for (let h = 1; h <= 3; h++) {
-        safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, spireMat);
-        safeAirOnlySetBlock(dimension, { x: cx + 2, y: cy + h, z: cz - 2 }, spireMat);
+        safeAirOnlySetBlock(dimension, { x: cx - 1, y: cy + h, z: cz - 3 }, mat);
       }
-    } else if (feat === "well" || feat === "sand_well") {
-      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 1, z: cz - 2 }, "minecraft:water");
     } else if (feat === "amethyst_crystal") {
-      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 1, z: cz - 2 }, "minecraft:amethyst_block");
-      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 2, z: cz - 2 }, "minecraft:amethyst_cluster");
+      safeAirOnlySetBlock(dimension, { x: cx - 1, y: cy + 1, z: cz - 3 }, "minecraft:amethyst_block");
+      safeAirOnlySetBlock(dimension, { x: cx - 1, y: cy + 2, z: cz - 3 }, "minecraft:amethyst_cluster");
     }
   } catch (fe) {}
 
-  // 5. Guaranteed Treasure Chest with resource progression loot
+  // 5. Cliffside Alcove Chest with Tier-Appropriate Loot
   const chestPos = { x: cx, y: cy + 1, z: cz + 2 };
   safeAirOnlySetBlock(dimension, chestPos, "minecraft:chest");
   try {
@@ -854,10 +926,10 @@ export function buildThemedIsland(dimension, theme, center) {
     }
   } catch (e) {}
 
-  // 6. Thematic Mob Spawn (if specified)
+  // 6. Thematic Mob Companion / Guardian
   if (theme.mob) {
     try {
-      dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1, z: cz - 1.5 });
+      dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1.2, z: cz - 0.5 });
     } catch (e) {}
   }
 }
