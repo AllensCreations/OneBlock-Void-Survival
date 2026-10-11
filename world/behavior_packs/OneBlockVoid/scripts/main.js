@@ -147,9 +147,14 @@ function spawnCelebrationFireworks(dimension) {
   } catch (e) {}
 }
 
-// Spawn Phase Jump-Scare Mini-Boss at block #250
-function spawnPhaseMiniBoss(dimKey, dimension) {
+// Spawn Phase Climax Mini-Boss strictly in Late-Game (Phase 10+ in Overworld, or Nether/End)
+function spawnPhaseMiniBoss(dimKey, dimension, phaseIndex) {
   try {
+    // Completely skip mini-bosses for the first 10 phases of Overworld (Phases 0 to 9 are peaceful / exploration focused!)
+    if (dimKey === "overworld" && phaseIndex < 10) {
+      return;
+    }
+
     let bossType = "minecraft:zombie";
     let bossName = "§c§lZombie King§r";
 
@@ -160,7 +165,7 @@ function spawnPhaseMiniBoss(dimKey, dimension) {
       bossType = "minecraft:enderman";
       bossName = "§5§lVoid Assassin§r";
     } else {
-      // Alternate Zombie King and Skeleton Captain in Overworld
+      // Alternate Zombie King, Skeleton Captain, or Breeze in Late Overworld
       if (Math.random() < 0.5) {
         bossType = "minecraft:skeleton";
         bossName = "§c§lSkeleton Captain§r";
@@ -366,7 +371,7 @@ function incrementDimensionCount(dimKey, dimension) {
 
   // Check if phase climax was just reached
   if (newState.phaseIndex > prevState.phaseIndex) {
-    spawnPhaseMiniBoss(dimKey, dimension);
+    spawnPhaseMiniBoss(dimKey, dimension, newState.phaseIndex);
     const isGameComplete = (dimKey === "end" && newState.phaseIndex === phases.length - 1);
     startPhaseTransition(dimKey, dimension, newState.phaseIndex, isGameComplete);
 

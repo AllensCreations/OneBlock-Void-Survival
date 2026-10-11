@@ -89,7 +89,7 @@ export const OVERWORLD_PHASES = [
       { id: "minecraft:raw_copper", min: 3, max: 7, weight: 15 },
       { id: "minecraft:iron_ingot", min: 1, max: 3, weight: 10 }
     ],
-    mobs: ["minecraft:zombie", "minecraft:skeleton", "minecraft:spider", "minecraft:bat"]
+    mobs: ["minecraft:bat", "minecraft:cow", "minecraft:sheep"]
   },
   {
     name: "Desert & Dunes",
