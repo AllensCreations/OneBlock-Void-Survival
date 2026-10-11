@@ -102,6 +102,42 @@ function getDimensionState(dimKey) {
   };
 }
 
+// Calculates directional arrow and distance from player to target island
+function calculateNavIndicator(pPos, pRotation, targetPos) {
+  try {
+    const dx = targetPos.x - pPos.x;
+    const dz = targetPos.z - pPos.z;
+    const dist = Math.round(Math.sqrt(dx * dx + dz * dz));
+
+    // Target angle in Minecraft world (-180 to 180 degrees)
+    const targetAngle = (Math.atan2(-dx, dz) * 180) / Math.PI;
+    const diff = ((targetAngle - pRotation.y + 180) % 360 + 360) % 360 - 180;
+
+    let arrow = "⬆";
+    if (Math.abs(diff) <= 22.5) {
+      arrow = "⬆";
+    } else if (diff > 22.5 && diff < 67.5) {
+      arrow = "↗";
+    } else if (diff >= 67.5 && diff < 112.5) {
+      arrow = "➡";
+    } else if (diff >= 112.5 && diff < 157.5) {
+      arrow = "↘";
+    } else if (Math.abs(diff) >= 157.5) {
+      arrow = "⬇";
+    } else if (diff <= -22.5 && diff > -67.5) {
+      arrow = "↖";
+    } else if (diff <= -67.5 && diff > -112.5) {
+      arrow = "⬅";
+    } else {
+      arrow = "↙";
+    }
+
+    return { arrow, dist };
+  } catch (e) {
+    return { arrow: "⬆", dist: 0 };
+  }
+}
+
 // Drops item precisely hovering above OneBlock at (0.5, 65.2, 0.5) with zero velocity
 function hoverDropAboveOneBlock(dimension, itemStack) {
   try {
@@ -399,6 +435,11 @@ function incrementDimensionCount(dimKey, dimension) {
         system.runTimeout(() => {
           try {
             buildThemedIsland(dimension, theme, islandLoc.center);
+
+            // Store active island target in world dynamic properties for radar navigation
+            world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
+            world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
+            world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
 
             // Broadcast Discovery Alert (Follow the Compass Needle - No Coordinates revealed!)
             for (const p of world.getAllPlayers()) {
@@ -1141,7 +1182,7 @@ system.runInterval(() => {
 
     try { updateScoreboard(); } catch (e) {}
 
-    // QoL: Actionbar HUD
+    // QoL: Actionbar HUD & Compass Nav-Radar
     for (const player of world.getAllPlayers()) {
       try {
         if (!player.hasTag("hide_hud")) {
@@ -1151,8 +1192,29 @@ system.runInterval(() => {
           const phaseName = state.phase ? state.phase.name : "Starting";
           const dimPrefix = dimKey === "nether" ? "§c[Nether]" : (dimKey === "end" ? "§d[End]" : "§a[Overworld]");
 
+          // Check if player is holding a Secret Island Compass in main hand
+          let navHUD = "";
+          try {
+            const equippable = player.getComponent("minecraft:equippable");
+            const heldItem = equippable?.getEquipment("Mainhand");
+            if (heldItem && heldItem.typeId === "minecraft:compass" && heldItem.nameTag && heldItem.nameTag.includes("Compass:")) {
+              const islandTitle = heldItem.nameTag.replace(/§[0-9a-fk-or]/gi, "").replace("Compass: ", "");
+              // Find matching island theme
+              const matchedTheme = ISLAND_THEMES.find(t => t.name.toLowerCase() === islandTitle.toLowerCase());
+              if (matchedTheme) {
+                const targetX = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
+                const targetY = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
+                const targetZ = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
+                if (targetX !== undefined && targetZ !== undefined) {
+                  const nav = calculateNavIndicator(player.location, player.getRotation(), { x: targetX, y: targetY, z: targetZ });
+                  navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §6to ${matchedTheme.name}]`;
+                }
+              }
+            }
+          } catch (ne) {}
+
           player.onScreenDisplay.setActionBar(
-            `${dimPrefix} §ePhase ${state.phaseIndex + 1}: §f${phaseName} §7[§b${progressInPhase}§7/§b${BLOCKS_PER_PHASE}§7] §eTotal: §6${state.count}`
+            `${dimPrefix} §ePhase ${state.phaseIndex + 1}: §f${phaseName} §7[§b${progressInPhase}§7/§b${BLOCKS_PER_PHASE}§7] §eTotal: §6${state.count}${navHUD}`
           );
         }
       } catch (e) {}
