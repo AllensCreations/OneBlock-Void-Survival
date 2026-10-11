@@ -447,17 +447,17 @@ function incrementDimensionCount(dimKey, dimension) {
             world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
             world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
 
-            // Broadcast Discovery Alert (Follow the Compass Needle - No Coordinates revealed!)
+            // Broadcast Discovery Alert with exact coordinates inscribed on compass
             for (const p of world.getAllPlayers()) {
               p.onScreenDisplay.setTitle(`${theme.color}★ SECRET ISLAND! ★`, {
                 stayDuration: 100,
                 fadeInDuration: 10,
                 fadeOutDuration: 15,
-                subtitle: `§e${theme.name} materialized somewhere in the void!`
+                subtitle: `§e${theme.name} materialized!`
               });
               p.sendMessage(`\n${theme.color}⚡ [Secret Island Discovered] §fThe mysterious §l${theme.name}§r ${theme.color}has materialized!`);
-              p.sendMessage(`§eA mystical Lodestone Compass has appeared in your hand!`);
-              p.sendMessage(`§aFollow the compass needle across the void to find the island and claim its rewards!\n`);
+              p.sendMessage(`§eA mystical Compass has been delivered! §6Target Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`);
+              p.sendMessage(`§7(Coordinates are inscribed directly on the Compass item tooltip / lore!)\n`);
               p.playSound("ambient.weather.thunder", { pitch: 1.1, volume: 1.0 });
 
               // Award Authentic Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
@@ -472,11 +472,13 @@ function incrementDimensionCount(dimKey, dimension) {
 
                 compass.nameTag = `${theme.color}§lLodestone Compass: ${theme.name}§r`;
                 compass.setLore([
-                  `§7Mystical Lodestone Compass`,
-                  `§eLocked directly to this island!`,
-                  `§aHold in hand for direction indicator.`,
-                  `§aRight-click the island Lodestone with this`,
-                  `§acompass to register discovery!`
+                  `§7Mystical Island Explorer Compass`,
+                  `§eIsland: §f${theme.name}`,
+                  `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`,
+                  `§7-----------------------`,
+                  `§aHold in hand for Radar HUD & Light Trail!`,
+                  `§eRight-click the island Lodestone with this`,
+                  `§ecompass to register discovery!`
                 ]);
 
                 // Attune Compass to the island Lodestone location via Bedrock Script API
