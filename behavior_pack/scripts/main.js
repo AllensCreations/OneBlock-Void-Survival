@@ -1244,9 +1244,9 @@ system.runInterval(() => {
             const equippable = player.getComponent("minecraft:equippable");
             const heldItem = equippable?.getEquipment("Mainhand");
             const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
-            if (isCompass && heldItem.nameTag && (heldItem.nameTag.includes("Compass:") || heldItem.nameTag.includes("Lodestone Compass:"))) {
-            const heldName = heldItem.nameTag || "";
-            const matchedTheme = ISLAND_THEMES.find(t => heldName.toLowerCase().includes(t.name.toLowerCase()));
+            if (isCompass && heldItem.nameTag) {
+              const heldName = heldItem.nameTag || "";
+              const matchedTheme = ISLAND_THEMES.find(t => heldName.toLowerCase().includes(t.name.toLowerCase()));
             if (matchedTheme) {
               const targetX = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
               const targetY = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
@@ -1327,76 +1327,120 @@ system.runInterval(() => {
   } catch (err) {}
 }, 20);
 
-// Secret Island Discovery Registration:
-// When the player right-clicks an island's Lodestone with its respective Compass,
-// trigger celebration fireworks, consume the compass, and replace the lodestone with a reward block (Gilded Blackstone / Smooth Stone)!
+// Dual Island Discovery Registration System:
+// Method 1: Automatic Proximity Registration (when player walks onto the island within 6 blocks of lodestone)
+// Method 2: Manual Lodestone Right-Click (both beforeEvents and afterEvents support)
+
+function triggerIslandRegistration(player, matchedTheme, blockPos) {
+  try {
+    const dimension = player.dimension;
+    const loc = blockPos || {
+      x: world.getDynamicProperty(`island_target_x_${matchedTheme.id}`) ?? player.location.x,
+      y: (world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 65),
+      z: world.getDynamicProperty(`island_target_z_${matchedTheme.id}`) ?? player.location.z
+    };
+
+    const regKey = `island_registered_${matchedTheme.id}`;
+    if (world.getDynamicProperty(regKey)) return; // Already registered
+    world.setDynamicProperty(regKey, true);
+
+    // 1. Consume compass from inventory if held
+    try {
+      const equippable = player.getComponent("minecraft:equippable");
+      const held = equippable?.getEquipment("Mainhand");
+      if (held && (held.typeId.includes("compass"))) {
+        equippable.setEquipment("Mainhand", undefined);
+      }
+    } catch (ie) {}
+
+    // 2. Transform lodestone to gilded monument
+    try {
+      const targetBlock = dimension.getBlock(loc);
+      if (targetBlock && targetBlock.typeId === "minecraft:lodestone") {
+        targetBlock.setType("minecraft:gilded_blackstone");
+      }
+    } catch (be) {}
+
+    // 3. Launch celebration fireworks
+    try {
+      for (let i = 0; i < 4; i++) {
+        system.runTimeout(() => {
+          try {
+            dimension.spawnEntity("minecraft:fireworks_rocket", {
+              x: loc.x + 0.5 + (Math.random() - 0.5) * 2,
+              y: loc.y + 1.5,
+              z: loc.z + 0.5 + (Math.random() - 0.5) * 2
+            });
+          } catch (fe) {}
+        }, i * 8);
+      }
+    } catch (fwe) {}
+
+    // 4. Audio & Visual Discovery Alert
+    player.playSound("ui.toast.challenge_complete", { pitch: 1.2, volume: 1.0 });
+    player.playSound("random.levelup", { pitch: 1.5, volume: 1.0 });
+
+    player.onScreenDisplay.setTitle("§6§lISLAND REGISTERED!§r", {
+      stayDuration: 90,
+      fadeInDuration: 5,
+      fadeOutDuration: 15,
+      subtitle: `§aDiscovered: §e${matchedTheme.name}`
+    });
+    player.sendMessage(`\n§6★ [Island Discovery Registered] §aYou reached and registered §e§l${matchedTheme.name}§r§a!`);
+    player.sendMessage(`§7The island monument is now unlocked! Enjoy your rewards in the treasure chest!\n`);
+  } catch (err) {}
+}
+
+// Method 1: Interacting with Lodestone (Before Event)
 world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
   const { block, itemStack, player } = event;
-  if (!block || !itemStack) return;
+  if (!block) return;
 
-  const isCompassItem = itemStack.typeId === "minecraft:compass" || itemStack.typeId === "minecraft:lodestone_compass";
-  if (block.typeId === "minecraft:lodestone" && isCompassItem) {
-    // Check if this compass is a Secret Island Compass
-    const customName = itemStack.nameTag || "";
-    const isSecretCompass = customName.includes("Compass") || customName.includes("Tier ") || customName.includes("Lodestone Compass");
-    if (isSecretCompass) {
-      event.cancel = true; // Prevent default Lodestone re-attunement
-
-      system.run(() => {
-        try {
-          const dimension = player.dimension;
-          const loc = block.location;
-
-          // 1. Consume the compass from the player's mainhand
-          try {
-            const equippable = player.getComponent("minecraft:equippable");
-            if (equippable) {
-              equippable.setEquipment("Mainhand", undefined);
-            } else {
-              const inv = player.getComponent("minecraft:inventory")?.container;
-              if (inv) {
-                const selected = player.selectedSlotIndex ?? 0;
-                inv.setItem(selected, undefined);
-              }
-            }
-          } catch (ie) {}
-
-          // 2. Replace Lodestone with a special decorative monument block (e.g., Gilded Blackstone)
-          try {
-            block.setType("minecraft:gilded_blackstone");
-          } catch (be) {}
-
-          // 3. Launch celebration fireworks rockets
-          try {
-            for (let i = 0; i < 3; i++) {
-              system.runTimeout(() => {
-                try {
-                  dimension.spawnEntity("minecraft:fireworks_rocket", {
-                    x: loc.x + 0.5 + (Math.random() - 0.5) * 2,
-                    y: loc.y + 1.5,
-                    z: loc.z + 0.5 + (Math.random() - 0.5) * 2
-                  });
-                } catch (fe) {}
-              }, i * 10);
-            }
-          } catch (fwe) {}
-
-          // 4. Audio & Visual Discovery Alert
-          player.playSound("ui.toast.challenge_complete", { pitch: 1.2, volume: 1.0 });
-          player.playSound("random.levelup", { pitch: 1.5, volume: 1.0 });
-
-          const islandTitle = customName.replace(/§[0-9a-fk-or]/gi, "").replace("Compass: ", "");
-          player.onScreenDisplay.setTitle("§6§lISLAND REGISTERED!§r", {
-            stayDuration: 80,
-            fadeInDuration: 5,
-            fadeOutDuration: 15,
-            subtitle: `§aDiscovered: §e${islandTitle}`
-          });
-          player.sendMessage(`\n§6★ [Island Discovery Registered] §aYou successfully reached and claimed §e§l${islandTitle}§r§a!`);
-          player.sendMessage(`§7The Lodestone transformed into Gilded Blackstone monument and your compass attuned successfully!\n`);
-        } catch (err) {}
-      });
-    }
+  if (block.typeId === "minecraft:lodestone") {
+    event.cancel = true; // Prevent vanilla attunement so custom registration handles it cleanly
+    system.run(() => {
+      // Find theme by position or held item
+      let matchedTheme = null;
+      if (itemStack && itemStack.nameTag) {
+        matchedTheme = ISLAND_THEMES.find(t => itemStack.nameTag.toLowerCase().includes(t.name.toLowerCase()));
+      }
+      if (!matchedTheme) {
+        // Fallback: match by distance to known island targets
+        for (const t of ISLAND_THEMES) {
+          const tx = world.getDynamicProperty(`island_target_x_${t.id}`);
+          const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
+          if (tx !== undefined && tz !== undefined) {
+            const d = Math.hypot(block.location.x - tx, block.location.z - tz);
+            if (d < 10) { matchedTheme = t; break; }
+          }
+        }
+      }
+      if (matchedTheme) {
+        triggerIslandRegistration(player, matchedTheme, block.location);
+      }
+    });
   }
 });
+
+// Method 2: Proactive Auto-Discovery on Arrival (Walking within 5 blocks of the Lodestone)
+system.runInterval(() => {
+  try {
+    for (const player of world.getAllPlayers()) {
+      const pLoc = player.location;
+      for (const t of ISLAND_THEMES) {
+        const tx = world.getDynamicProperty(`island_target_x_${t.id}`);
+        const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
+        if (tx !== undefined && tz !== undefined) {
+          const dist = Math.hypot(pLoc.x - tx, pLoc.z - tz);
+          // When player arrives on the island (within 5 blocks of the lodestone)
+          if (dist <= 5 && !world.getDynamicProperty(`island_registered_${t.id}`)) {
+            const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 65;
+            triggerIslandRegistration(player, t, { x: tx, y: ty, z: tz });
+            break;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+}, 20);
 

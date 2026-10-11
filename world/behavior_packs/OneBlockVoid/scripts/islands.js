@@ -879,8 +879,8 @@ export function buildThemedIsland(dimension, theme, center) {
     }
   }
 
-  // 2. Scenic Bluff Overlook: Raised Lodestone Beacon (X: +1, Z: -2 on the ridge)
-  safeAirOnlySetBlock(dimension, { x: cx + 1, y: cy + 2, z: cz - 2 }, "minecraft:lodestone");
+  // 2. Central Lodestone Beacon Monument (At exact island target coordinates: cx, cy+1, cz)
+  safeAirOnlySetBlock(dimension, { x: cx, y: cy + 1, z: cz }, "minecraft:lodestone");
 
   // 3. Natural Thematic Lighting: Lanterns on cobblestone/wood posts along the cliffs
   const lightPosts = [
@@ -929,10 +929,18 @@ export function buildThemedIsland(dimension, theme, center) {
 
   // 5. Cliffside Alcove Chest with Tier-Appropriate Loot
   const chestPos = { x: cx, y: cy + 1, z: cz + 2 };
-  safeAirOnlySetBlock(dimension, chestPos, "minecraft:chest");
+  // Ensure solid floor under chest
+  try {
+    const floorBlock = dimension.getBlock({ x: chestPos.x, y: chestPos.y - 1, z: chestPos.z });
+    if (floorBlock && (floorBlock.isAir || floorBlock.typeId === "minecraft:air")) {
+      floorBlock.setType(theme.floor);
+    }
+  } catch (fe) {}
+
   try {
     const chestBlock = dimension.getBlock(chestPos);
     if (chestBlock) {
+      chestBlock.setType("minecraft:chest");
       const inv = chestBlock.getComponent("minecraft:inventory")?.container;
       if (inv) {
         for (const item of theme.chest) {
