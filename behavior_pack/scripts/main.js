@@ -566,30 +566,44 @@ function updateScoreboard() {
     const netherState = getDimensionState("nether");
     const endState = getDimensionState("end");
 
-    // Format neat scoreboard lines using dummy participant names
+    // Format distinct, clean scoreboard lines
     const lines = [
-      `§7---------------§r`,
+      "§7-----------------§r",
       `§aOverworld: §fPhase ${owState.phaseIndex + 1}`,
-      ` §7Progress: §b${owState.phaseProgress}§7/§b${owState.currentPhaseLength}`,
+      `§7Progress: §b${owState.phaseProgress}§7/§b${owState.currentPhaseLength}`,
       `§cNether: §fPhase ${netherState.phaseIndex + 1}`,
       `§dThe End: §fPhase ${endState.phaseIndex + 1}`,
       `§eTotal Mined: §6${owState.count + netherState.count + endState.count}`,
-      `§7----------------§r`
+      "§7------------------§r"
     ];
 
-    // Clear old scores and update current scores
-    const participants = objective.getParticipants();
-    for (const p of participants) {
-      if (typeof p === "string" && !lines.includes(p)) {
-        objective.removeParticipant(p);
+    // Remove obsolete participants
+    try {
+      const participants = objective.getParticipants();
+      for (const p of participants) {
+        const idName = (typeof p === "string") ? p : (p.displayName || p.id);
+        if (idName && !lines.includes(idName)) {
+          objective.removeParticipant(p);
+        }
       }
-    }
+    } catch (pe) {}
 
     let score = lines.length;
     for (const line of lines) {
-      objective.setScore(line, score--);
+      try {
+        objective.setScore(line, score--);
+      } catch (se) {}
     }
-  } catch (e) {}
+  } catch (e) {
+    // Robust Command Fallback
+    try {
+      const ow = world.getDimension("overworld");
+      if (ow) {
+        ow.runCommand("scoreboard objectives add oneblock_stats dummy §e§lONEBLOCK VOID§r");
+        ow.runCommand("scoreboard objectives setdisplay sidebar oneblock_stats");
+      }
+    } catch (ce) {}
+  }
 }
 
 // 8 perimeter positions around (0, 64, 0)
@@ -1237,9 +1251,53 @@ system.runInterval(() => {
 
     if (tickCounter % 2 === 0) {
       try {
-        nether.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
-        end.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
+        const nether = world.getDimension("nether");
+        if (nether) nether.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
       } catch (e) {}
+      try {
+        const end = world.getDimension("the_end");
+        if (end) end.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
+      } catch (e) {}
+      // Compass Particle Guide: emit a trail of shining particles extending in front of player towards island
+      try {
+        for (const player of world.getAllPlayers()) {
+          const equippable = player.getComponent("minecraft:equippable");
+          const heldItem = equippable?.getEquipment("Mainhand");
+          const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
+          if (isCompass && heldItem.nameTag && (heldItem.nameTag.includes("Compass:") || heldItem.nameTag.includes("Lodestone Compass:"))) {
+            const islandTitle = heldItem.nameTag.replace(/§[0-9a-fk-or]/gi, "").replace("Lodestone Compass: ", "").replace("Compass: ", "").trim();
+            const matchedTheme = ISLAND_THEMES.find(t => t.name.toLowerCase() === islandTitle.toLowerCase());
+            if (matchedTheme) {
+              const tx = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
+              const ty = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
+              const tz = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
+              if (tx !== undefined && tz !== undefined) {
+                const px = player.location.x;
+                const py = player.location.y + 1.2;
+                const pz = player.location.z;
+                const dx = tx - px;
+                const dy = ty - py;
+                const dz = tz - pz;
+                const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (len > 0.1) {
+                  const ux = dx / len;
+                  const uy = dy / len;
+                  const uz = dz / len;
+                  // Spawn 5 particle steps extending out from player
+                  for (let step = 1; step <= 5; step++) {
+                    const d = step * 1.5;
+                    player.dimension.spawnParticle("minecraft:endrod", {
+                      x: px + ux * d,
+                      y: py + uy * d,
+                      z: pz + uz * d
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (pe) {}
     }
   } catch (err) {}
 }, 20);
