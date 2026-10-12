@@ -101,9 +101,9 @@ export const ISLAND_THEMES = [
     y: 76,
     name: "Cherry Blossom Sanctuary",
     color: "§d",
-    floor: "minecraft:cherry_log",
-    subfloor: "minecraft:cherry_leaves",
-    base: "minecraft:grass_block",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "blossom_tree",
     mob: "minecraft:bee",
     chest: [
@@ -122,8 +122,8 @@ export const ISLAND_THEMES = [
     y: 74,
     name: "Pale Garden Eerie Spire",
     color: "§7",
-    floor: "minecraft:pale_oak_log",
-    subfloor: "minecraft:pale_moss_block",
+    floor: "minecraft:pale_moss_block",
+    subfloor: "minecraft:dirt",
     base: "minecraft:deepslate",
     feature: "creaking_heart",
     mob: "minecraft:creaking",
@@ -164,8 +164,8 @@ export const ISLAND_THEMES = [
     y: 60,
     name: "Badlands Gold Mesa",
     color: "§6",
-    floor: "minecraft:terracotta",
-    subfloor: "minecraft:red_sandstone",
+    floor: "minecraft:red_sand",
+    subfloor: "minecraft:terracotta",
     base: "minecraft:stone",
     feature: "gold_core",
     mob: null,
@@ -185,9 +185,9 @@ export const ISLAND_THEMES = [
     y: 96,
     name: "Glacial Ice Spire",
     color: "§b",
-    floor: "minecraft:blue_ice",
+    floor: "minecraft:snow_block",
     subfloor: "minecraft:packed_ice",
-    base: "minecraft:snow_block",
+    base: "minecraft:stone",
     feature: "ice_spike",
     mob: "minecraft:polar_bear",
     chest: [
@@ -206,9 +206,9 @@ export const ISLAND_THEMES = [
     y: 58,
     name: "Jungle Ruined Temple",
     color: "§2",
-    floor: "minecraft:mossy_cobblestone",
-    subfloor: "minecraft:chiseled_stone_bricks",
-    base: "minecraft:cobblestone",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "bamboo_grove",
     mob: "minecraft:parrot",
     chest: [
@@ -374,9 +374,9 @@ export const ISLAND_THEMES = [
     y: 88,
     name: "Pillager Sky Outpost",
     color: "§8",
-    floor: "minecraft:dark_oak_planks",
-    subfloor: "minecraft:dark_oak_log",
-    base: "minecraft:cobblestone",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "watchtower",
     mob: "minecraft:pillager",
     chest: [
@@ -395,8 +395,8 @@ export const ISLAND_THEMES = [
     y: 62,
     name: "Desert Mirage Well",
     color: "§e",
-    floor: "minecraft:sandstone",
-    subfloor: "minecraft:sand",
+    floor: "minecraft:sand",
+    subfloor: "minecraft:sandstone",
     base: "minecraft:stone",
     feature: "sand_well",
     mob: "minecraft:camel",
@@ -416,8 +416,8 @@ export const ISLAND_THEMES = [
     y: 66,
     name: "Bamboo Panda Sanctuary",
     color: "§a",
-    floor: "minecraft:bamboo_block",
-    subfloor: "minecraft:moss_block",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
     base: "minecraft:stone",
     feature: "bamboo_pillars",
     mob: "minecraft:panda",
@@ -479,8 +479,8 @@ export const ISLAND_THEMES = [
     y: 90,
     name: "Fallen Glowstone Meteor",
     color: "§e",
-    floor: "minecraft:glowstone",
-    subfloor: "minecraft:magma",
+    floor: "minecraft:basalt",
+    subfloor: "minecraft:blackstone",
     base: "minecraft:obsidian",
     feature: "meteor_core",
     mob: null,
@@ -500,9 +500,9 @@ export const ISLAND_THEMES = [
     y: 92,
     name: "End City Spire",
     color: "§5",
-    floor: "minecraft:purpur_block",
-    subfloor: "minecraft:purpur_pillar",
-    base: "minecraft:end_stone_bricks",
+    floor: "minecraft:end_stone",
+    subfloor: "minecraft:end_stone",
+    base: "minecraft:end_stone",
     feature: "end_rod",
     mob: "minecraft:shulker",
     chest: [
@@ -521,9 +521,9 @@ export const ISLAND_THEMES = [
     y: 54,
     name: "Prehistoric Fossil Dig",
     color: "§f",
-    floor: "minecraft:bone_block",
-    subfloor: "minecraft:coarse_dirt",
-    base: "minecraft:dirt",
+    floor: "minecraft:coarse_dirt",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "fossil_rib",
     mob: "minecraft:sniffer",
     chest: [
@@ -563,9 +563,9 @@ export const ISLAND_THEMES = [
     y: 82,
     name: "Arcane Sky Observatory",
     color: "§9",
-    floor: "minecraft:bookshelf",
-    subfloor: "minecraft:chiseled_bookshelf",
-    base: "minecraft:stone_bricks",
+    floor: "minecraft:stone_bricks",
+    subfloor: "minecraft:cobblestone",
+    base: "minecraft:stone",
     feature: "enchanting_setup",
     mob: null,
     chest: [
@@ -647,9 +647,9 @@ export const ISLAND_THEMES = [
     y: 50,
     name: "Gelatinous Slime Isle",
     color: "§a",
-    floor: "minecraft:lime_concrete",
-    subfloor: "minecraft:moss_block",
-    base: "minecraft:clay",
+    floor: "minecraft:moss_block",
+    subfloor: "minecraft:clay",
+    base: "minecraft:stone",
     feature: "slime_core",
     mob: "minecraft:slime",
     chest: [
@@ -668,9 +668,9 @@ export const ISLAND_THEMES = [
     y: 70,
     name: "Sunlit Honey Apiary",
     color: "§6",
-    floor: "minecraft:honeycomb_block",
-    subfloor: "minecraft:grass_block",
-    base: "minecraft:dirt",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "beehive",
     mob: "minecraft:bee",
     chest: [
@@ -689,9 +689,9 @@ export const ISLAND_THEMES = [
     y: 64,
     name: "Haunted Pumpkin Patch",
     color: "§6",
-    floor: "minecraft:carved_pumpkin",
-    subfloor: "minecraft:grass_block",
-    base: "minecraft:dirt",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "jack_o_lantern",
     mob: "minecraft:snow_golem",
     chest: [
@@ -710,7 +710,7 @@ export const ISLAND_THEMES = [
     y: 64,
     name: "Tropical Melon Greenhouse",
     color: "§a",
-    floor: "minecraft:melon_block",
+    floor: "minecraft:grass_block",
     subfloor: "minecraft:dirt",
     base: "minecraft:stone",
     feature: "glass_dome",
@@ -773,9 +773,9 @@ export const ISLAND_THEMES = [
     y: 70,
     name: "Windmill Grain Haven",
     color: "§e",
-    floor: "minecraft:hay_block",
-    subfloor: "minecraft:spruce_planks",
-    base: "minecraft:dirt",
+    floor: "minecraft:grass_block",
+    subfloor: "minecraft:dirt",
+    base: "minecraft:stone",
     feature: "hay_spire",
     mob: "minecraft:villager_v2",
     chest: [
@@ -794,9 +794,9 @@ export const ISLAND_THEMES = [
     y: 56,
     name: "Coral Reef Biosphere",
     color: "§3",
-    floor: "minecraft:tube_coral_block",
-    subfloor: "minecraft:brain_coral_block",
-    base: "minecraft:sand",
+    floor: "minecraft:sand",
+    subfloor: "minecraft:sandstone",
+    base: "minecraft:stone",
     feature: "coral_pool",
     mob: "minecraft:axolotl",
     chest: [
@@ -836,9 +836,9 @@ export const ISLAND_THEMES = [
     y: 48,
     name: "Starlight Meteorite Crater",
     color: "§5",
-    floor: "minecraft:crying_obsidian",
-    subfloor: "minecraft:obsidian",
-    base: "minecraft:magma",
+    floor: "minecraft:blackstone",
+    subfloor: "minecraft:basalt",
+    base: "minecraft:obsidian",
     feature: "star_core",
     mob: null,
     chest: [
@@ -1026,7 +1026,39 @@ function getSubsoilBlock(theme, dx, dz, seed) {
 function placeSurfaceVegetation(dimension, theme, loc, seed) {
   const { x, y, z } = loc;
   try {
-    if (theme.floor === "minecraft:grass_block") {
+    if (theme.biome === "cherry_grove") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 65) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:pink_petals");
+      }
+    } else if (theme.id === "bamboo_monastery") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 35) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:bamboo");
+        safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:bamboo");
+      } else if (vh < 60) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+      }
+    } else if (theme.id === "pumpkin_patch") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 25) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:carved_pumpkin");
+      } else if (vh < 55) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+      }
+    } else if (theme.id === "melon_greenhouse") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 25) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:melon_block");
+      } else if (vh < 55) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+      }
+    } else if (theme.id === "bee_apiary") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 30) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
+      else if (vh < 55) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
+      else if (vh < 75) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
+    } else if (theme.floor === "minecraft:grass_block") {
       const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
       if (vh < 35) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
@@ -1043,9 +1075,6 @@ function placeSurfaceVegetation(dimension, theme, loc, seed) {
       const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
       if (vh < 40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:fern");
       else if (vh < 55) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:sweet_berry_bush");
-    } else if (theme.biome === "cherry_grove") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 60) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:pink_petals");
     } else if (theme.floor.includes("sand")) {
       const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
       if (vh < 20) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");

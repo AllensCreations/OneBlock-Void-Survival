@@ -408,6 +408,156 @@ function startPhaseTransition(dimKey, dimension, newPhaseIdx, isGameComplete) {
   }, 20);
 }
 
+function materializeIsland(dimension, theme, phaseIndex, totalCount) {
+  try {
+    const lastX = world.getDynamicProperty("last_island_x");
+    const lastZ = world.getDynamicProperty("last_island_z");
+    const lastPos = (lastX !== undefined && lastZ !== undefined) ? { x: lastX, z: lastZ } : null;
+
+    const islandLoc = getIslandLocation(phaseIndex + Math.floor(totalCount / 100), 42, theme, lastPos);
+
+    // Record this island as the last materialized island
+    world.setDynamicProperty("last_island_x", islandLoc.center.x);
+    world.setDynamicProperty("last_island_z", islandLoc.center.z);
+
+    // 1. PRELOAD CHUNK: Add ticking area first so the chunk is actively loaded in memory
+    const areaName = `isl_${theme.id}`.slice(0, 16);
+    try {
+      dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
+    } catch (tce) {}
+
+    // Store active island target in world dynamic properties for radar navigation
+    world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
+    world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
+    world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
+
+    // 2. Build the themed Skyblock island and award compass
+    system.runTimeout(() => {
+      try {
+        buildThemedIsland(dimension, theme, islandLoc.center);
+
+        // Subtle Ambient Discovery: Audio chime, action bar notification, and chat coordinates (NO full screen title)
+        for (const p of world.getAllPlayers()) {
+          p.playSound("random.levelup", { pitch: 1.2, volume: 0.8 });
+          p.playSound("block.amethyst_block.chime", { pitch: 1.1, volume: 1.0 });
+
+          p.onScreenDisplay.setActionBar(`§e⚡ A secret island (${theme.name}) has materialized! Check your compass!`);
+
+          p.sendMessage(`\n${theme.color}⚡ [Secret Island Materialized] §fThe mysterious §l${theme.name}§r ${theme.color}has appeared in the void!`);
+          p.sendMessage(`§eA mystical Compass has been delivered! §6Target Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`);
+          p.sendMessage(`§7(Coordinates are inscribed directly on the Compass item tooltip / lore!)\n`);
+
+          // Award Authentic Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
+          try {
+            let compass;
+            try {
+              compass = new ItemStack("minecraft:lodestone_compass", 1);
+            } catch (lce) {
+              compass = new ItemStack("minecraft:compass", 1);
+            }
+
+            const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
+            const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
+            const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
+            compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
+            compass.setLore([
+              `§7Mystical Island Explorer Compass`,
+              `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
+              `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
+              `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`,
+              `§7-----------------------`,
+              `§aHold in hand for Radar HUD & Light Trail!`,
+              `§bRight-Click for Interactive Sonar Ping!`,
+              `§eAuto-dissolves when you reach the island!`
+            ]);
+
+            // Attune Compass to the island Lodestone location via Bedrock Script API
+            const lodestonePos = { x: islandLoc.center.x, y: islandLoc.center.y + 1, z: islandLoc.center.z };
+            try {
+              const tracker = compass.getComponent("minecraft:lodestone_tracker");
+              if (tracker) {
+                if (typeof tracker.setLodestonePosition === "function") {
+                  tracker.setLodestonePosition(lodestonePos);
+                } else if ("trackingPosition" in tracker) {
+                  tracker.trackingPosition = lodestonePos;
+                }
+              }
+            } catch (te) {}
+
+            const inv = p.getComponent("minecraft:inventory")?.container;
+            if (inv && inv.emptySlotsCount > 0) {
+              inv.addItem(compass);
+            } else {
+              hoverDropAboveOneBlock(dimension, compass);
+            }
+          } catch (ce) {}
+        }
+      } catch (ie) {}
+    }, 10);
+  } catch (err) {}
+}
+
+function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
+  try {
+    // 1. Determine player's active tier based on phase:
+    // Phase 1-4 (idx 0-3): Tier 1
+    // Phase 5-8 (idx 4-7): Tier 2
+    // Phase 9-12 (idx 8-11): Tier 3
+    // Phase 13+ (idx 12+): Tier 4
+    const currentTier = phaseIndex < 4 ? 1 : (phaseIndex < 8 ? 2 : (phaseIndex < 12 ? 3 : 4));
+
+    // 2. Track blocks mined since last island spawn:
+    const lastMineCount = world.getDynamicProperty("last_island_mine_count") ?? 0;
+    const blocksSinceLast = totalCount - lastMineCount;
+
+    // 3. Pity timer (>= 150 blocks) or random chance (~0.8% = 1 in 125 blocks)
+    const isPity = blocksSinceLast >= 150;
+    const isRandom = Math.random() < 0.008;
+
+    if (!isPity && !isRandom) return;
+
+    // 4. Find all unspawned islands for unlocked tiers (tiers <= currentTier)
+    const unspawnedCurrentTier = [];
+    const unspawnedEarlierTiers = [];
+
+    for (const t of ISLAND_THEMES) {
+      if (t.tier > currentTier) continue; // Locked future tier!
+      const isSpawned = world.getDynamicProperty(`island_spawned_${t.id}`);
+      if (!isSpawned) {
+        if (t.tier === currentTier) {
+          unspawnedCurrentTier.push(t);
+        } else {
+          unspawnedEarlierTiers.push(t);
+        }
+      }
+    }
+
+    if (unspawnedCurrentTier.length === 0 && unspawnedEarlierTiers.length === 0) return;
+
+    // 5. Weighted Tier Selection: 70% current tier, 30% earlier tiers
+    let selectedTheme = null;
+    const rollTier = Math.random();
+
+    if (unspawnedCurrentTier.length > 0 && (rollTier < 0.70 || unspawnedEarlierTiers.length === 0)) {
+      const idx = Math.floor(Math.random() * unspawnedCurrentTier.length);
+      selectedTheme = unspawnedCurrentTier[idx];
+    } else if (unspawnedEarlierTiers.length > 0) {
+      const idx = Math.floor(Math.random() * unspawnedEarlierTiers.length);
+      selectedTheme = unspawnedEarlierTiers[idx];
+    } else {
+      selectedTheme = unspawnedCurrentTier[0];
+    }
+
+    if (!selectedTheme) return;
+
+    // Mark spawned and record mine count
+    world.setDynamicProperty(`island_spawned_${selectedTheme.id}`, true);
+    world.setDynamicProperty("last_island_mine_count", totalCount);
+
+    materializeIsland(dimension, selectedTheme, phaseIndex, totalCount);
+  } catch (err) {}
+}
+
 function incrementDimensionCount(dimKey, dimension) {
   const countProp = `ob_${dimKey}_count`;
   const prevState = getDimensionState(dimKey);
@@ -418,118 +568,16 @@ function incrementDimensionCount(dimKey, dimension) {
   const newState = getDimensionState(dimKey);
   const phases = getPhasesForDim(dimKey);
 
+  // Random Chance Island Materialization with Pity Timer in Overworld
+  if (dimKey === "overworld") {
+    checkRandomIslandSpawn(dimension, newState.phaseIndex, newCount);
+  }
+
   // Check if phase climax was just reached
   if (newState.phaseIndex > prevState.phaseIndex) {
     spawnPhaseMiniBoss(dimKey, dimension, newState.phaseIndex);
     const isGameComplete = (dimKey === "end" && newState.phaseIndex === phases.length - 1);
     startPhaseTransition(dimKey, dimension, newState.phaseIndex, isGameComplete);
-
-    // Check for Secret Island Materialization across 42+ Unique Void Islands
-    // Islands materialize based on Progression Tiers (Tier 1: Starter, Tier 2: Mining, Tier 3: Nether/Magic, Tier 4: End/Relics)
-    if (dimKey === "overworld") {
-      // Determine allowed Tier based on player's current phase:
-      // Phase 1-4 (idx 0-3): Tier 1
-      // Phase 5-8 (idx 4-7): Tier 2
-      // Phase 9-12 (idx 8-11): Tier 3
-      // Phase 13+ (idx 12+): Tier 4
-      const targetTier = newState.phaseIndex < 4 ? 1 : (newState.phaseIndex < 8 ? 2 : (newState.phaseIndex < 12 ? 3 : 4));
-      const tierThemes = ISLAND_THEMES.filter(t => t.tier === targetTier);
-
-      // Pick theme from the appropriate tier pool
-      const themeIndex = (newState.phaseIndex + Math.floor(newCount / 200)) % tierThemes.length;
-      const theme = tierThemes[themeIndex] || ISLAND_THEMES[0];
-      const propKey = `island_spawned_phase_${newState.phaseIndex}_${theme.id}`;
-
-      if (!world.getDynamicProperty(propKey)) {
-        world.setDynamicProperty(propKey, true);
-        const lastX = world.getDynamicProperty("last_island_x");
-        const lastZ = world.getDynamicProperty("last_island_z");
-        const lastPos = (lastX !== undefined && lastZ !== undefined) ? { x: lastX, z: lastZ } : null;
-
-        const islandLoc = getIslandLocation(newState.phaseIndex, 42, theme, lastPos);
-
-        // Record this island as the last materialized island
-        world.setDynamicProperty("last_island_x", islandLoc.center.x);
-        world.setDynamicProperty("last_island_z", islandLoc.center.z);
-
-        // 1. PRELOAD CHUNK: Add ticking area first so the chunk is actively loaded in memory
-        const areaName = `isl_${theme.id}`.slice(0, 16);
-        try {
-          dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
-        } catch (tce) {}
-
-        // Store active island target in world dynamic properties for radar navigation
-        world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
-        world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
-        world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
-
-        // 2. Build the themed Skyblock island and award compass
-        system.runTimeout(() => {
-          try {
-            buildThemedIsland(dimension, theme, islandLoc.center);
-
-            // Broadcast Discovery Alert with exact coordinates inscribed on compass
-            for (const p of world.getAllPlayers()) {
-              p.onScreenDisplay.setTitle(`${theme.color}★ SECRET ISLAND! ★`, {
-                stayDuration: 100,
-                fadeInDuration: 10,
-                fadeOutDuration: 15,
-                subtitle: `§e${theme.name} materialized!`
-              });
-              p.sendMessage(`\n${theme.color}⚡ [Secret Island Discovered] §fThe mysterious §l${theme.name}§r ${theme.color}has materialized!`);
-              p.sendMessage(`§eA mystical Compass has been delivered! §6Target Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`);
-              p.sendMessage(`§7(Coordinates are inscribed directly on the Compass item tooltip / lore!)\n`);
-              p.playSound("ambient.weather.thunder", { pitch: 1.1, volume: 1.0 });
-
-              // Award Authentic Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
-              try {
-                let compass;
-                try {
-                  compass = new ItemStack("minecraft:lodestone_compass", 1);
-                } catch (lce) {
-                  compass = new ItemStack("minecraft:compass", 1);
-                }
-
-                const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
-                const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
-                const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
-                compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
-                compass.setLore([
-                  `§7Mystical Island Explorer Compass`,
-                  `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
-                  `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
-                  `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`,
-                  `§7-----------------------`,
-                  `§aHold in hand for Radar HUD & Light Trail!`,
-                  `§bRight-Click for Interactive Sonar Ping!`,
-                  `§eAuto-dissolves when you reach the island!`
-                ]);
-
-                // Attune Compass to the island Lodestone location via Bedrock Script API
-                const lodestonePos = { x: islandLoc.center.x, y: islandLoc.center.y + 1, z: islandLoc.center.z };
-                try {
-                  const tracker = compass.getComponent("minecraft:lodestone_tracker");
-                  if (tracker) {
-                    if (typeof tracker.setLodestonePosition === "function") {
-                      tracker.setLodestonePosition(lodestonePos);
-                    } else if ("trackingPosition" in tracker) {
-                      tracker.trackingPosition = lodestonePos;
-                    }
-                  }
-                } catch (te) {}
-
-                const inv = p.getComponent("minecraft:inventory")?.container;
-                if (inv && inv.emptySlotsCount > 0) {
-                  inv.addItem(compass);
-                } else {
-                  hoverDropAboveOneBlock(dimension, compass);
-                }
-              } catch (ce) {}
-            }
-          } catch (ie) {}
-        }, 10);
-      }
-    }
   }
 
   // Check global island milestones
