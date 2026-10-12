@@ -324,17 +324,51 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
         } catch (e) {}
       }, 1);
     } else {
-      // Fully mined! The last block turns into the island's floor block, and the Sacred Reward Entity Chest spawns atop it!
+      // Fully mined! The core first reveals solid Bedrock for 3 seconds, then stabilizes into the normal floor block!
       world.setDynamicProperty(`island_ob_completed_${matchedTheme.id}`, true);
 
+      // 1. Instantly place Bedrock at the core location
       system.run(() => {
+        try {
+          const targetBlock = dimension.getBlock(loc);
+          if (targetBlock) {
+            targetBlock.setType("minecraft:bedrock");
+          }
+        } catch (e) {}
+      });
+
+      // Bedrock manifestation FX: deep resonance & void energy
+      try {
+        dimension.playSound("block.anvil.land", loc, { pitch: 0.7, volume: 1.0 });
+        dimension.playSound("block.amethyst_block.resonate", loc, { pitch: 0.9, volume: 1.0 });
+        dimension.spawnParticle("minecraft:portal_particle", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+        dimension.spawnParticle("minecraft:dragon_breath_fire", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+      } catch (e) {}
+
+      if (player) {
+        player.onScreenDisplay.setActionBar(`§5✦ Bedrock Core Exposed! Stabilizing terrain... (3s) ✦`);
+        player.sendMessage(`\n${matchedTheme.color}✦ [Core Reached] §fThe Island Core has struck Bedrock! Stabilizing into natural terrain in 3 seconds...`);
+      }
+
+      // Pulsing stabilization particles during the 3-second countdown
+      for (let s = 1; s <= 2; s++) {
+        system.runTimeout(() => {
+          try {
+            dimension.spawnParticle("minecraft:wax_particle", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+            dimension.playSound("random.orb", loc, { pitch: 1.0 + s * 0.3, volume: 0.8 });
+          } catch (e) {}
+        }, s * 20);
+      }
+
+      // 2. Exactly 3 seconds (60 ticks) later: Bedrock transforms into normal floor block & Sacred Entity Chest spawns
+      system.runTimeout(() => {
         try {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
             targetBlock.setType(matchedTheme.floor);
           }
 
-          // Spawn the Sacred Reward Entity Chest sitting atop the permanent floor block
+          // Spawn the Sacred Reward Entity Chest sitting cleanly atop the permanent floor block
           const chestLoc = { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 };
           const chestEntity = dimension.spawnEntity("minecraft:chest_minecart", chestLoc);
           if (chestEntity) {
@@ -349,20 +383,18 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
               } catch (ie) {}
             }, 1);
           }
+
+          // Celebration effects: fireworks, totem particles, levelup sound, chat announcement
+          dimension.spawnEntity("minecraft:fireworks_rocket", { x: loc.x + 0.5, y: loc.y + 1.5, z: loc.z + 0.5 });
+          dimension.spawnParticle("minecraft:totem_particle", { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 });
+          dimension.playSound("random.levelup", loc, { pitch: 1.2, volume: 1.0 });
+          dimension.playSound("random.totem", loc, { pitch: 1.0, volume: 0.8 });
+
+          for (const p of world.getAllPlayers()) {
+            p.sendMessage(`${matchedTheme.color}★ [Island Core Conquered] §fThe Bedrock core has stabilized into the island's natural floor! The Sacred Treasure Chest has manifested!\n`);
+          }
         } catch (e) {}
-      });
-
-      // Celebration effects: fireworks, totem particles, levelup sound, chat announcement
-      try {
-        dimension.spawnEntity("minecraft:fireworks_rocket", { x: loc.x + 0.5, y: loc.y + 1.5, z: loc.z + 0.5 });
-        dimension.spawnParticle("minecraft:totem_particle", { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 });
-        dimension.playSound("random.levelup", loc, { pitch: 1.2, volume: 1.0 });
-        dimension.playSound("random.totem", loc, { pitch: 1.0, volume: 0.8 });
-      } catch (e) {}
-
-      for (const p of world.getAllPlayers()) {
-        p.sendMessage(`${matchedTheme.color}★ [Island Core Conquered] §fYou have mined all blocks of the §l${matchedTheme.name}§r ${matchedTheme.color}Core! The Sacred Treasure Chest has manifested!`);
-      }
+      }, 60);
     }
   } catch (err) {}
 }
