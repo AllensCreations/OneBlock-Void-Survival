@@ -1498,6 +1498,15 @@ world.afterEvents.playerSpawn.subscribe((event) => {
           ensureOneBlock(player.dimension);
         } catch (e) {}
 
+        // Enforce Pure Survival on joining player
+        try {
+          if (player.getGameMode && player.getGameMode() !== "survival") {
+            player.setGameMode("survival");
+          }
+        } catch (gme) {
+          try { player.runCommand("gamemode survival @s"); } catch (e2) {}
+        }
+
         // Initialize Scoreboard for the joining player
         try {
           updateScoreboard();
@@ -1563,9 +1572,26 @@ system.runInterval(() => {
 
     try { updateScoreboard(); } catch (e) {}
 
+    // Permanently Lock World Difficulty to Hard
+    if (tickCounter % 10 === 0) {
+      try {
+        const ow = world.getDimension("overworld");
+        if (ow) ow.runCommand("difficulty hard");
+      } catch (de) {}
+    }
+
     // QoL: Actionbar HUD & Compass Nav-Radar
     for (const player of world.getAllPlayers()) {
       try {
+        // Permanently Lock Player GameMode to Pure Survival
+        try {
+          if (player.getGameMode && player.getGameMode() !== "survival") {
+            player.setGameMode("survival");
+            player.sendMessage("§c[World Settings Locked] This world is permanently locked to Pure Survival on Hard difficulty!");
+          }
+        } catch (ge) {
+          try { player.runCommand("gamemode survival @s[m=!survival]"); } catch (e2) {}
+        }
         if (!player.hasTag("hide_hud")) {
           const dimKey = getDimKey(player.dimension.id);
           const state = getDimensionState(dimKey);
