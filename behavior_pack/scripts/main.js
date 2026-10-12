@@ -1735,6 +1735,19 @@ world.afterEvents.entityDie.subscribe((event) => {
   } catch (e) {}
 });
 
+// Wandering Trader Arrival Notification
+world.afterEvents.entitySpawn.subscribe((event) => {
+  try {
+    const entity = event.entity;
+    if (entity && entity.typeId === "minecraft:wandering_trader") {
+      for (const player of world.getAllPlayers()) {
+        player.sendMessage("§e★ A Wandering Trader has arrived with mystery survival goods! §7(Accepts Emeralds, Gold, & Diamonds)");
+        player.playSound("mob.villager.idle", { pitch: 1.1, volume: 1.0 });
+      }
+    }
+  } catch (e) {}
+});
+
 // Player initial spawn & Welcome Introduction
 world.afterEvents.playerSpawn.subscribe((event) => {
   const { player, initialSpawn } = event;
