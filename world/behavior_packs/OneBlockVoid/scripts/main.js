@@ -1084,13 +1084,106 @@ function handleAutomatedBlockDestruction(dimension) {
   } catch (err) {}
 }
 
+// Auto-renews the OneBlock immediately whenever it is detected as air or missing
+export function renewOneBlock(dimension) {
+  try {
+    const dimKey = getDimKey(dimension.id);
+    if (activeCountdowns.get(dimKey)) return false;
+
+    // 1. Bedrock foundation at (0, 63, 0) directly below the OneBlock:
+    // Guarantees gravity blocks (sand, gravel, concrete powder) never fall into the void!
+    try {
+      const bFloor = dimension.getBlock({ x: ONEBLOCK_POS.x, y: ONEBLOCK_POS.y - 1, z: ONEBLOCK_POS.z });
+      if (bFloor && bFloor.typeId !== "minecraft:bedrock") {
+        bFloor.setType("minecraft:bedrock");
+      }
+    } catch (bfe) {}
+
+    const block = dimension.getBlock(ONEBLOCK_POS);
+    if (!block) return false;
+
+    const bType = block.typeId;
+    const isLiquid = bType === "minecraft:water" || bType === "minecraft:flowing_water" ||
+                     bType === "minecraft:lava" || bType === "minecraft:flowing_lava";
+    const isAir = block.isAir || bType === "minecraft:air" || isLiquid;
+
+    if (!isAir) {
+      lastKnownOneBlockType[dimKey] = bType;
+      return false; // Block is already present and solid
+    }
+
+    // 2. Clear liquid if fluid flowed into the OneBlock slot
+    if (isLiquid) {
+      try { block.setType("minecraft:air"); } catch (ce) {}
+    }
+
+    // 3. Determine target block to renew based on active dimension & phase progression
+    const state = getDimensionState(dimKey);
+    const phase = state.phase;
+    let nextBlockType;
+
+    if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
+      nextBlockType = TUTORIAL_BLOCKS[state.count].block;
+    } else if (activeLuckyRush.get(dimKey)) {
+      const luckyBlocks = ["minecraft:gold_block", "minecraft:emerald_block", "minecraft:diamond_ore", "minecraft:gold_ore", "minecraft:iron_block"];
+      nextBlockType = luckyBlocks[Math.floor(Math.random() * luckyBlocks.length)];
+    } else if (phase && phase.blocks && phase.blocks.length > 0) {
+      nextBlockType = pickWeighted(phase.blocks).id;
+    } else {
+      nextBlockType = dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt");
+    }
+
+    // 4. Place renewed block with fail-proof multi-tier fallbacks
+    let renewed = false;
+    try {
+      block.setType(nextBlockType);
+      if (!block.isAir && block.typeId !== "minecraft:air") {
+        renewed = true;
+        lastKnownOneBlockType[dimKey] = nextBlockType;
+      }
+    } catch (e1) {}
+
+    // Fallback 1: Dimension default block
+    if (!renewed) {
+      try {
+        const dimDefault = dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt");
+        block.setType(dimDefault);
+        if (!block.isAir && block.typeId !== "minecraft:air") {
+          renewed = true;
+          lastKnownOneBlockType[dimKey] = dimDefault;
+        }
+      } catch (e2) {}
+    }
+
+    // Fallback 2: Universal dirt
+    if (!renewed) {
+      try {
+        block.setType("minecraft:dirt");
+        lastKnownOneBlockType[dimKey] = "minecraft:dirt";
+        renewed = true;
+      } catch (e3) {}
+    }
+
+    // 5. Visual/Audio auto-renew feedback
+    if (renewed) {
+      try {
+        dimension.spawnParticle("minecraft:villager_happy", { x: ONEBLOCK_POS.x + 0.5, y: ONEBLOCK_POS.y + 1.2, z: ONEBLOCK_POS.z + 0.5 });
+        dimension.playSound("dig.stone", ONEBLOCK_POS, { pitch: 1.2, volume: 0.5 });
+      } catch (pe) {}
+    }
+
+    return renewed;
+  } catch (err) {
+    return false;
+  }
+}
+
 function ensureOneBlock(dimension) {
   try {
     const dimKey = getDimKey(dimension.id);
     if (activeCountdowns.get(dimKey)) return;
 
-    // 1. Bedrock foundation at (0, 63, 0) directly below the OneBlock:
-    // Guarantees gravity blocks (sand, gravel, concrete powder) never fall into the void!
+    // Bedrock foundation guarantee at (0, 63, 0)
     const bedrockPos = { x: ONEBLOCK_POS.x, y: ONEBLOCK_POS.y - 1, z: ONEBLOCK_POS.z };
     try {
       const bFloor = dimension.getBlock(bedrockPos);
@@ -1103,24 +1196,13 @@ function ensureOneBlock(dimension) {
     const isLiquid = block && (block.typeId === "minecraft:water" || block.typeId === "minecraft:flowing_water" || block.typeId === "minecraft:lava" || block.typeId === "minecraft:flowing_lava");
     const isMissing = !block || block.isAir || block.typeId === "minecraft:air" || isLiquid;
 
-    // 2. Automated Destruction Handling (TNT explosions, Piston push, environmental):
     if (isMissing) {
-      if (!blockBrokenByPlayer[dimKey]) {
+      // If broken environmentally (TNT, piston, environmental decay) without player break event
+      if (!blockBrokenByPlayer[dimKey] && lastKnownOneBlockType[dimKey]) {
         handleAutomatedBlockDestruction(dimension);
-      } else {
-        // Player break already handled count increment; regenerate if still missing
-        const state = getDimensionState(dimKey);
-        let chosenId;
-        if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
-          chosenId = TUTORIAL_BLOCKS[state.count].block;
-        } else {
-          chosenId = pickWeighted(state.phase.blocks).id;
-        }
-        if (block) {
-          block.setType(chosenId);
-          lastKnownOneBlockType[dimKey] = chosenId;
-        }
       }
+      // Guarantee the block is auto-renewed immediately!
+      renewOneBlock(dimension);
     } else if (block) {
       lastKnownOneBlockType[dimKey] = block.typeId;
     }
@@ -1876,10 +1958,10 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
 
       const targetBlock = dimension.getBlock(ONEBLOCK_POS);
       if (targetBlock && !activeCountdowns.get(dimKey)) {
-        targetBlock.setType(nextBlockType);
-        lastKnownOneBlockType[dimKey] = nextBlockType;
         if (targetBlock.isAir || targetBlock.typeId === "minecraft:air") {
-          targetBlock.setType(dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt"));
+          renewOneBlock(dimension);
+        } else {
+          lastKnownOneBlockType[dimKey] = targetBlock.typeId;
         }
       }
     } catch (e) {}
@@ -2102,21 +2184,17 @@ world.afterEvents.playerSpawn.subscribe((event) => {
   const { player, initialSpawn } = event;
   system.run(() => {
     try {
+      // Ensure OneBlock is immediately active and renewed if air
+      try {
+        renewOneBlock(player.dimension);
+      } catch (e) {}
+
       if (initialSpawn) {
         const loc = player.location;
         if (Math.abs(loc.x) < 5 && Math.abs(loc.z) < 5) {
           player.teleport({ x: 0.5, y: 65.0, z: 0.5 });
           player.clearVelocity();
         }
-
-        // Ensure OneBlock is immediately active on spawn
-        try {
-          const ob = player.dimension.getBlock(ONEBLOCK_POS);
-          if (ob && (ob.isAir || ob.typeId === "minecraft:air")) {
-            ob.setType("minecraft:dirt");
-          }
-          ensureOneBlock(player.dimension);
-        } catch (e) {}
       }
 
       // Enforce Hardcore Survival or Spectator on spawning player in official survival world
@@ -2349,7 +2427,13 @@ function ensureIslandOneBlocks(dimension) {
       if (obX === undefined || obZ === undefined) continue;
 
       const b = dimension.getBlock({ x: obX, y: obY, z: obZ });
-      if (b && (b.isAir || b.typeId === "minecraft:air")) {
+      const isMissing = !b || b.isAir || b.typeId === "minecraft:air" ||
+                        b.typeId === "minecraft:water" || b.typeId === "minecraft:flowing_water" ||
+                        b.typeId === "minecraft:lava" || b.typeId === "minecraft:flowing_lava";
+      if (b && isMissing) {
+        if (b.typeId.includes("water") || b.typeId.includes("lava")) {
+          try { b.setType("minecraft:air"); } catch (e) {}
+        }
         const pool = getIslandBlockPool(theme);
         let placed = false;
         if (pool && pool.length > 0) {
@@ -2403,30 +2487,39 @@ function ensureIslandOneBlocks(dimension) {
   }
 }
 
-// Fast Block Health-Check Loop (runs every 5 ticks / 0.25s) to guarantee the OneBlock & Island OneBlocks never stay air
+// Ultra-Fast Auto-Renewal Loop (runs every 1 tick / 0.05s) to guarantee OneBlock NEVER stays air!
 system.runInterval(() => {
   try {
     const ow = world.getDimension("overworld");
-    if (ow) {
-      ensureOneBlock(ow);
-      ensureIslandOneBlocks(ow);
-    }
+    if (ow) ensureOneBlock(ow);
   } catch (e) {}
 
   try {
     const nether = world.getDimension("nether");
-    if (nether) {
-      ensureOneBlock(nether);
-      ensureIslandOneBlocks(nether);
-    }
+    if (nether) ensureOneBlock(nether);
   } catch (e) {}
 
   try {
     const end = world.getDimension("the_end");
-    if (end) {
-      ensureOneBlock(end);
-      ensureIslandOneBlocks(end);
-    }
+    if (end) ensureOneBlock(end);
+  } catch (e) {}
+}, 1);
+
+// Island OneBlocks Health-Check (runs every 5 ticks / 0.25s)
+system.runInterval(() => {
+  try {
+    const ow = world.getDimension("overworld");
+    if (ow) ensureIslandOneBlocks(ow);
+  } catch (e) {}
+
+  try {
+    const nether = world.getDimension("nether");
+    if (nether) ensureIslandOneBlocks(nether);
+  } catch (e) {}
+
+  try {
+    const end = world.getDimension("the_end");
+    if (end) ensureIslandOneBlocks(end);
   } catch (e) {}
 }, 5);
 
