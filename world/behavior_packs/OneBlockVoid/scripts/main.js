@@ -322,13 +322,25 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
         try {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
-            targetBlock.setType(nextBlockId);
-            if (targetBlock.isAir || targetBlock.typeId === "minecraft:air") {
-              targetBlock.setType(matchedTheme.floor);
+            let placed = false;
+            try {
+              targetBlock.setType(nextBlockId);
+              if (!targetBlock.isAir && targetBlock.typeId !== "minecraft:air") placed = true;
+            } catch (e1) {}
+            if (!placed) {
+              try {
+                targetBlock.setType(matchedTheme.floor);
+                if (!targetBlock.isAir && targetBlock.typeId !== "minecraft:air") placed = true;
+              } catch (e2) {}
+            }
+            if (!placed) {
+              try { targetBlock.setType("minecraft:dirt"); } catch (e3) {}
             }
           }
           const underBlock = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-          if (underBlock) underBlock.setType("minecraft:bedrock");
+          if (underBlock) {
+            try { underBlock.setType("minecraft:bedrock"); } catch (ue) {}
+          }
 
           const besideOffsets = [
             { x: 1, z: 0 },
@@ -338,7 +350,9 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           ];
           for (const off of besideOffsets) {
             const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
-            if (bBlock) bBlock.setType("minecraft:bedrock");
+            if (bBlock) {
+              try { bBlock.setType("minecraft:bedrock"); } catch (se) {}
+            }
           }
         } catch (e) {}
       });
@@ -1849,21 +1863,102 @@ world.beforeEvents.itemUse.subscribe((event) => {
   } catch (e) {}
 });
 
-// Fast Block Health-Check Loop (runs every 5 ticks / 0.25s) to guarantee the OneBlock never stays air
+// Fast Health-Check & Auto-Repair for all Island OneBlocks across loaded chunks
+function ensureIslandOneBlocks(dimension) {
+  for (const theme of ISLAND_THEMES) {
+    try {
+      const completed = world.getDynamicProperty(`island_ob_completed_${theme.id}`);
+      if (completed) continue;
+      let obX = world.getDynamicProperty(`island_ob_x_${theme.id}`);
+      let obY = world.getDynamicProperty(`island_ob_y_${theme.id}`);
+      let obZ = world.getDynamicProperty(`island_ob_z_${theme.id}`);
+
+      if (obX === undefined) {
+        obX = world.getDynamicProperty(`island_target_x_${theme.id}`);
+        obY = world.getDynamicProperty(`island_target_y_${theme.id}`) ?? theme.y;
+        obZ = world.getDynamicProperty(`island_target_z_${theme.id}`);
+      }
+      if (obX === undefined || obZ === undefined) continue;
+
+      const b = dimension.getBlock({ x: obX, y: obY, z: obZ });
+      if (b && (b.isAir || b.typeId === "minecraft:air")) {
+        const pool = getIslandBlockPool(theme);
+        let placed = false;
+        if (pool && pool.length > 0) {
+          const nextBlock = pool[Math.floor(Math.random() * pool.length)];
+          try {
+            b.setType(nextBlock);
+            if (!b.isAir && b.typeId !== "minecraft:air") placed = true;
+          } catch (e1) {}
+        }
+        if (!placed) {
+          try {
+            b.setType(theme.floor || "minecraft:dirt");
+            if (!b.isAir && b.typeId !== "minecraft:air") placed = true;
+          } catch (e2) {}
+        }
+        if (!placed) {
+          try { b.setType("minecraft:dirt"); } catch (e3) {}
+        }
+
+        // Bedrock foundation under Island OneBlock
+        const under = dimension.getBlock({ x: obX, y: obY - 1, z: obZ });
+        if (under) {
+          try { under.setType("minecraft:bedrock"); } catch (ue) {}
+        }
+
+        // Surrounding bedrock collar
+        const besideOffsets = [
+          { x: 1, z: 0 },
+          { x: -1, z: 0 },
+          { x: 0, z: 1 },
+          { x: 0, z: -1 }
+        ];
+        for (const off of besideOffsets) {
+          const side = dimension.getBlock({ x: obX + off.x, y: obY, z: obZ + off.z });
+          if (side) {
+            try { side.setType("minecraft:bedrock"); } catch (se) {}
+          }
+        }
+
+        world.setDynamicProperty(`island_ob_x_${theme.id}`, obX);
+        world.setDynamicProperty(`island_ob_y_${theme.id}`, obY);
+        world.setDynamicProperty(`island_ob_z_${theme.id}`, obZ);
+        if (world.getDynamicProperty(`island_ob_max_${theme.id}`) === undefined) {
+          world.setDynamicProperty(`island_ob_max_${theme.id}`, 35);
+        }
+        if (world.getDynamicProperty(`island_ob_mined_${theme.id}`) === undefined) {
+          world.setDynamicProperty(`island_ob_mined_${theme.id}`, 0);
+        }
+      }
+    } catch (e) {}
+  }
+}
+
+// Fast Block Health-Check Loop (runs every 5 ticks / 0.25s) to guarantee the OneBlock & Island OneBlocks never stay air
 system.runInterval(() => {
   try {
     const ow = world.getDimension("overworld");
-    if (ow) ensureOneBlock(ow);
+    if (ow) {
+      ensureOneBlock(ow);
+      ensureIslandOneBlocks(ow);
+    }
   } catch (e) {}
 
   try {
     const nether = world.getDimension("nether");
-    if (nether) ensureOneBlock(nether);
+    if (nether) {
+      ensureOneBlock(nether);
+      ensureIslandOneBlocks(nether);
+    }
   } catch (e) {}
 
   try {
     const end = world.getDimension("the_end");
-    if (end) ensureOneBlock(end);
+    if (end) {
+      ensureOneBlock(end);
+      ensureIslandOneBlocks(end);
+    }
   } catch (e) {}
 }, 5);
 

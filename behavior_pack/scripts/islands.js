@@ -120,17 +120,17 @@ export const ISLAND_THEMES = [
     biome: "dark_forest",
     tier: 4, // Tier 4 (End/Relics)
     y: 74,
-    name: "Pale Garden Eerie Spire",
+    name: "Dark Forest Spire",
     color: "§7",
-    floor: "minecraft:pale_moss_block",
+    floor: "minecraft:podzol",
     subfloor: "minecraft:dirt",
     base: "minecraft:deepslate",
-    feature: "creaking_heart",
-    mob: "minecraft:creaking",
+    feature: "dark_oak_spire",
+    mob: "minecraft:witch",
     chest: [
-      { id: "minecraft:pale_oak_sapling", count: 4 },
-      { id: "minecraft:resin_clump", count: 6 },
-      { id: "minecraft:creaking_heart", count: 1 },
+      { id: "minecraft:dark_oak_sapling", count: 4 },
+      { id: "minecraft:totem_of_undying", count: 1 },
+      { id: "minecraft:emerald", count: 6 },
       { id: "minecraft:bone", count: 8 }
     ]
   },
@@ -1239,10 +1239,10 @@ export function getIslandBlockPool(theme) {
   const pools = {
     sky_oasis: ["minecraft:grass_block", "minecraft:oak_log", "minecraft:oak_planks", "minecraft:moss_block", "minecraft:melon_block", "minecraft:emerald_ore", "minecraft:hay_block"],
     ancient_crypt: ["minecraft:sandstone", "minecraft:cut_sandstone", "minecraft:chiseled_sandstone", "minecraft:gold_ore", "minecraft:raw_gold_block", "minecraft:lapis_ore"],
-    trial_vault: ["minecraft:copper_block", "minecraft:cut_copper", "minecraft:tuff_bricks", "minecraft:chiseled_tuff", "minecraft:chiseled_copper", "minecraft:copper_bulb"],
+    trial_vault: ["minecraft:copper_block", "minecraft:cut_copper", "minecraft:polished_tuff", "minecraft:tuff", "minecraft:copper_ore", "minecraft:iron_block"],
     stronghold_portal: ["minecraft:stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:mossy_stone_bricks", "minecraft:iron_block", "minecraft:bookshelf", "minecraft:chiseled_stone_bricks"],
     cherry_sanctuary: ["minecraft:cherry_log", "minecraft:cherry_leaves", "minecraft:cherry_planks", "minecraft:cherry_wood", "minecraft:bee_nest", "minecraft:honey_block"],
-    pale_garden_spire: ["minecraft:pale_oak_log", "minecraft:pale_moss_block", "minecraft:pale_oak_planks", "minecraft:pale_oak_leaves", "minecraft:creaking_heart"],
+    pale_garden_spire: ["minecraft:dark_oak_log", "minecraft:dark_oak_planks", "minecraft:dark_oak_leaves", "minecraft:moss_block", "minecraft:podzol", "minecraft:deepslate"],
     mushroom_haven: ["minecraft:mycelium", "minecraft:red_mushroom_block", "minecraft:brown_mushroom_block", "minecraft:mushroom_stem", "minecraft:dirt"],
     badlands_mesa: ["minecraft:red_sand", "minecraft:terracotta", "minecraft:orange_terracotta", "minecraft:yellow_terracotta", "minecraft:gold_ore", "minecraft:raw_gold_block"],
     ice_spike_peak: ["minecraft:snow_block", "minecraft:packed_ice", "minecraft:blue_ice", "minecraft:ice"],
@@ -1275,7 +1275,7 @@ export function getIslandBlockPool(theme) {
     armory_vault: ["minecraft:stone_bricks", "minecraft:iron_block", "minecraft:raw_iron_block", "minecraft:chiseled_stone_bricks", "minecraft:cracked_stone_bricks"],
     bakery_windmill: ["minecraft:hay_block", "minecraft:barrel", "minecraft:dried_kelp_block", "minecraft:spruce_planks", "minecraft:spruce_log"],
     aquarium_atoll: ["minecraft:sand", "minecraft:tube_coral_block", "minecraft:brain_coral_block", "minecraft:prismarine", "minecraft:sponge"],
-    tuff_golem_sanctuary: ["minecraft:tuff", "minecraft:tuff_bricks", "minecraft:chiseled_tuff", "minecraft:polished_tuff", "minecraft:copper_bulb"],
+    tuff_golem_sanctuary: ["minecraft:tuff", "minecraft:polished_tuff", "minecraft:deepslate", "minecraft:chiseled_stone_bricks", "minecraft:stone"],
     meteorite_crater: ["minecraft:blackstone", "minecraft:crying_obsidian", "minecraft:obsidian", "minecraft:magma", "minecraft:ancient_debris"],
     golden_pantheon: ["minecraft:quartz_block", "minecraft:smooth_quartz", "minecraft:gold_block", "minecraft:raw_gold_block", "minecraft:sea_lantern"],
     void_gateway_outpost: ["minecraft:end_stone_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:purpur_pillar"]
@@ -1314,7 +1314,7 @@ function getIslandTreePlacement(theme, center) {
     case "cherry_sanctuary":
       return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:cherry_log", leaves: "minecraft:cherry_leaves", beeNest: true };
     case "pale_garden_spire":
-      return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:pale_oak_log", leaves: "minecraft:pale_moss_block" };
+      return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:dark_oak_log", leaves: "minecraft:dark_oak_leaves" };
     case "jungle_temple":
       return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
     case "sky_oasis":
@@ -1526,13 +1526,27 @@ export function buildThemedIsland(dimension, theme, center) {
     const pool = getIslandBlockPool(theme);
     const obBlock = dimension.getBlock(obPos);
     if (obBlock) {
-      obBlock.setType(pool[0]);
-      if (obBlock.isAir) obBlock.setType(theme.floor);
+      let placed = false;
+      try {
+        obBlock.setType(pool[0]);
+        if (!obBlock.isAir && obBlock.typeId !== "minecraft:air") placed = true;
+      } catch (e1) {}
+      if (!placed) {
+        try {
+          obBlock.setType(theme.floor);
+          if (!obBlock.isAir && obBlock.typeId !== "minecraft:air") placed = true;
+        } catch (e2) {}
+      }
+      if (!placed) {
+        try { obBlock.setType("minecraft:dirt"); } catch (e3) {}
+      }
     }
 
     // Bedrock foundation directly underneath the Island OneBlock
     const underBlock = dimension.getBlock({ x: cx, y: cy - 1, z: cz });
-    if (underBlock) underBlock.setType("minecraft:bedrock");
+    if (underBlock) {
+      try { underBlock.setType("minecraft:bedrock"); } catch (ue) {}
+    }
 
     // The blocks directly beside the Island OneBlock are Bedrock
     const besideOffsets = [
@@ -1543,7 +1557,9 @@ export function buildThemedIsland(dimension, theme, center) {
     ];
     for (const off of besideOffsets) {
       const bBlock = dimension.getBlock({ x: cx + off.x, y: cy, z: cz + off.z });
-      if (bBlock) bBlock.setType("minecraft:bedrock");
+      if (bBlock) {
+        try { bBlock.setType("minecraft:bedrock"); } catch (se) {}
+      }
     }
   } catch (e) {}
 
