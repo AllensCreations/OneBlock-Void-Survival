@@ -1016,7 +1016,7 @@ function getSubsoilBlock(theme, dx, dz, seed) {
   if (theme.floor.includes("end_stone")) return "minecraft:end_stone";
   if (theme.floor.includes("tuff")) return "minecraft:tuff";
 
-  const sh = Math.abs((dx * 37 + dz * 41 + seed) % 100);
+  const sh = Math.random() * 100;
   if (sh < 65) return "minecraft:dirt";
   if (sh < 80) return "minecraft:coarse_dirt";
   if (sh < 92) return "minecraft:rooted_dirt";
@@ -1026,66 +1026,70 @@ function getSubsoilBlock(theme, dx, dz, seed) {
 function placeSurfaceVegetation(dimension, theme, loc, seed) {
   const { x, y, z } = loc;
   try {
-    if (theme.biome === "cherry_grove") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 65) {
+    const roll = Math.random();
+
+    if (theme.biome === "cherry_grove" || theme.id === "cherry_sanctuary") {
+      // Natural scattered pink petals (pure organic distribution like vanilla cherry groves)
+      if (roll < 0.48) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:pink_petals");
       }
     } else if (theme.id === "bamboo_monastery") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 35) {
+      // Organic bamboo cluster with variable heights and short grass
+      if (roll < 0.22) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:bamboo");
-        safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:bamboo");
-      } else if (vh < 60) {
+        if (Math.random() < 0.65) safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:bamboo");
+        if (Math.random() < 0.35) safeAirOnlySetBlock(dimension, { x, y: y + 3, z }, "minecraft:bamboo");
+      } else if (roll < 0.55) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
       }
     } else if (theme.id === "pumpkin_patch") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 25) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:carved_pumpkin");
-      } else if (vh < 55) {
+      // Scattered pumpkins and grass
+      if (roll < 0.16) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, Math.random() < 0.25 ? "minecraft:carved_pumpkin" : "minecraft:pumpkin");
+      } else if (roll < 0.50) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
       }
     } else if (theme.id === "melon_greenhouse") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 25) {
+      if (roll < 0.18) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:melon_block");
-      } else if (vh < 55) {
+      } else if (roll < 0.50) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
       }
     } else if (theme.id === "bee_apiary") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 30) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
-      else if (vh < 55) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
-      else if (vh < 75) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
+      // Lush wildflower meadow
+      if (roll < 0.15) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
+      else if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
+      else if (roll < 0.40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
+      else if (roll < 0.52) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:allium");
+      else if (roll < 0.62) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
+      else if (roll < 0.78) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
     } else if (theme.floor === "minecraft:grass_block") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 35) {
+      // Natural vanilla meadow: irregular grass, scattered flowers, and open spaces
+      if (roll < 0.32) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
-      } else if (vh < 45) {
+      } else if (roll < 0.36) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
-      } else if (vh < 55) {
+      } else if (roll < 0.40) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
-      } else if (vh < 63) {
+      } else if (roll < 0.44) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
-      } else if (vh < 70) {
+      } else if (roll < 0.47) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
+      } else if (roll < 0.50) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:azure_bluet");
       }
     } else if (theme.floor === "minecraft:podzol") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:fern");
-      else if (vh < 55) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:sweet_berry_bush");
+      if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:fern");
+      else if (roll < 0.42) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:sweet_berry_bush");
+      else if (roll < 0.50) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:large_fern");
     } else if (theme.floor.includes("sand")) {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 20) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");
+      if (roll < 0.12) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");
     } else if (theme.floor === "minecraft:crimson_nylium") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 35) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_roots");
-      else if (vh < 50) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_fungus");
+      if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_roots");
+      else if (roll < 0.40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_fungus");
     } else if (theme.floor === "minecraft:warped_nylium") {
-      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
-      if (vh < 35) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_roots");
-      else if (vh < 50) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_fungus");
+      if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_roots");
+      else if (roll < 0.40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_fungus");
     }
   } catch (e) {}
 }
@@ -1283,7 +1287,7 @@ function decorateSteppingPaths(dimension, theme, center, seed) {
     const p = pathBlocks[i];
     const b = dimension.getBlock(p);
     if (b && b.typeId === theme.floor) {
-      if ((i + seed) % 2 === 0) {
+      if (Math.random() < 0.5) {
         b.setType("minecraft:dirt_path");
       } else {
         b.setType(theme.biome.includes("nether") ? "minecraft:blackstone" : "minecraft:cobblestone");
@@ -1373,7 +1377,7 @@ export function buildThemedIsland(dimension, theme, center) {
             blockMat = getSubsoilBlock(theme, dx, dz, seed);
           } else {
             // Stone strata with real ore veins!
-            const oreHash = Math.abs((dx * 67 + dz * 43 + d * 19 + seed) % 100);
+            const oreHash = Math.random() * 100;
             if (oreHash < oreChance) {
               blockMat = getOreBlock(theme, d, dx, dz, seed);
             } else {
@@ -1384,7 +1388,7 @@ export function buildThemedIsland(dimension, theme, center) {
         }
 
         // Hanging root stalactites underneath:
-        if (dist <= 3.2 && (dx + dz + (seed % 4)) % 2 === 0) {
+        if (dist <= 3.2 && Math.random() < 0.45) {
           const rootMat = getRockBlock(theme, dx, dz, depth + 1, seed);
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 1, z: cz + dz }, rootMat);
           if (dist <= 1.5) {
@@ -1393,7 +1397,7 @@ export function buildThemedIsland(dimension, theme, center) {
         }
 
         // Hanging underside foliage (roots & vines under soil/rock overhangs):
-        if (dist >= baseRadius * 0.45 && (dx + dz + seed) % 4 === 0) {
+        if (dist >= baseRadius * 0.45 && Math.random() < 0.22) {
           const hangLoc = { x: cx + dx, y: cy - depth - 1, z: cz + dz };
           if (theme.biome.includes("nether") || theme.biome.includes("crimson")) {
             safeAirOnlySetBlock(dimension, hangLoc, "minecraft:weeping_vines");
@@ -1495,7 +1499,9 @@ export function buildThemedIsland(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: cx + 3, y: cy + 2, z: cz + 3 }, "minecraft:hay_block");
 
       // Spawn Villager
-      dimension.spawnEntity("minecraft:villager_v2", { x: hx + 1.5, y: hy, z: hz + 1.5 });
+      try {
+        dimension.spawnEntity("minecraft:villager_v2", { x: hx + 1.5, y: hy, z: hz + 1.5 });
+      } catch (ve) {}
 
     } else if (tr === "animals") {
       // Build animal paddock & spawn pastoral creatures
@@ -1514,21 +1520,23 @@ export function buildThemedIsland(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: px + 1, y: cy + 1, z: pz - 1 }, "minecraft:hay_block");
 
       // Themed animals spawn:
-      if (theme.id === "bee_apiary") {
-        safeAirOnlySetBlock(dimension, { x: px, y: cy + 2, z: pz - 1 }, "minecraft:bee_nest");
-        dimension.spawnEntity("minecraft:bee", { x: px + 0.5, y: cy + 2, z: pz + 0.5 });
-        dimension.spawnEntity("minecraft:bee", { x: px - 0.5, y: cy + 2, z: pz + 0.5 });
-      } else if (theme.id === "bamboo_monastery") {
-        dimension.spawnEntity("minecraft:panda", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
-      } else if (theme.id === "ice_spike_peak") {
-        dimension.spawnEntity("minecraft:polar_bear", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
-      } else if (theme.id === "mushroom_haven") {
-        dimension.spawnEntity("minecraft:mooshroom", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
-        dimension.spawnEntity("minecraft:mooshroom", { x: px - 0.5, y: cy + 1, z: pz - 0.5 });
-      } else {
-        dimension.spawnEntity("minecraft:cow", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
-        dimension.spawnEntity("minecraft:sheep", { x: px - 0.5, y: cy + 1, z: pz - 0.5 });
-      }
+      try {
+        if (theme.id === "bee_apiary") {
+          safeAirOnlySetBlock(dimension, { x: px, y: cy + 2, z: pz - 1 }, "minecraft:bee_nest");
+          dimension.spawnEntity("minecraft:bee", { x: px + 0.5, y: cy + 2, z: pz + 0.5 });
+          dimension.spawnEntity("minecraft:bee", { x: px - 0.5, y: cy + 2, z: pz + 0.5 });
+        } else if (theme.id === "bamboo_monastery") {
+          dimension.spawnEntity("minecraft:panda", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+        } else if (theme.id === "ice_spike_peak") {
+          dimension.spawnEntity("minecraft:polar_bear", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+        } else if (theme.id === "mushroom_haven") {
+          dimension.spawnEntity("minecraft:mooshroom", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+          dimension.spawnEntity("minecraft:mooshroom", { x: px - 0.5, y: cy + 1, z: pz - 0.5 });
+        } else {
+          dimension.spawnEntity("minecraft:cow", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+          dimension.spawnEntity("minecraft:sheep", { x: px - 0.5, y: cy + 1, z: pz - 0.5 });
+        }
+      } catch (ae) {}
 
     } else if (tr === "water_spring") {
       // Natural Spring with cascading waterfall spilling into void!
@@ -1575,7 +1583,7 @@ export function buildThemedIsland(dimension, theme, center) {
       const dz = cz + 2;
       for (let x = -1; x <= 1; x++) {
         for (let z = -1; z <= 1; z++) {
-          safeAirOnlySetBlock(dimension, { x: dx + x, y: cy, z: dz + z }, (x + z) % 2 === 0 ? "minecraft:mossy_cobblestone" : "minecraft:cracked_stone_bricks");
+          safeAirOnlySetBlock(dimension, { x: dx + x, y: cy, z: dz + z }, Math.random() < 0.5 ? "minecraft:mossy_cobblestone" : "minecraft:cracked_stone_bricks");
         }
       }
       safeAirOnlySetBlock(dimension, { x: dx - 1, y: cy + 1, z: dz - 1 }, "minecraft:iron_bars");
@@ -1586,7 +1594,9 @@ export function buildThemedIsland(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: dx, y: cy + 2, z: dz }, "minecraft:cobweb");
 
       if (theme.mob) {
-        dimension.spawnEntity(theme.mob, { x: dx + 0.5, y: cy + 1, z: dz + 0.5 });
+        try {
+          dimension.spawnEntity(theme.mob, { x: dx + 0.5, y: cy + 1, z: dz + 0.5 });
+        } catch (me) {}
       }
 
     } else if (tr === "lush_flora") {

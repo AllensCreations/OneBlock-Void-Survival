@@ -583,95 +583,95 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
     world.setDynamicProperty("last_island_x", islandLoc.center.x);
     world.setDynamicProperty("last_island_z", islandLoc.center.z);
 
-    // 1. PRELOAD CHUNK: Add ticking area first so the chunk is actively loaded in memory
-    const areaName = `isl_${theme.id}`.slice(0, 16);
-    try {
-      dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
-    } catch (tce) {}
-
     // Store active island target in world dynamic properties for radar navigation
     world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
     world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y);
     world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
 
-    // 2. Build the themed Skyblock island and award compass
+    const cardinal = getCardinalFromCoords(islandLoc.center.x, islandLoc.center.z);
+
+    // 1. GUARANTEED IMMEDIATE ANNOUNCEMENT & COMPASS AWARD (NEVER BLOCKED BY REMOTE CHUNK STATE)
+    for (const p of world.getAllPlayers()) {
+      try {
+        // Celestial Rift Sound FX
+        p.playSound("respawn_anchor.charge", { pitch: 0.8, volume: 1.0 });
+        p.playSound("block.amethyst_block.resonate", { pitch: 1.1, volume: 1.0 });
+        p.playSound("ambient.weather.wind", { pitch: 0.9, volume: 0.7 });
+
+        // Dramatic Title & Subtitle announcement
+        p.onScreenDisplay.setTitle("§5§l✦ RIFT MANIFESTED ✦§r", {
+          subtitle: `§dSomewhere in the distant §b${cardinal}§d... a new island has manifested!`,
+          fadeInDuration: 10,
+          stayDuration: 70,
+          fadeOutDuration: 20
+        });
+
+        // Action bar toast
+        p.onScreenDisplay.setActionBar(`§e⚡ Somewhere in the distant §b${cardinal}§e... a new island has manifested, Adventure and find it!`);
+
+        // Atmospheric semi-announcement chat (Mysterious, poetic, hints cardinal direction instead of exact coords spam)
+        p.sendMessage(`\n§d✦ §lSomewhere in the World...§r §da new island has manifested!`);
+        p.sendMessage(`§eA mysterious energy stirs in the distant §b§l${cardinal}§r§e... Adventure and find it!`);
+        p.sendMessage(`§7(An attuned Explorer Compass has been placed in your inventory!)\n`);
+
+        // Award Mystical Tracking Compass directly into player inventory (or hovering at OneBlock)
+        try {
+          const compass = new ItemStack("minecraft:compass", 1);
+          const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
+          const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
+          const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
+          compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
+          compass.setLore([
+            `§7Mystical Island Explorer Compass`,
+            `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
+            `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
+            `§6Direction: §b${cardinal} §7(X: ${islandLoc.center.x}, Z: ${islandLoc.center.z})`,
+            `§7-----------------------`,
+            `§aHold in hand for Radar HUD & Light Trail!`,
+            `§bRight-Click for Interactive Sonar Ping!`,
+            `§eAuto-dissolves when you reach the island!`
+          ]);
+
+          const inv = p.getComponent("minecraft:inventory")?.container;
+          if (inv && inv.emptySlotsCount > 0) {
+            inv.addItem(compass);
+          } else {
+            hoverDropAboveOneBlock(dimension, compass);
+          }
+        } catch (ce) {}
+      } catch (pe) {}
+    }
+
+    // 2. Shooting Starlight Trail: Particle stream shooting 25 blocks from OneBlock towards the new island
+    try {
+      const dx = islandLoc.center.x;
+      const dz = islandLoc.center.z;
+      const dist = Math.sqrt(dx * dx + dz * dz) || 1;
+      const normX = dx / dist;
+      const normZ = dz / dist;
+      for (let step = 1; step <= 25; step++) {
+        system.runTimeout(() => {
+          try {
+            const px = 0.5 + normX * step;
+            const py = 65.5 + Math.sin((step / 25) * Math.PI) * 4;
+            const pz = 0.5 + normZ * step;
+            dimension.spawnParticle("minecraft:endrod", { x: px, y: py, z: pz });
+            dimension.spawnParticle("minecraft:portal_particle", { x: px, y: py, z: pz });
+          } catch (e) {}
+        }, Math.floor(step * 1.5));
+      }
+    } catch (pe) {}
+
+    // 3. PRELOAD CHUNK & BUILD ISLAND:
+    const areaName = `isl_${theme.id}`.slice(0, 16);
+    try {
+      dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
+    } catch (tce) {}
+
     system.runTimeout(() => {
       try {
         buildThemedIsland(dimension, theme, islandLoc.center);
-
-        const cardinal = getCardinalFromCoords(islandLoc.center.x, islandLoc.center.z);
-
-        // Shooting Starlight Trail: Particle stream shooting 25 blocks from OneBlock towards the new island
-        try {
-          const dx = islandLoc.center.x;
-          const dz = islandLoc.center.z;
-          const dist = Math.sqrt(dx * dx + dz * dz) || 1;
-          const normX = dx / dist;
-          const normZ = dz / dist;
-          for (let step = 1; step <= 25; step++) {
-            system.runTimeout(() => {
-              try {
-                const px = 0.5 + normX * step;
-                const py = 65.5 + Math.sin((step / 25) * Math.PI) * 4;
-                const pz = 0.5 + normZ * step;
-                dimension.spawnParticle("minecraft:endrod", { x: px, y: py, z: pz });
-                dimension.spawnParticle("minecraft:portal_particle", { x: px, y: py, z: pz });
-              } catch (e) {}
-            }, Math.floor(step * 1.5));
-          }
-        } catch (pe) {}
-
-        for (const p of world.getAllPlayers()) {
-          // Celestial Rift Sound FX
-          p.playSound("respawn_anchor.charge", { pitch: 0.8, volume: 1.0 });
-          p.playSound("block.amethyst_block.resonate", { pitch: 1.1, volume: 1.0 });
-          p.playSound("ambient.weather.wind", { pitch: 0.9, volume: 0.7 });
-
-          // Dramatic Title & Subtitle announcement
-          try {
-            p.onScreenDisplay.setTitle("§5§l✦ RIFT MANIFESTED ✦§r", {
-              subtitle: `§dSomewhere in the distant §b${cardinal}§d... a new island has manifested!`,
-              fadeInDuration: 10,
-              stayDuration: 70,
-              fadeOutDuration: 20
-            });
-          } catch (te) {}
-
-          // Action bar toast
-          p.onScreenDisplay.setActionBar(`§e⚡ An anomaly stirs in the §b${cardinal}§e... Adventure and find it!`);
-
-          // Atmospheric semi-announcement chat (Mysterious, poetic, hints cardinal direction instead of exact coords spam)
-          p.sendMessage(`\n§d✦ §lSomewhere in the World...§r §da new island has manifested!`);
-          p.sendMessage(`§eA mysterious energy stirs in the distant §b§l${cardinal}§r§e... Adventure and find it!`);
-          p.sendMessage(`§7(An attuned Explorer Compass has been placed in your inventory!)\n`);
-
-          // Award Mystical Tracking Compass directly into player inventory (or hovering at OneBlock)
-          try {
-            const compass = new ItemStack("minecraft:compass", 1);
-
-            const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
-            const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
-            const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
-            compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
-            compass.setLore([
-              `§7Mystical Island Explorer Compass`,
-              `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
-              `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
-              `§6Direction: §b${cardinal} §7(X: ${islandLoc.center.x}, Z: ${islandLoc.center.z})`,
-              `§7-----------------------`,
-              `§aHold in hand for Radar HUD & Light Trail!`,
-              `§bRight-Click for Interactive Sonar Ping!`,
-              `§eAuto-dissolves when you reach the island!`
-            ]);
-
-            const inv = p.getComponent("minecraft:inventory")?.container;
-            if (inv && inv.emptySlotsCount > 0) {
-              inv.addItem(compass);
-            } else {
-              hoverDropAboveOneBlock(dimension, compass);
-            }
-          } catch (ce) {}
-        }
+        world.setDynamicProperty(`island_built_${theme.id}`, true);
       } catch (ie) {}
     }, 10);
   } catch (err) {}
@@ -690,9 +690,12 @@ function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
     const lastMineCount = world.getDynamicProperty("last_island_mine_count") ?? 0;
     const blocksSinceLast = totalCount - lastMineCount;
 
-    // 3. Pity timer (>= 150 blocks) or random chance (~0.8% = 1 in 125 blocks)
-    const isPity = blocksSinceLast >= 150;
-    const isRandom = Math.random() < 0.008;
+    // 3. Dynamic Pity timer:
+    // First island spawns early (at 35 blocks mined or 2.5% chance) so players experience islands early!
+    // Subsequent islands spawn with 100 block pity or 1.2% chance per block.
+    const isFirstIsland = (lastMineCount === 0);
+    const isPity = isFirstIsland ? (blocksSinceLast >= 35) : (blocksSinceLast >= 100);
+    const isRandom = isFirstIsland ? (Math.random() < 0.025) : (Math.random() < 0.012);
 
     if (!isPity && !isRandom) return;
 
@@ -879,6 +882,7 @@ export function openAdminIslandMenu(player) {
     form.body("§eSelect an island to inspect in Creative Mode.\n§7Clicking an island generates it in the void and teleports you directly there!\n§bTotal: 42 Secret Themed Islands");
 
     form.button("§c§l⚡ PRE-BUILD ALL 42 ISLANDS§r\n§8(Generates all void islands)", "textures/ui/refresh_light");
+    form.button("§d§l✦ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live announcement & compass on OneBlock)", "textures/ui/portal_icon");
 
     for (let i = 0; i < ISLAND_THEMES.length; i++) {
       const theme = ISLAND_THEMES[i];
@@ -917,8 +921,15 @@ export function openAdminIslandMenu(player) {
         return;
       }
 
+      if (response.selection === 1) {
+        // Test live manifestation announcement, sounds, particle trail & compass on OneBlock
+        materializeIsland(player.dimension, ISLAND_THEMES[0], 0, 10);
+        player.sendMessage("§d[Admin] ★ Triggered live Rift Manifestation announcement, celestial sounds, starlight trail & compass!");
+        return;
+      }
+
       // Specific Island Selected
-      const themeIndex = response.selection - 1;
+      const themeIndex = response.selection - 2;
       const theme = ISLAND_THEMES[themeIndex];
       if (!theme) return;
 
@@ -941,6 +952,21 @@ export function openAdminIslandMenu(player) {
         try { player.setGameMode("creative"); } catch (e) {}
         try { player.addEffect("night_vision", 999999, { showParticles: false }); } catch (e) {}
       } catch (tpe) {}
+
+      // Award tracking compass for easy navigation testing
+      try {
+        const compass = new ItemStack("minecraft:compass", 1);
+        const tierLabel = theme.tier === 1 ? "Starter" : (theme.tier === 2 ? "Mining" : (theme.tier === 3 ? "Nether" : "Relic"));
+        compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
+        compass.setLore([
+          `§7Mystical Island Explorer Compass`,
+          `§eIsland: §f${theme.name}`,
+          `§6Coordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`,
+          `§7Hold in hand for Radar HUD & Sonar ping!`
+        ]);
+        const inv = player.getComponent("minecraft:inventory")?.container;
+        if (inv) inv.addItem(compass);
+      } catch (ce) {}
 
       player.sendMessage(`\n${theme.color}★ [Admin Inspector] Teleported to §l${theme.name}§r${theme.color}!`);
       player.sendMessage(`§eCoordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`);
