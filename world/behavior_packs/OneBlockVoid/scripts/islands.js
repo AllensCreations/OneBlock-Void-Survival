@@ -936,8 +936,9 @@ export const ISLAND_THEMES = [
 
 // Computes deterministic fixed locations around the central base (0, 64, 0):
 // - Overworld: 32 islands arranged in a staggered 2-ring rosette (16 inner at 42m, 16 outer at 60m)
-// - Nether: 7 islands arranged in a 45m ring around the Nether base
-// - The End: 3 islands arranged in a 45m ring around The End altar
+//   Permuted with stride 17 so consecutive island indices land on opposite sides (~100m+ away)
+// - Nether: 7 islands arranged in a 45m ring around the Nether base, permuted with stride 4 (~88m away)
+// - The End: 3 islands arranged in a 45m ring around The End altar (120 degrees apart)
 export function getIslandLocation(index, total, theme, lastPos = null) {
   const targetDim = (theme && theme.dimension) || "overworld";
   const dimThemes = ISLAND_THEMES.filter(t => (t.dimension || "overworld") === targetDim);
@@ -948,24 +949,29 @@ export function getIslandLocation(index, total, theme, lastPos = null) {
   let angle;
 
   if (targetDim === "overworld") {
-    // 32 islands: Staggered 2-ring rosette
-    if (themeIdx < 16) {
-      // Inner ring: 16 islands at 42 blocks
+    // 32 slots: 16 inner (42m), 16 outer (60m)
+    // Permutation stride 17 guarantees consecutive theme indices land on opposite sides (~100m away)
+    const slotIdx = (themeIdx * 17) % 32;
+    if (slotIdx % 2 === 0) {
+      // Inner ring: radius 42m
       distance = 42;
-      angle = themeIdx * (360 / 16);
+      const k = Math.floor(slotIdx / 2);
+      angle = k * (360 / 16);
     } else {
-      // Outer ring: 16 islands at 60 blocks, offset by 11.25 degrees into the gaps
+      // Outer ring: radius 60m, staggered by 11.25 degrees into the gaps
       distance = 60;
-      angle = 11.25 + (themeIdx - 16) * (360 / 16);
+      const k = Math.floor(slotIdx / 2);
+      angle = 11.25 + k * (360 / 16);
     }
   } else if (targetDim === "nether") {
-    // 7 islands: 45 blocks ring
+    // 7 islands: 45m ring, permuted with stride 4 across opposite sides
     distance = 45;
-    angle = themeIdx * (360 / 7);
+    const slotIdx = (themeIdx * 4) % 7;
+    angle = slotIdx * (360 / 7);
   } else {
-    // The End: 3 islands at 45 blocks ring
+    // The End: 3 islands at 45m ring (120 degrees apart)
     distance = 45;
-    angle = themeIdx * (360 / 3);
+    angle = (themeIdx % 3) * (360 / 3);
   }
 
   const rad = (angle * Math.PI) / 180;

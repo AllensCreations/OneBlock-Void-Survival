@@ -865,18 +865,39 @@ function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
 
     if (unspawnedCurrentTier.length === 0 && unspawnedEarlierTiers.length === 0) return;
 
-    // 5. Weighted Tier Selection: 70% current tier, 30% earlier tiers
-    let selectedTheme = null;
+    // 5. Weighted Tier Pool Selection: 70% current tier, 30% earlier tiers
+    let candidatePool = [];
     const rollTier = Math.random();
 
     if (unspawnedCurrentTier.length > 0 && (rollTier < 0.70 || unspawnedEarlierTiers.length === 0)) {
-      const idx = Math.floor(Math.random() * unspawnedCurrentTier.length);
-      selectedTheme = unspawnedCurrentTier[idx];
+      candidatePool = unspawnedCurrentTier;
     } else if (unspawnedEarlierTiers.length > 0) {
-      const idx = Math.floor(Math.random() * unspawnedEarlierTiers.length);
-      selectedTheme = unspawnedEarlierTiers[idx];
+      candidatePool = unspawnedEarlierTiers;
     } else {
-      selectedTheme = unspawnedCurrentTier[0];
+      candidatePool = unspawnedCurrentTier;
+    }
+
+    if (candidatePool.length === 0) return;
+
+    // Dispersed Selection: Pick the candidate that is furthest from the last materialized island in this dimension!
+    let selectedTheme = null;
+    const lastX = world.getDynamicProperty(`last_island_x_${dimKey}`);
+    const lastZ = world.getDynamicProperty(`last_island_z_${dimKey}`);
+
+    if (lastX !== undefined && lastZ !== undefined && candidatePool.length > 1) {
+      // Sort candidates by distance to last spawned island descending (furthest first)
+      candidatePool.sort((a, b) => {
+        const locA = getIslandLocation(0, 0, a);
+        const locB = getIslandLocation(0, 0, b);
+        const distA = Math.hypot(locA.center.x - lastX, locA.center.z - lastZ);
+        const distB = Math.hypot(locB.center.x - lastX, locB.center.z - lastZ);
+        return distB - distA;
+      });
+      // Pick the furthest candidate (or from top 2 for subtle variety)
+      const topCount = Math.min(2, candidatePool.length);
+      selectedTheme = candidatePool[Math.floor(Math.random() * topCount)];
+    } else {
+      selectedTheme = candidatePool[Math.floor(Math.random() * candidatePool.length)];
     }
 
     if (!selectedTheme) return;
