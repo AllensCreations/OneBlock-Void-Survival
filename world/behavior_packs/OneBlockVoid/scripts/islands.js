@@ -7,6 +7,8 @@ import { ItemStack } from "@minecraft/server";
 export const ISLAND_THEMES = [
   {
     id: "sky_oasis",
+    size: "huge",
+    trait: "village",
     biome: "plains",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 68,
@@ -27,6 +29,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ancient_crypt",
+    size: "big",
+    trait: "ore_rich",
     biome: "desert",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 54,
@@ -47,6 +51,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "trial_vault",
+    size: "huge",
+    trait: "dungeon",
     biome: "deep_dark",
     tier: 4, // Tier 4 (End/Relics)
     y: 48,
@@ -67,6 +73,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "stronghold_portal",
+    size: "big",
+    trait: "dungeon",
     biome: "the_end",
     tier: 4, // Tier 4 (End/Relics)
     y: 40,
@@ -86,6 +94,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "cherry_sanctuary",
+    size: "huge",
+    trait: "lush_flora",
     biome: "cherry_grove",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 76,
@@ -105,6 +115,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pale_garden_spire",
+    size: "medium",
+    trait: "lush_flora",
     biome: "dark_forest",
     tier: 4, // Tier 4 (End/Relics)
     y: 74,
@@ -124,6 +136,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "mushroom_haven",
+    size: "huge",
+    trait: "animals",
     biome: "mushroom_island",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 62,
@@ -143,6 +157,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "badlands_mesa",
+    size: "huge",
+    trait: "ore_rich",
     biome: "mesa",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 60,
@@ -162,6 +178,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ice_spike_peak",
+    size: "big",
+    trait: "animals",
     biome: "ice_plains_spikes",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 96,
@@ -181,6 +199,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "jungle_temple",
+    size: "huge",
+    trait: "lush_flora",
     biome: "jungle",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 58,
@@ -200,6 +220,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "nether_fortress_spire",
+    size: "huge",
+    trait: "lava_spring",
     biome: "nether_wastes",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 44,
@@ -219,6 +241,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bastion_treasury",
+    size: "huge",
+    trait: "ore_rich",
     biome: "nether_wastes",
     tier: 4, // Tier 4 (End/Relics)
     y: 42,
@@ -238,6 +262,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "crimson_forest_isle",
+    size: "big",
+    trait: "lush_flora",
     biome: "crimson_forest",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 46,
@@ -257,6 +283,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "warped_forest_isle",
+    size: "big",
+    trait: "water_spring",
     biome: "warped_forest",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 46,
@@ -276,6 +304,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "soul_sand_valley",
+    size: "medium",
+    trait: "lava_spring",
     biome: "soulsand_valley",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 40,
@@ -295,6 +325,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "amethyst_geode",
+    size: "big",
+    trait: "water_spring",
     biome: "lush_caves",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 50,
@@ -314,6 +346,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "witch_swamp_hut",
+    size: "big",
+    trait: "dungeon",
     biome: "swampland",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 58,
@@ -333,6 +367,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pillager_watchtower",
+    size: "huge",
+    trait: "dungeon",
     biome: "meadow",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 88,
@@ -352,6 +388,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "desert_well_oasis",
+    size: "medium",
+    trait: "water_spring",
     biome: "desert",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 62,
@@ -371,6 +409,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bamboo_monastery",
+    size: "huge",
+    trait: "animals",
     biome: "bamboo_jungle",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 66,
@@ -390,6 +430,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "deepslate_forge",
+    size: "big",
+    trait: "ore_rich",
     biome: "deep_dark",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 36,
@@ -409,6 +451,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ocean_monument_shrine",
+    size: "huge",
+    trait: "water_spring",
     biome: "deep_ocean",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 52,
@@ -428,6 +472,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "glowstone_meteor",
+    size: "medium",
+    trait: "lava_spring",
     biome: "basalt_deltas",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 90,
@@ -447,6 +493,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "end_city_tower",
+    size: "huge",
+    trait: "dungeon",
     biome: "the_end",
     tier: 4, // Tier 4 (End/Relics)
     y: 92,
@@ -466,6 +514,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "fossil_excavation",
+    size: "big",
+    trait: "ore_rich",
     biome: "desert",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 54,
@@ -485,6 +535,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "blacksmith_workshop",
+    size: "big",
+    trait: "village",
     biome: "stony_peaks",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 64,
@@ -504,6 +556,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "library_observatory",
+    size: "big",
+    trait: "ancient_shrine",
     biome: "jagged_peaks",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 82,
@@ -523,6 +577,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "alchemist_laboratory",
+    size: "medium",
+    trait: "dungeon",
     biome: "dark_forest",
     tier: 3, // Tier 3 (Nether/Magic)
     y: 60,
@@ -542,6 +598,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "spider_nest",
+    size: "medium",
+    trait: "dungeon",
     biome: "dripstone_caves",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 44,
@@ -561,6 +619,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "creeper_dungeon",
+    size: "medium",
+    trait: "dungeon",
     biome: "lush_caves",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 46,
@@ -580,6 +640,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "slime_biosphere",
+    size: "big",
+    trait: "water_spring",
     biome: "swampland",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 50,
@@ -599,6 +661,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bee_apiary",
+    size: "big",
+    trait: "animals",
     biome: "meadow",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 70,
@@ -618,6 +682,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pumpkin_patch",
+    size: "big",
+    trait: "animals",
     biome: "taiga",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 64,
@@ -637,6 +703,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "melon_greenhouse",
+    size: "big",
+    trait: "village",
     biome: "jungle",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 64,
@@ -656,6 +724,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "sculk_laboratory",
+    size: "huge",
+    trait: "dungeon",
     biome: "deep_dark",
     tier: 4, // Tier 4 (End/Relics)
     y: 32,
@@ -675,6 +745,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "armory_vault",
+    size: "big",
+    trait: "ore_rich",
     biome: "stony_peaks",
     tier: 2, // Tier 2 (Mining/Iron)
     y: 52,
@@ -694,6 +766,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bakery_windmill",
+    size: "huge",
+    trait: "village",
     biome: "plains",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 70,
@@ -713,6 +787,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "aquarium_atoll",
+    size: "huge",
+    trait: "water_spring",
     biome: "warm_ocean",
     tier: 1, // Tier 1 (Starter/Agri)
     y: 56,
@@ -732,6 +808,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "tuff_golem_sanctuary",
+    size: "big",
+    trait: "ore_rich",
     biome: "dripstone_caves",
     tier: 4, // Tier 4 (End/Relics)
     y: 42,
@@ -751,6 +829,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "meteorite_crater",
+    size: "huge",
+    trait: "lava_spring",
     biome: "basalt_deltas",
     tier: 4, // Tier 4 (End/Relics)
     y: 48,
@@ -770,6 +850,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "golden_pantheon",
+    size: "huge",
+    trait: "ancient_shrine",
     biome: "jagged_peaks",
     tier: 4, // Tier 4 (End/Relics)
     y: 95,
@@ -789,6 +871,8 @@ export const ISLAND_THEMES = [
   },
   {
     id: "void_gateway_outpost",
+    size: "huge",
+    trait: "ancient_shrine",
     biome: "the_end",
     tier: 4, // Tier 4 (End/Relics)
     y: 86,
@@ -864,158 +948,233 @@ function safeAirOnlySetBlock(dimension, loc, typeId) {
   return false;
 }
 
-// Natural Ore Veins distribution per tier (Pure Vanilla Natural Ores)
-const TIER_ORES = {
-  1: ["minecraft:coal_ore", "minecraft:copper_ore", "minecraft:iron_ore"],
-  2: ["minecraft:iron_ore", "minecraft:gold_ore", "minecraft:lapis_ore", "minecraft:redstone_ore"],
-  3: ["minecraft:nether_quartz_ore", "minecraft:nether_gold_ore", "minecraft:gold_ore", "minecraft:diamond_ore"],
-  4: ["minecraft:diamond_ore", "minecraft:emerald_ore", "minecraft:ancient_debris"]
-};
+// =========================================================================
+// REALISTIC NATURAL FLOATING ISLAND GENERATOR
+// =========================================================================
+// - Authentic Geological Strata: Stone, Andesite, Diorite, Granite, Tuff, Deepslate
+// - Subsoil: Dirt, Coarse Dirt, Rooted Dirt, Gravel, Clay
+// - Surface: Grass Block, Podzol, Mycelium, Sand, Nylium + Wildflowers & Vegetation
+// - Embedded Ore Veins: Coal, Copper, Iron, Gold, Lapis, Redstone, Diamond, Emerald
+// - Scale Varieties: Huge (R~11), Big (R~8.5), Medium (R~6.5), Compact (R~5)
+// - Specialized Traits: Village, Animals, Water Spring / Waterfall, Lava Spring / Cascade,
+//   Ore-Rich Mine, Dungeon / Mobs, Lush Flora Tree, Ancient Shrine
 
-// Builds unique natural-generating islands with biome painting and authentic ore veins
+function getRockBlock(theme, dx, dz, d, seed) {
+  if (theme.biome === "the_end") return "minecraft:end_stone";
+  if (theme.biome.includes("nether") || theme.biome.includes("valley")) {
+    const nh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
+    return nh < 55 ? "minecraft:netherrack" : (nh < 80 ? "minecraft:blackstone" : "minecraft:basalt");
+  }
+  if (theme.biome === "deep_dark" || d >= 7) {
+    return ((dx + dz + d) % 3 === 0) ? "minecraft:cobbled_deepslate" : "minecraft:deepslate";
+  }
+  // Realistic natural rock mix:
+  const h = Math.abs((dx * 43 + dz * 29 + d * 13 + seed) % 100);
+  if (h < 42) return "minecraft:stone";
+  if (h < 58) return "minecraft:andesite";
+  if (h < 74) return "minecraft:diorite";
+  if (h < 88) return "minecraft:granite";
+  return "minecraft:tuff";
+}
+
+function getOreBlock(theme, depth, dx, dz, seed) {
+  const isNether = theme.biome.includes("nether") || theme.biome.includes("valley") || theme.biome.includes("deltas");
+  if (isNether) {
+    const no = Math.abs((dx * 19 + dz * 23 + seed) % 100);
+    if (no < 50) return "minecraft:nether_quartz_ore";
+    if (no < 90) return "minecraft:nether_gold_ore";
+    return theme.tier >= 3 ? "minecraft:ancient_debris" : "minecraft:nether_gold_ore";
+  }
+  const isDeep = depth >= 6 || theme.biome === "deep_dark";
+  const oh = Math.abs((dx * 71 + dz * 37 + depth * 19 + seed) % 100);
+
+  if (theme.tier === 1) {
+    return oh < 55 ? "minecraft:coal_ore" : (oh < 85 ? "minecraft:copper_ore" : "minecraft:iron_ore");
+  }
+  if (theme.tier === 2) {
+    if (isDeep) {
+      return oh < 40 ? "minecraft:deepslate_iron_ore" : (oh < 70 ? "minecraft:deepslate_gold_ore" : "minecraft:deepslate_redstone_ore");
+    }
+    return oh < 40 ? "minecraft:iron_ore" : (oh < 65 ? "minecraft:copper_ore" : (oh < 85 ? "minecraft:lapis_ore" : "minecraft:gold_ore"));
+  }
+  if (theme.tier === 3) {
+    if (isDeep) {
+      return oh < 35 ? "minecraft:deepslate_iron_ore" : (oh < 65 ? "minecraft:deepslate_gold_ore" : (oh < 85 ? "minecraft:deepslate_redstone_ore" : "minecraft:deepslate_diamond_ore"));
+    }
+    return oh < 30 ? "minecraft:gold_ore" : (oh < 60 ? "minecraft:redstone_ore" : (oh < 85 ? "minecraft:lapis_ore" : "minecraft:diamond_ore"));
+  }
+  // Tier 4
+  if (isDeep) {
+    return oh < 40 ? "minecraft:deepslate_diamond_ore" : (oh < 70 ? "minecraft:deepslate_redstone_ore" : (oh < 90 ? "minecraft:deepslate_emerald_ore" : "minecraft:ancient_debris"));
+  }
+  return oh < 45 ? "minecraft:diamond_ore" : (oh < 75 ? "minecraft:gold_ore" : "minecraft:emerald_ore");
+}
+
+function getSubsoilBlock(theme, dx, dz, seed) {
+  if (theme.floor.includes("sand")) return theme.subfloor || "minecraft:sandstone";
+  if (theme.floor.includes("nylium")) return "minecraft:netherrack";
+  if (theme.floor.includes("end_stone")) return "minecraft:end_stone";
+  if (theme.floor.includes("tuff")) return "minecraft:tuff";
+
+  const sh = Math.abs((dx * 37 + dz * 41 + seed) % 100);
+  if (sh < 65) return "minecraft:dirt";
+  if (sh < 80) return "minecraft:coarse_dirt";
+  if (sh < 92) return "minecraft:rooted_dirt";
+  return "minecraft:gravel";
+}
+
+function placeSurfaceVegetation(dimension, theme, loc, seed) {
+  const { x, y, z } = loc;
+  try {
+    if (theme.floor === "minecraft:grass_block") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 35) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+      } else if (vh < 45) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
+      } else if (vh < 55) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
+      } else if (vh < 63) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
+      } else if (vh < 70) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
+      }
+    } else if (theme.floor === "minecraft:podzol") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:fern");
+      else if (vh < 55) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:sweet_berry_bush");
+    } else if (theme.biome === "cherry_grove") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 60) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:pink_petals");
+    } else if (theme.floor.includes("sand")) {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 20) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");
+    } else if (theme.floor === "minecraft:crimson_nylium") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 35) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_roots");
+      else if (vh < 50) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_fungus");
+    } else if (theme.floor === "minecraft:warped_nylium") {
+      const vh = Math.abs((x * 29 + z * 31 + seed) % 100);
+      if (vh < 35) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_roots");
+      else if (vh < 50) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_fungus");
+    }
+  } catch (e) {}
+}
+
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
-  // 1. AUTO-CHANGE BIOME: Paint the true Minecraft Biome across the island chunk
+  // 1. AUTO-CHANGE BIOME: Paint true native Minecraft biome across island volume
   try {
     const biomeName = theme.biome || "plains";
-    dimension.runCommand(`fillbiome ${cx - 8} ${cy - 10} ${cz - 8} ${cx + 8} ${cy + 15} ${cz + 8} ${biomeName}`);
+    dimension.runCommand(`fillbiome ${cx - 14} ${cy - 12} ${cz - 14} ${cx + 14} ${cy + 18} ${cz + 14} ${biomeName}`);
   } catch (be) {}
 
-  // 2. UNIQUE LAYOUT PER THEME (Seed-driven natural contour):
-  // Generate a distinct shape seed from theme ID characters
+  // 2. PROCEDURAL SHAPE & SCALE PER THEME:
   let seed = 0;
   for (let i = 0; i < theme.id.length; i++) {
     seed = (seed * 31 + theme.id.charCodeAt(i)) & 0xffffff;
   }
+
+  // Radius scale by size category:
+  let baseRadius = 6.2;
+  if (theme.size === "huge") baseRadius = 10.5;
+  else if (theme.size === "big") baseRadius = 8.2;
+  else if (theme.size === "medium") baseRadius = 6.4;
+  else if (theme.size === "compact") baseRadius = 4.8;
+
   const freq1 = 2 + (seed % 3);
   const freq2 = 3 + ((seed >> 2) % 3);
-  const amp1 = 0.8 + ((seed % 10) / 15);
-  const amp2 = 0.5 + (((seed >> 4) % 10) / 20);
-  const baseRadius = 4.5 + (seed % 4) * 0.4; // 4.5 to 5.7 blocks radius
-  const ridgeAngle = ((seed % 8) * Math.PI) / 4; // Angle where the bluff ridge rises
+  const freq3 = 4 + ((seed >> 4) % 2);
+  const amp1 = 0.9 + ((seed % 10) / 12);
+  const amp2 = 0.6 + (((seed >> 3) % 10) / 18);
+  const amp3 = 0.4 + (((seed >> 6) % 10) / 25);
+  const ridgeAngle = ((seed % 8) * Math.PI) / 4;
 
-  const ores = TIER_ORES[theme.tier || 1] || TIER_ORES[1];
+  const isOreRich = theme.trait === "ore_rich";
+  const oreChance = isOreRich ? 28 : 15;
 
-  // 3. Terrain Generation (Natural floating island geometry)
-  for (let dx = -7; dx <= 7; dx++) {
-    for (let dz = -7; dz <= 7; dz++) {
+  const maxR = Math.ceil(baseRadius + amp1 + amp2 + amp3 + 1);
+
+  // 3. TERRAIN VOLUME GENERATION:
+  for (let dx = -maxR; dx <= maxR; dx++) {
+    for (let dz = -maxR; dz <= maxR; dz++) {
       const angle = Math.atan2(dz, dx);
-      // Unique organic contour per island
-      const shapeMod = baseRadius + amp1 * Math.cos(freq1 * angle) + amp2 * Math.sin(freq2 * angle);
+      const shapeMod = baseRadius + amp1 * Math.cos(freq1 * angle) + amp2 * Math.sin(freq2 * angle) + amp3 * Math.cos(freq3 * angle);
       const dist = Math.sqrt(dx * dx + dz * dz);
 
       if (dist <= shapeMod) {
-        // Natural Elevation: Ridge/hill rises on the side indicated by ridgeAngle
+        // Natural surface elevation (rolling topography):
         const dot = Math.cos(angle - ridgeAngle);
         let surfaceY = cy;
-        if (dot > 0.4 && dist > 1.2) {
-          surfaceY = cy + 1; // Natural hill crest
+        if (dot > 0.35 && dist > 1.5) {
+          surfaceY = cy + 1;
+        }
+        if (dot > 0.72 && dist > 3.0) {
+          surfaceY = cy + 2; // Upper bluff crest
         }
 
-        // POND ALCOVE: Natural spring pool on the opposite side of the ridge
-        const isPond = (dot < -0.6 && dist >= 1.8 && dist <= 3.2);
+        // POND ALCOVE (for water spring / nature):
+        const isSpringPond = (theme.trait === "water_spring" || theme.trait === "animals") && (dot < -0.45 && dist >= 2.0 && dist <= 4.2);
 
-        // Top surface layer
-        if (isPond) {
+        // Place surface layer:
+        if (isSpringPond) {
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, "minecraft:water");
-          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, "minecraft:dirt");
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, "minecraft:clay");
         } else {
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: surfaceY, z: cz + dz }, theme.floor);
-          // If elevated hill, fill layer beneath with natural subfloor (dirt/sand/gravel)
+          placeSurfaceVegetation(dimension, theme, { x: cx + dx, y: surfaceY, z: cz + dz }, seed);
+
+          // Fill elevated hill step underneath with subsoil
           if (surfaceY > cy) {
-            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, theme.subfloor);
+            for (let upY = cy; upY < surfaceY; upY++) {
+              safeAirOnlySetBlock(dimension, { x: cx + dx, y: upY, z: cz + dz }, getSubsoilBlock(theme, dx, dz, seed));
+            }
           }
         }
 
-        // 4. Underside: Natural Stone & Subfloor with embedded Real Ore Veins
-        const depth = Math.max(1, Math.round((shapeMod - dist) * 1.3));
+        // 4. SUBSOIL & ROCK STRATA UNDERSIDE:
+        const depth = Math.max(1, Math.round((shapeMod - dist) * 1.35));
         for (let d = 1; d <= depth; d++) {
           let blockMat;
-          if (d === 1) {
-            blockMat = theme.subfloor; // Natural subsoil (dirt/sandstone/deepslate)
+          if (d <= 2) {
+            // Subsoil layer (dirt / coarse dirt / rooted dirt / gravel)
+            blockMat = getSubsoilBlock(theme, dx, dz, seed);
           } else {
-            // Natural Ore Generation inside stone layers (15% chance for realistic veins)
-            const oreHash = Math.abs((dx * 73 + dz * 37 + d * 19 + seed) % 100);
-            if (oreHash < 16) {
-              const oreIndex = Math.abs((dx + dz + d) % ores.length);
-              blockMat = ores[oreIndex];
+            // Stone strata with real ore veins!
+            const oreHash = Math.abs((dx * 67 + dz * 43 + d * 19 + seed) % 100);
+            if (oreHash < oreChance) {
+              blockMat = getOreBlock(theme, d, dx, dz, seed);
             } else {
-              blockMat = theme.base; // Natural stone / deepslate / sandstone
+              blockMat = getRockBlock(theme, dx, dz, d, seed);
             }
           }
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - d, z: cz + dz }, blockMat);
         }
 
-        // Hanging root stalactites underneath
-        if (dist <= 2.2 && (dx + dz + (seed % 3)) % 2 === 0) {
-          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 1, z: cz + dz }, theme.base);
-          if (dist <= 1.2) {
-            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 2, z: cz + dz }, theme.base);
+        // Hanging root stalactites underneath:
+        if (dist <= 3.2 && (dx + dz + (seed % 4)) % 2 === 0) {
+          const rootMat = getRockBlock(theme, dx, dz, depth + 1, seed);
+          safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 1, z: cz + dz }, rootMat);
+          if (dist <= 1.5) {
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 2, z: cz + dz }, rootMat);
           }
         }
       }
     }
   }
 
-  // 5. Central Lodestone Beacon Monument (At exact island target coordinates: cx, cy+1, cz)
+  // 5. CENTRAL LODESTONE MONUMENT:
+  // Placed right at island center (cx, cy + 1, cz)
   safeAirOnlySetBlock(dimension, { x: cx, y: cy + 1, z: cz }, "minecraft:lodestone");
 
-  // 6. Natural Thematic Lighting: Torches/Lanterns on fence posts
-  const lightOffsets = [
-    { dx: 3, dz: -2 },
-    { dx: -3, dz: 2 },
-    { dx: 1, dz: 3 }
-  ];
-  for (const lo of lightOffsets) {
-    safeAirOnlySetBlock(dimension, { x: cx + lo.dx, y: cy + 1, z: cz + lo.dz }, "minecraft:oak_fence");
-    safeAirOnlySetBlock(dimension, { x: cx + lo.dx, y: cy + 2, z: cz + lo.dz }, "minecraft:lantern");
-  }
-
-  // 7. Natural Thematic Vegetation & Features (Trees, mushrooms, crystals)
-  try {
-    const feat = theme.feature;
-    if (feat === "blossom_tree" || feat === "bamboo_grove" || feat === "beehive") {
-      const log = feat === "blossom_tree" ? "minecraft:cherry_log" : "minecraft:oak_log";
-      const leaves = feat === "blossom_tree" ? "minecraft:cherry_leaves" : "minecraft:oak_leaves";
-      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, log);
-      for (let lx = -3; lx <= -1; lx++) {
-        for (let lz = -3; lz <= -1; lz++) {
-          safeAirOnlySetBlock(dimension, { x: cx + lx, y: cy + 4, z: cz + lz }, leaves);
-          safeAirOnlySetBlock(dimension, { x: cx + lx, y: cy + 5, z: cz + lz }, leaves);
-        }
-      }
-      if (feat === "beehive") {
-        safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 2, z: cz - 3 }, "minecraft:bee_nest");
-      }
-    } else if (feat === "huge_mushroom") {
-      for (let h = 1; h <= 4; h++) safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, "minecraft:mushroom_stem");
-      for (let mx = -3; mx <= -1; mx++) {
-        for (let mz = -3; mz <= -1; mz++) {
-          safeAirOnlySetBlock(dimension, { x: cx + mx, y: cy + 4, z: cz + mz }, "minecraft:red_mushroom_block");
-        }
-      }
-    } else if (feat === "copper_spire" || feat === "pillars" || feat === "gold_monolith") {
-      const mat = feat === "copper_spire" ? "minecraft:copper_block" : feat === "gold_monolith" ? "minecraft:gold_block" : "minecraft:chiseled_sandstone";
-      for (let h = 1; h <= 3; h++) {
-        safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + h, z: cz - 2 }, mat);
-      }
-    } else if (feat === "amethyst_crystal") {
-      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 1, z: cz - 2 }, "minecraft:amethyst_block");
-      safeAirOnlySetBlock(dimension, { x: cx - 2, y: cy + 2, z: cz - 2 }, "minecraft:amethyst_cluster");
-    }
-  } catch (fe) {}
-
-  // 8. Guaranteed Treasure Chest with solid foundation
+  // 6. SAFE GUARANTEED TREASURE CHEST:
   const chestPos = { x: cx, y: cy + 1, z: cz + 2 };
   try {
     const floorBlock = dimension.getBlock({ x: chestPos.x, y: chestPos.y - 1, z: chestPos.z });
     if (floorBlock && (floorBlock.isAir || floorBlock.typeId === "minecraft:air")) {
       floorBlock.setType(theme.floor);
     }
-  } catch (fe) {}
-
-  try {
     const chestBlock = dimension.getBlock(chestPos);
     if (chestBlock) {
       chestBlock.setType("minecraft:chest");
@@ -1030,10 +1189,212 @@ export function buildThemedIsland(dimension, theme, center) {
     }
   } catch (e) {}
 
-  // 9. Thematic Mob Companion / Guardian
-  if (theme.mob) {
+  // 7. THEMATIC SPECIAL STRUCTURES / TRAITS:
+  try {
+    const tr = theme.trait;
+
+    if (tr === "village") {
+      // Build authentic Wooden Village Cottage at North-West of island
+      const hx = cx - 4;
+      const hz = cz - 4;
+      const hy = cy + 1;
+
+      // 4x4 Cottage walls & foundation
+      for (let x = 0; x <= 3; x++) {
+        for (let z = 0; z <= 3; z++) {
+          safeAirOnlySetBlock(dimension, { x: hx + x, y: hy - 1, z: hz + z }, "minecraft:cobblestone");
+          // Pillars at corners
+          const isCorner = (x === 0 || x === 3) && (z === 0 || z === 3);
+          const mat = isCorner ? "minecraft:oak_log" : "minecraft:oak_planks";
+          for (let y = 0; y <= 2; y++) {
+            safeAirOnlySetBlock(dimension, { x: hx + x, y: hy + y, z: hz + z }, mat);
+          }
+          // Roof
+          safeAirOnlySetBlock(dimension, { x: hx + x, y: hy + 3, z: hz + z }, "minecraft:oak_planks");
+        }
+      }
+      // Cottage Door & Window
+      safeAirOnlySetBlock(dimension, { x: hx + 1, y: hy, z: hz }, "minecraft:air");
+      safeAirOnlySetBlock(dimension, { x: hx + 1, y: hy + 1, z: hz }, "minecraft:air");
+      safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy + 1, z: hz + 3 }, "minecraft:glass_pane");
+
+      // Interior furniture: Bed, Crafting Table, Furnace, Torch
+      safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy, z: hz + 2 }, "minecraft:red_bed");
+      safeAirOnlySetBlock(dimension, { x: hx + 1, y: hy, z: hz + 2 }, "minecraft:crafting_table");
+      safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy, z: hz + 1 }, "minecraft:furnace");
+      safeAirOnlySetBlock(dimension, { x: hx + 1, y: hy + 2, z: hz + 1 }, "minecraft:torch");
+
+      // Farm plot with farmland, water, wheat & carrots
+      const fx = cx + 3;
+      const fz = cz - 2;
+      for (let fxo = -1; fxo <= 1; fxo++) {
+        for (let fzo = -1; fzo <= 1; fzo++) {
+          if (fxo === 0 && fzo === 0) {
+            safeAirOnlySetBlock(dimension, { x: fx + fxo, y: cy, z: fz + fzo }, "minecraft:water");
+          } else {
+            safeAirOnlySetBlock(dimension, { x: fx + fxo, y: cy, z: fz + fzo }, "minecraft:farmland");
+            safeAirOnlySetBlock(dimension, { x: fx + fxo, y: cy + 1, z: fz + fzo }, (fxo + fzo) % 2 === 0 ? "minecraft:wheat" : "minecraft:carrots");
+          }
+        }
+      }
+      // Village Bell & Hay Bales
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: cy + 1, z: cz + 3 }, "minecraft:oak_fence");
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: cy + 2, z: cz + 3 }, "minecraft:bell");
+      safeAirOnlySetBlock(dimension, { x: cx + 3, y: cy + 1, z: cz + 3 }, "minecraft:hay_block");
+      safeAirOnlySetBlock(dimension, { x: cx + 3, y: cy + 2, z: cz + 3 }, "minecraft:hay_block");
+
+      // Spawn Villager
+      dimension.spawnEntity("minecraft:villager_v2", { x: hx + 1.5, y: hy, z: hz + 1.5 });
+
+    } else if (tr === "animals") {
+      // Build animal paddock & spawn pastoral creatures
+      const px = cx - 3;
+      const pz = cz + 3;
+      for (let ox = -2; ox <= 2; ox++) {
+        for (let oz = -2; oz <= 2; oz++) {
+          const isBorder = (Math.abs(ox) === 2 || Math.abs(oz) === 2);
+          if (isBorder && !(ox === 0 && oz === 2)) {
+            safeAirOnlySetBlock(dimension, { x: px + ox, y: cy + 1, z: pz + oz }, "minecraft:oak_fence");
+          }
+        }
+      }
+      safeAirOnlySetBlock(dimension, { x: px, y: cy + 1, z: pz + 2 }, "minecraft:oak_fence_gate");
+      safeAirOnlySetBlock(dimension, { x: px - 1, y: cy + 1, z: pz - 1 }, "minecraft:cauldron");
+      safeAirOnlySetBlock(dimension, { x: px + 1, y: cy + 1, z: pz - 1 }, "minecraft:hay_block");
+
+      // Themed animals spawn:
+      if (theme.id === "bee_apiary") {
+        safeAirOnlySetBlock(dimension, { x: px, y: cy + 2, z: pz - 1 }, "minecraft:bee_nest");
+        dimension.spawnEntity("minecraft:bee", { x: px + 0.5, y: cy + 2, z: pz + 0.5 });
+        dimension.spawnEntity("minecraft:bee", { x: px - 0.5, y: cy + 2, z: pz + 0.5 });
+      } else if (theme.id === "bamboo_monastery") {
+        dimension.spawnEntity("minecraft:panda", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+      } else if (theme.id === "ice_spike_peak") {
+        dimension.spawnEntity("minecraft:polar_bear", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+      } else if (theme.id === "mushroom_haven") {
+        dimension.spawnEntity("minecraft:mooshroom", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+        dimension.spawnEntity("minecraft:mooshroom", { x: px - 0.5, y: cy + 1, z: pz - 0.5 });
+      } else {
+        dimension.spawnEntity("minecraft:cow", { x: px + 0.5, y: cy + 1, z: pz + 0.5 });
+        dimension.spawnEntity("minecraft:sheep", { x: px - 0.5, y: cy + 1, z: pz - 0.5 });
+      }
+
+    } else if (tr === "water_spring") {
+      // Natural Spring with cascading waterfall spilling into void!
+      const wx = cx - 3;
+      const wz = cz - 2;
+      safeAirOnlySetBlock(dimension, { x: wx, y: cy, z: wz }, "minecraft:water");
+      safeAirOnlySetBlock(dimension, { x: wx - 1, y: cy, z: wz }, "minecraft:water");
+      safeAirOnlySetBlock(dimension, { x: wx - 2, y: cy, z: wz }, "minecraft:water");
+      // Waterfall channel down the cliff edge:
+      for (let yDrop = 0; yDrop <= 5; yDrop++) {
+        safeAirOnlySetBlock(dimension, { x: wx - 3, y: cy - yDrop, z: wz }, "minecraft:water");
+      }
+      safeAirOnlySetBlock(dimension, { x: wx, y: cy + 1, z: wz + 1 }, "minecraft:sugar_cane");
+      safeAirOnlySetBlock(dimension, { x: wx, y: cy + 2, z: wz + 1 }, "minecraft:sugar_cane");
+      safeAirOnlySetBlock(dimension, { x: wx - 1, y: cy + 1, z: wz }, "minecraft:lily_pad");
+
+    } else if (tr === "lava_spring") {
+      // Volcanic fissure with bubbling lava cascading down cliff into void!
+      const lx = cx - 2;
+      const lz = cz - 3;
+      safeAirOnlySetBlock(dimension, { x: lx, y: cy, z: lz }, "minecraft:lava");
+      safeAirOnlySetBlock(dimension, { x: lx - 1, y: cy, z: lz }, "minecraft:magma");
+      safeAirOnlySetBlock(dimension, { x: lx + 1, y: cy, z: lz }, "minecraft:magma");
+      safeAirOnlySetBlock(dimension, { x: lx, y: cy, z: lz - 1 }, "minecraft:crying_obsidian");
+      for (let yDrop = 0; yDrop <= 6; yDrop++) {
+        safeAirOnlySetBlock(dimension, { x: lx, y: cy - yDrop, z: lz - 2 }, "minecraft:lava");
+      }
+
+    } else if (tr === "ore_rich") {
+      // Dramatic exposed mine cliff with rich mineral blocks and rails
+      const mx = cx + 3;
+      const mz = cz - 3;
+      safeAirOnlySetBlock(dimension, { x: mx, y: cy + 1, z: mz }, "minecraft:raw_iron_block");
+      safeAirOnlySetBlock(dimension, { x: mx + 1, y: cy + 1, z: mz }, "minecraft:gold_ore");
+      safeAirOnlySetBlock(dimension, { x: mx, y: cy + 2, z: mz }, "minecraft:diamond_ore");
+      safeAirOnlySetBlock(dimension, { x: mx + 1, y: cy + 2, z: mz }, "minecraft:raw_gold_block");
+      safeAirOnlySetBlock(dimension, { x: mx - 1, y: cy + 1, z: mz }, "minecraft:anvil");
+      safeAirOnlySetBlock(dimension, { x: mx - 1, y: cy + 1, z: mz + 1 }, "minecraft:rail");
+      safeAirOnlySetBlock(dimension, { x: mx, y: cy + 1, z: mz + 1 }, "minecraft:rail");
+
+    } else if (tr === "dungeon") {
+      // Ancient mossy stone brick dungeon ruins with iron bars & spawner pedestal
+      const dx = cx - 3;
+      const dz = cz + 2;
+      for (let x = -1; x <= 1; x++) {
+        for (let z = -1; z <= 1; z++) {
+          safeAirOnlySetBlock(dimension, { x: dx + x, y: cy, z: dz + z }, (x + z) % 2 === 0 ? "minecraft:mossy_cobblestone" : "minecraft:cracked_stone_bricks");
+        }
+      }
+      safeAirOnlySetBlock(dimension, { x: dx - 1, y: cy + 1, z: dz - 1 }, "minecraft:iron_bars");
+      safeAirOnlySetBlock(dimension, { x: dx + 1, y: cy + 1, z: dz - 1 }, "minecraft:iron_bars");
+      safeAirOnlySetBlock(dimension, { x: dx - 1, y: cy + 1, z: dz + 1 }, "minecraft:iron_bars");
+      safeAirOnlySetBlock(dimension, { x: dx + 1, y: cy + 1, z: dz + 1 }, "minecraft:iron_bars");
+      safeAirOnlySetBlock(dimension, { x: dx, y: cy + 1, z: dz }, "minecraft:chiseled_stone_bricks");
+      safeAirOnlySetBlock(dimension, { x: dx, y: cy + 2, z: dz }, "minecraft:cobweb");
+
+      if (theme.mob) {
+        dimension.spawnEntity(theme.mob, { x: dx + 0.5, y: cy + 1, z: dz + 0.5 });
+      }
+
+    } else if (tr === "lush_flora") {
+      // Custom magnificent tree
+      const tx = cx - 3;
+      const tz = cz - 2;
+      const logMat = theme.id === "cherry_sanctuary" ? "minecraft:cherry_log" : (theme.id === "jungle_temple" ? "minecraft:jungle_log" : (theme.id === "pale_garden_spire" ? "minecraft:pale_oak_log" : "minecraft:oak_log"));
+      const leafMat = theme.id === "cherry_sanctuary" ? "minecraft:cherry_leaves" : (theme.id === "jungle_temple" ? "minecraft:jungle_leaves" : (theme.id === "pale_garden_spire" ? "minecraft:pale_moss_block" : "minecraft:oak_leaves"));
+
+      for (let h = 1; h <= 5; h++) {
+        safeAirOnlySetBlock(dimension, { x: tx, y: cy + h, z: tz }, logMat);
+      }
+      for (let lx = -2; lx <= 2; lx++) {
+        for (let lz = -2; lz <= 2; lz++) {
+          if (Math.abs(lx) + Math.abs(lz) <= 3) {
+            safeAirOnlySetBlock(dimension, { x: tx + lx, y: cy + 4, z: tz + lz }, leafMat);
+            safeAirOnlySetBlock(dimension, { x: tx + lx, y: cy + 5, z: tz + lz }, leafMat);
+            if (Math.abs(lx) <= 1 && Math.abs(lz) <= 1) {
+              safeAirOnlySetBlock(dimension, { x: tx + lx, y: cy + 6, z: tz + lz }, leafMat);
+            }
+          }
+        }
+      }
+      if (theme.id === "cherry_sanctuary") {
+        safeAirOnlySetBlock(dimension, { x: tx - 1, y: cy + 3, z: tz }, "minecraft:bee_nest");
+      }
+
+    } else if (tr === "ancient_shrine") {
+      // Marble quartz dais & god altar with sea lanterns
+      const sx = cx + 3;
+      const sz = cz + 3;
+      for (let x = -1; x <= 1; x++) {
+        for (let z = -1; z <= 1; z++) {
+          safeAirOnlySetBlock(dimension, { x: sx + x, y: cy + 1, z: sz + z }, "minecraft:quartz_block");
+        }
+      }
+      safeAirOnlySetBlock(dimension, { x: sx - 1, y: cy + 2, z: sz - 1 }, "minecraft:chiseled_quartz_block");
+      safeAirOnlySetBlock(dimension, { x: sx + 1, y: cy + 2, z: sz - 1 }, "minecraft:chiseled_quartz_block");
+      safeAirOnlySetBlock(dimension, { x: sx - 1, y: cy + 2, z: sz + 1 }, "minecraft:chiseled_quartz_block");
+      safeAirOnlySetBlock(dimension, { x: sx + 1, y: cy + 2, z: sz + 1 }, "minecraft:chiseled_quartz_block");
+      safeAirOnlySetBlock(dimension, { x: sx, y: cy + 2, z: sz }, "minecraft:sea_lantern");
+    }
+  } catch (fe) {}
+
+  // 8. CORNER LIGHTING POSTS:
+  const lanternPosts = [
+    { x: cx + 3, y: cy + 1, z: cz - 2 },
+    { x: cx - 3, y: cy + 1, z: cz + 3 },
+    { x: cx + 2, y: cy + 1, z: cz + 4 }
+  ];
+  for (const lp of lanternPosts) {
+    safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y, z: lp.z }, "minecraft:oak_fence");
+    safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y + 1, z: lp.z }, "minecraft:lantern");
+  }
+
+  // 9. THEMATIC COMPANION MOB (if not already spawned by trait):
+  if (theme.mob && theme.trait !== "dungeon" && theme.trait !== "village" && theme.trait !== "animals") {
     try {
-      dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1.2, z: cz - 0.5 });
+      dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1.2, z: cz - 1.5 });
     } catch (e) {}
   }
 }

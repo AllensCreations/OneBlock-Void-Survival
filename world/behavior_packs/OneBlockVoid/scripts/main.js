@@ -132,9 +132,14 @@ function calculateNavIndicator(pPos, pRotation, targetPos) {
       arrow = "↙";
     }
 
-    return { arrow, dist };
+    const deg = ((Math.atan2(dz, dx) * 180) / Math.PI + 360) % 360;
+    const directions = ["East", "South-East", "South", "South-West", "West", "North-West", "North", "North-East"];
+    const cardinalIdx = Math.round(deg / 45) % 8;
+    const cardinal = directions[cardinalIdx];
+
+    return { arrow, dist, cardinal };
   } catch (e) {
-    return { arrow: "⬆", dist: 0 };
+    return { arrow: "⬆", dist: 0, cardinal: "North" };
   }
 }
 
@@ -486,15 +491,18 @@ function incrementDimensionCount(dimKey, dimension) {
                 }
 
                 const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
+                const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
+                const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
                 compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
                 compass.setLore([
                   `§7Mystical Island Explorer Compass`,
                   `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
+                  `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
                   `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`,
                   `§7-----------------------`,
                   `§aHold in hand for Radar HUD & Light Trail!`,
-                  `§eRight-click the island Lodestone with this`,
-                  `§ecompass to register discovery!`
+                  `§bRight-Click for Interactive Sonar Ping!`,
+                  `§eAuto-dissolves when you reach the island!`
                 ]);
 
                 // Attune Compass to the island Lodestone location via Bedrock Script API
@@ -1253,7 +1261,7 @@ system.runInterval(() => {
               const targetZ = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
               if (targetX !== undefined && targetZ !== undefined) {
                 const nav = calculateNavIndicator(player.location, player.getRotation(), { x: targetX, y: targetY, z: targetZ });
-                navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §6to ${matchedTheme.name}]`;
+                navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §7(${nav.cardinal}) §6${matchedTheme.name}]`;
 
                 // Proactive Materialization: If player is within 60 blocks of island target, ensure island blocks are materialized in the newly loaded chunk!
                 if (nav.dist <= 60 && !world.getDynamicProperty(`island_built_${matchedTheme.id}`)) {
@@ -1327,9 +1335,101 @@ system.runInterval(() => {
   } catch (err) {}
 }, 20);
 
-// Dual Island Discovery Registration System:
-// Method 1: Automatic Proximity Registration (when player walks onto the island within 6 blocks of lodestone)
-// Method 2: Manual Lodestone Right-Click (both beforeEvents and afterEvents support)
+// =========================================================================
+// INTERACTIVE COMPASS & AUTO-DISSOLVING ISLAND DISCOVERY SYSTEM
+// =========================================================================
+
+// Completely removes island compasses from player inventory, mainhand, and offhand
+function removeIslandCompassFromPlayer(player, theme) {
+  let removed = 0;
+  try {
+    // 1. Scan player inventory slots (0 - 35)
+    const inv = player.getComponent("minecraft:inventory")?.container;
+    if (inv) {
+      for (let slot = 0; slot < inv.size; slot++) {
+        const item = inv.getItem(slot);
+        if (item && (item.typeId === "minecraft:compass" || item.typeId === "minecraft:lodestone_compass")) {
+          const name = item.nameTag || "";
+          if (!theme || name.toLowerCase().includes(theme.name.toLowerCase()) || name.includes("Secret") || name.includes("Island")) {
+            inv.setItem(slot, undefined);
+            removed++;
+          }
+        }
+      }
+    }
+
+    // 2. Scan equippable slots (Mainhand & Offhand)
+    const equippable = player.getComponent("minecraft:equippable");
+    if (equippable) {
+      for (const slotId of ["Mainhand", "Offhand"]) {
+        try {
+          const eqItem = equippable.getEquipment(slotId);
+          if (eqItem && (eqItem.typeId === "minecraft:compass" || eqItem.typeId === "minecraft:lodestone_compass")) {
+            const name = eqItem.nameTag || "";
+            if (!theme || name.toLowerCase().includes(theme.name.toLowerCase()) || name.includes("Secret") || name.includes("Island")) {
+              equippable.setEquipment(slotId, undefined);
+              removed++;
+            }
+          }
+        } catch (eqe) {}
+      }
+    }
+  } catch (err) {}
+  return removed;
+}
+
+// Interactive Compass Sonar Ping on Right-Click
+world.afterEvents.itemUse.subscribe((event) => {
+  try {
+    const { itemStack, source: player } = event;
+    if (!itemStack || !player) return;
+
+    if (itemStack.typeId === "minecraft:compass" || itemStack.typeId === "minecraft:lodestone_compass") {
+      const name = itemStack.nameTag || "";
+      const matchedTheme = ISLAND_THEMES.find(t => name.toLowerCase().includes(t.name.toLowerCase()));
+      if (matchedTheme) {
+        const tx = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
+        const ty = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 65;
+        const tz = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
+
+        if (tx !== undefined && tz !== undefined) {
+          const pLoc = player.location;
+          const nav = calculateNavIndicator(pLoc, player.getRotation(), { x: tx, y: ty, z: tz });
+
+          // Sonar Audio Feedback
+          player.playSound("block.amethyst_block.chime", { pitch: 1.5, volume: 1.0 });
+          player.playSound("note.harp", { pitch: 1.8, volume: 0.9 });
+
+          // Shoot Sonar Particle Beam towards target island
+          const dx = tx - pLoc.x;
+          const dy = ty - (pLoc.y + 1.2);
+          const dz = tz - pLoc.z;
+          const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (len > 0.1) {
+            const ux = dx / len;
+            const uy = dy / len;
+            const uz = dz / len;
+            for (let step = 1; step <= 10; step++) {
+              const d = step * 1.5;
+              player.dimension.spawnParticle("minecraft:endrod", {
+                x: pLoc.x + ux * d,
+                y: pLoc.y + 1.2 + uy * d,
+                z: pLoc.z + uz * d
+              });
+            }
+          }
+
+          // Sonar HUD & Chat Alert
+          const sizeStr = matchedTheme.size ? matchedTheme.size.toUpperCase() : "MEDIUM";
+          const traitStr = matchedTheme.trait ? matchedTheme.trait.replace("_", " ").toUpperCase() : "ISLAND";
+          player.onScreenDisplay.setActionBar(`§b✦ SONAR PING: §e${nav.arrow} §f${matchedTheme.name} §6${nav.dist}m §7[${nav.cardinal}]`);
+          player.sendMessage(`§b✦ [Compass Sonar Ping] §fTarget: §e§l${matchedTheme.name}§r §7(${sizeStr} | ${traitStr})`);
+          player.sendMessage(`  §8» §6Distance: §b${nav.dist} blocks §8| §6Bearing: §a${nav.cardinal} §8| §6Heading: §e${nav.arrow}`);
+        }
+      }
+    }
+  } catch (err) {}
+});
 
 function triggerIslandRegistration(player, matchedTheme, blockPos) {
   try {
@@ -1344,14 +1444,8 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
     if (world.getDynamicProperty(regKey)) return; // Already registered
     world.setDynamicProperty(regKey, true);
 
-    // 1. Consume compass from inventory if held
-    try {
-      const equippable = player.getComponent("minecraft:equippable");
-      const held = equippable?.getEquipment("Mainhand");
-      if (held && (held.typeId.includes("compass"))) {
-        equippable.setEquipment("Mainhand", undefined);
-      }
-    } catch (ie) {}
+    // 1. AUTO-DISAPPEAR COMPASS: Remove tracking compass from player inventory & hands!
+    const removedCount = removeIslandCompassFromPlayer(player, matchedTheme);
 
     // 2. Transform lodestone to gilded monument
     try {
@@ -1363,30 +1457,43 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
 
     // 3. Launch celebration fireworks
     try {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         system.runTimeout(() => {
           try {
             dimension.spawnEntity("minecraft:fireworks_rocket", {
-              x: loc.x + 0.5 + (Math.random() - 0.5) * 2,
+              x: loc.x + 0.5 + (Math.random() - 0.5) * 3,
               y: loc.y + 1.5,
-              z: loc.z + 0.5 + (Math.random() - 0.5) * 2
+              z: loc.z + 0.5 + (Math.random() - 0.5) * 3
             });
           } catch (fe) {}
         }, i * 8);
       }
     } catch (fwe) {}
 
-    // 4. Audio & Visual Discovery Alert
+    // 4. Totem dissolving particles on player
+    try {
+      dimension.spawnParticle("minecraft:totem_particle", {
+        x: player.location.x,
+        y: player.location.y + 1,
+        z: player.location.z
+      });
+    } catch (pe) {}
+
+    // 5. Audio & Visual Discovery Alert
     player.playSound("ui.toast.challenge_complete", { pitch: 1.2, volume: 1.0 });
     player.playSound("random.levelup", { pitch: 1.5, volume: 1.0 });
 
-    player.onScreenDisplay.setTitle("§6§lISLAND REGISTERED!§r", {
-      stayDuration: 90,
+    const sizeStr = matchedTheme.size ? matchedTheme.size.toUpperCase() : "MEDIUM";
+    player.onScreenDisplay.setTitle("§6§lISLAND DISCOVERED!§r", {
+      stayDuration: 100,
       fadeInDuration: 5,
       fadeOutDuration: 15,
-      subtitle: `§aDiscovered: §e${matchedTheme.name}`
+      subtitle: `§a${matchedTheme.name} §7(${sizeStr})`
     });
-    player.sendMessage(`\n§6★ [Island Discovery Registered] §aYou reached and registered §e§l${matchedTheme.name}§r§a!`);
+    player.sendMessage(`\n§6★ [Island Discovered] §aYou arrived at §e§l${matchedTheme.name}§r§a!`);
+    if (removedCount > 0) {
+      player.sendMessage(`§d✦ Your mystical Island Compass dissolved into starlight as you set foot on the island!`);
+    }
     player.sendMessage(`§7The island monument is now unlocked! Enjoy your rewards in the treasure chest!\n`);
   } catch (err) {}
 }
@@ -1422,7 +1529,7 @@ world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
   }
 });
 
-// Method 2: Proactive Auto-Discovery on Arrival (Walking within 5 blocks of the Lodestone)
+// Method 2: Proactive Auto-Discovery on Arrival (Walking onto the Island platform)
 system.runInterval(() => {
   try {
     for (const player of world.getAllPlayers()) {
@@ -1432,11 +1539,23 @@ system.runInterval(() => {
         const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
         if (tx !== undefined && tz !== undefined) {
           const dist = Math.hypot(pLoc.x - tx, pLoc.z - tz);
-          // When player arrives on the island (within 5 blocks of the lodestone)
-          if (dist <= 5 && !world.getDynamicProperty(`island_registered_${t.id}`)) {
-            const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 65;
-            triggerIslandRegistration(player, t, { x: tx, y: ty, z: tz });
-            break;
+          // Scale-based arrival detection radius:
+          let arrivalDist = 8.5;
+          if (t.size === "huge") arrivalDist = 14.0;
+          else if (t.size === "big") arrivalDist = 11.0;
+          else if (t.size === "medium") arrivalDist = 8.5;
+          else if (t.size === "compact") arrivalDist = 6.5;
+
+          // When player arrives on the island platform
+          if (dist <= arrivalDist) {
+            if (!world.getDynamicProperty(`island_registered_${t.id}`)) {
+              const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 65;
+              triggerIslandRegistration(player, t, { x: tx, y: ty, z: tz });
+              break;
+            } else {
+              // If already registered, ensure any remaining compass automatically dissolves
+              removeIslandCompassFromPlayer(player, t);
+            }
           }
         }
       }

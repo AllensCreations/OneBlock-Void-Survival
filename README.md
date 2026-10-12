@@ -28,26 +28,45 @@ Never fall into the void on your first minute again!
 
 ### 🗺️ 2. 42+ Unique Secret Void Islands (Procedural Micro-Continents)
 Every island that materializes is a unique, natural floating micro-continent:
-- **No Identical Islands**: Each island uses procedural seed-based contours, natural elevation bluffs, ponds, and hanging stalactite roots.
+- **Authentic Geological Strata**: Built using genuine natural rock layers (Stone, Andesite, Diorite, Granite, Tuff, Deepslate) + subsoil (Dirt, Coarse Dirt, Rooted Dirt, Gravel) + surface vegetation (Grass, Podzol, Mycelium, Sand, Nylium). No artificial or random blocks!
+- **Diverse Scales & Unique Layouts**:
+  - **Huge (R~11)**: Grand continents with mountains, full village settlements, and sprawling biomes.
+  - **Big (R~8.5)**: Expansive islands with deep caves, animal paddocks, and mine excavations.
+  - **Medium (R~6.5)**: Thematic ruins, dungeons, and natural water/lava springs.
+  - **Compact (R~5)**: Specialized outposts, shrines, and geode pods.
+- **Specialized Procedural Traits**:
+  - **Village Settlement**: Authentic wooden cottages, interior furniture (bed, crafting table, furnace), fenced farmlands with water irrigation, crops, village bells, and friendly villagers!
+  - **Animal Paddocks**: Enclosed pastures with troughs, hay bales, and themed livestock (Cows, Sheep, Mooshrooms, Bees, Pandas, Polar Bears).
+  - **Water & Lava Springs**: Natural cliffside springs with dramatic cascading waterfalls or volcanic lava flows tumbling into the void.
+  - **Ore-Rich Mines**: Exposed mineral veins with minecart rails, anvils, and raw ore blocks.
+  - **Dungeon Ruins**: Mossy stone brick chambers with iron bars, spawners, and cobwebs.
 - **Genuine Biome Painting (`fillbiome`)**: Islands automatically paint their true native Minecraft biome (`cherry_grove`, `lush_caves`, `meadow`, `desert`, `dripstone_caves`, etc.) with authentic foliage tinting and ambient skies!
-- **Natural Underground Ore Veins**: Mine beneath the island surface to discover real embedded Coal, Copper, Iron, Gold, Redstone, Diamond, and Ancient Debris veins!
+- **Natural Embedded Ore Veins**: Mine beneath the island surface to discover real Coal, Copper, Iron, Gold, Redstone, Lapis, Diamond, Emerald, and Ancient Debris veins scaled to island tier!
 - **Balanced 4-Tier Progression**:
   - **Tier 1 (Phases 1–4)**: Starter agriculture, trees, crops, bees, and livestock (Floral Oasis, Cherry Blossom Sanctuary, Honey Apiary, Windmill Grain Haven).
   - **Tier 2 (Phases 5–8)**: Mining & metals (Sandstone Crypt, Badlands Mesa, Glacial Ice Spire, Sky Blacksmith Forge, Deepslate Forge).
   - **Tier 3 (Phases 9–12)**: Nether flora, brewing, and magic (Nether Fortress Outpost, Amethyst Geode, Witch Brew Hut, Soul Sand Valley).
   - **Tier 4 (Phases 13+)**: Relics & the End (Trial Chamber Vaults, Breeze Spires, Piglin Treasury, Sculk Laboratory, Void Gateway Shrine).
-- **Anti-Clustering Golden Ratio Spacing**: Islands spawn between **80 to 120 blocks away** distributed across different horizons via the Golden Ratio ($137.5^\circ$), ensuring they are visible without crowding your base.
+- **Anti-Clustering Golden Ratio Spacing**: Islands spawn between **85 to 120 blocks away** distributed across different horizons via the Golden Ratio ($137.5^\circ$) with minimum distance verification, ensuring they are visible without crowding your base.
 
 ---
 
-### 🧭 3. Dual Compass Navigation & Instant Discovery
-- **Exact Coordinates on Compass Tooltip**: Every island delivery awards an Explorer Compass with the exact $(X, Y, Z)$ coordinates inscribed directly on its tooltip lore!
+### 🧭 3. Interactive Sonar Compass & Auto-Disappearing Discovery
+- **Exact Coordinates on Compass Tooltip**: Every island delivery awards an Explorer Compass with scale, trait, and exact $(X, Y, Z)$ coordinates inscribed directly on its tooltip lore!
 - **Actionbar HUD Nav-Radar**: Holding the compass displays a live directional radar:
-  `[Radar: ⬆ 95m to Cherry Blossom Sanctuary]` with dynamic turn arrows.
-- **End-Rod Light Guide**: Emits an in-game shining particle beam pointing toward the island.
-- **Dual Discovery Registration**: 
-  - **Auto-Walk Proximity**: Step within 5 blocks of the Lodestone, and fireworks burst into the sky, granting discovery completion automatically!
-  - **Manual Interaction**: Right-clicking the Lodestone with your compass transforms it into a golden monument and consumes the compass as an exploration trophy!
+  `[Radar: ⬆ 95m (North-East) to Cherry Blossom Sanctuary]` with dynamic turn arrows and cardinal bearing.
+- **Interactive Sonar Ping (Right-Click)**:
+  - Right-click holding the compass to fire a **Sonar Ping**!
+  - Emits a soothing Amethyst chime & note harp chord.
+  - Shoots a radiant 10-step particle light beam directly towards the hidden island across the void!
+  - Displays instant Sonar distance, heading arrow, and cardinal bearing.
+- **End-Rod Light Trail**: Continuous soft particle guide hovering ahead while the compass is held.
+- **Auto-Disappearing Compass on Island Arrival**:
+  - The moment you set foot on the island platform, your tracking compass **automatically dissolves into starlight** from your inventory and hands!
+  - Accompanied by **Totem of Undying dissolving particles**, glorious multi-colored **fireworks**, and celebratory sound effects!
+- **Permanent Gilded Monument & Chest Unlocking**:
+  - The central Lodestone permanently transforms into a **Gilded Blackstone Monument**.
+  - Safe treasure chests are unlocked with guaranteed high-tier rewards!
 
 ---
 
