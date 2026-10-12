@@ -1709,12 +1709,38 @@ world.afterEvents.playerDimensionChange.subscribe((event) => {
   }
 });
 
+// Hardcore Mode Death & Spectator Enforcement
+world.afterEvents.entityDie.subscribe((event) => {
+  try {
+    const dead = event.deadEntity;
+    if (dead && dead.typeId === "minecraft:player") {
+      const player = dead;
+      const isAdminWorld = world.getDynamicProperty("is_admin_world");
+      if (!isAdminWorld) {
+        player.addTag("hardcore_fallen");
+        for (const p of world.getAllPlayers()) {
+          p.sendMessage(`\n§4§l☠ [HARDCORE ELIMINATION] §c${player.name} §4has fallen!§r`);
+          p.sendMessage(`§7${player.name} is now permanently in Spectator Mode.\n`);
+          p.playSound("ambient.weather.thunder", { pitch: 0.8, volume: 1.0 });
+        }
+        system.run(() => {
+          try {
+            player.setGameMode("spectator");
+          } catch (e) {
+            try { player.runCommand("gamemode spectator @s"); } catch (e2) {}
+          }
+        });
+      }
+    }
+  } catch (e) {}
+});
+
 // Player initial spawn & Welcome Introduction
 world.afterEvents.playerSpawn.subscribe((event) => {
   const { player, initialSpawn } = event;
-  if (initialSpawn) {
-    system.run(() => {
-      try {
+  system.run(() => {
+    try {
+      if (initialSpawn) {
         const loc = player.location;
         if (Math.abs(loc.x) < 5 && Math.abs(loc.z) < 5) {
           player.teleport({ x: 0.5, y: 65.0, z: 0.5 });
@@ -1729,11 +1755,19 @@ world.afterEvents.playerSpawn.subscribe((event) => {
           }
           ensureOneBlock(player.dimension);
         } catch (e) {}
+      }
 
-        // Enforce Pure Survival on joining player
-        // Enforce Pure Survival on joining player if not in Admin World
-        const isAdminWorld = world.getDynamicProperty("is_admin_world");
-        if (!isAdminWorld && !player.hasTag("admin")) {
+      // Enforce Hardcore Survival or Spectator on spawning player
+      const isAdminWorld = world.getDynamicProperty("is_admin_world");
+      if (!isAdminWorld && !player.hasTag("admin")) {
+        if (player.hasTag("hardcore_fallen")) {
+          try {
+            player.setGameMode("spectator");
+          } catch (gme) {
+            try { player.runCommand("gamemode spectator @s"); } catch (e2) {}
+          }
+          player.sendMessage("§4[Hardcore Mode] §cYou have fallen! You are in Spectator Mode.");
+        } else {
           try {
             if (player.getGameMode && player.getGameMode() !== "survival") {
               player.setGameMode("survival");
@@ -1742,6 +1776,7 @@ world.afterEvents.playerSpawn.subscribe((event) => {
             try { player.runCommand("gamemode survival @s"); } catch (e2) {}
           }
         }
+      }
 
         // Cleanly wipe any lingering scoreboard sidebar
         clearScoreboardObjective();
@@ -1763,7 +1798,6 @@ world.afterEvents.playerSpawn.subscribe((event) => {
         player.playSound("random.levelup", { pitch: 1.0, volume: 1.0 });
       } catch (e) {}
     });
-  }
 });
 
 // Chat command helpers (!hud, !admin, !islands)
@@ -1840,15 +1874,27 @@ system.runInterval(() => {
     // QoL: Actionbar HUD & Compass Nav-Radar
     for (const player of world.getAllPlayers()) {
       try {
-        // Permanently Lock Player GameMode to Pure Survival in official survival world
+        // Permanently Lock Player GameMode in official survival world
         if (!isAdminWorld && !player.hasTag("admin")) {
           try {
-            if (player.getGameMode && player.getGameMode() !== "survival") {
-              player.setGameMode("survival");
-              player.sendMessage("§c[World Settings Locked] This world is permanently locked to Pure Survival on Hard difficulty!");
+            if (player.hasTag("hardcore_fallen")) {
+              if (player.getGameMode && player.getGameMode() !== "spectator") {
+                player.setGameMode("spectator");
+              }
+            } else {
+              if (player.getGameMode && player.getGameMode() !== "survival") {
+                player.setGameMode("survival");
+                player.sendMessage("§c[World Settings Locked] This world is permanently locked to Hardcore Survival on Hard difficulty!");
+              }
             }
           } catch (ge) {
-            try { player.runCommand("gamemode survival @s[m=!survival]"); } catch (e2) {}
+            try {
+              if (player.hasTag("hardcore_fallen")) {
+                player.runCommand("gamemode spectator @s[m=!spectator]");
+              } else {
+                player.runCommand("gamemode survival @s[m=!survival]");
+              }
+            } catch (e2) {}
           }
         }
         if (!player.hasTag("hide_hud")) {
