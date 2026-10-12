@@ -1842,6 +1842,85 @@ function safePlantSetBlock(dimension, groundLoc, plantLoc, plantTypeId) {
   return safeAirOnlySetBlock(dimension, plantLoc, plantTypeId);
 }
 
+export function getThemeFenceType(theme) {
+  const d = (theme && theme.dimension) || "overworld";
+  const b = (theme && theme.biome) || "";
+  const id = (theme && theme.id) || "";
+  if (d === "nether") {
+    if (b.includes("crimson")) return "minecraft:crimson_fence";
+    if (b.includes("warped")) return "minecraft:warped_fence";
+    return "minecraft:nether_brick_fence";
+  }
+  if (d === "the_end") return "minecraft:birch_fence";
+  if (b.includes("cherry") || id.includes("cherry")) return "minecraft:cherry_fence";
+  if (b.includes("bamboo") || id.includes("bamboo")) return "minecraft:bamboo_fence";
+  if (b.includes("mangrove") || b.includes("swamp")) return "minecraft:mangrove_fence";
+  if (b.includes("birch")) return "minecraft:birch_fence";
+  if (b.includes("dark_forest") || b.includes("deep_dark") || id.includes("pale")) return "minecraft:dark_oak_fence";
+  if (b.includes("taiga") || b.includes("ice") || b.includes("snow")) return "minecraft:spruce_fence";
+  if (b.includes("jungle")) return "minecraft:jungle_fence";
+  if (b.includes("mesa") || b.includes("badlands") || b.includes("savanna") || b.includes("desert")) return "minecraft:acacia_fence";
+  return "minecraft:oak_fence";
+}
+
+export function getThemeLanternType(theme) {
+  const d = (theme && theme.dimension) || "overworld";
+  const b = (theme && theme.biome) || "";
+  if (d === "nether" || b.includes("soul") || b.includes("deep_dark")) {
+    return "minecraft:soul_lantern";
+  }
+  return "minecraft:lantern";
+}
+
+// Places a lantern strictly on top of a fence.
+// Guarantees 100% that a lantern is NEVER placed without a valid fence underneath!
+export function placeLanternWithFence(dimension, fenceLoc, fenceType = "minecraft:oak_fence", lanternType = "minecraft:lantern") {
+  try {
+    const fenceBlock = dimension.getBlock(fenceLoc);
+    if (!fenceBlock) return false;
+
+    // Fence can replace air or soft foliage (flowers, tall grass, crops, petals, etc.)
+    if (!fenceBlock.isAir && fenceBlock.typeId !== "minecraft:air") {
+      const ft = fenceBlock.typeId;
+      // Do not overwrite chests, bedrock, lodestone, portals, or walls
+      if (ft.includes("chest") || ft.includes("bedrock") || ft.includes("lodestone") || ft.includes("portal") || ft.includes("frame") || ft.includes("wall")) {
+        return false;
+      }
+      const isSoft = ft.includes("grass") || ft.includes("flower") || ft.includes("petal") || 
+                     ft.includes("fern") || ft.includes("bush") || ft.includes("roots") || 
+                     ft.includes("fungus") || ft.includes("deadbush") || ft.includes("crop") ||
+                     ft.includes("carrot") || ft.includes("wheat") || ft.includes("potato") ||
+                     ft.includes("beetroot") || ft.includes("pumpkin") || ft.includes("melon") ||
+                     (ft.includes("nether_brick") && fenceType.includes("nether_brick")) ||
+                     (ft.includes("sculk") && fenceType.includes("fence"));
+      if (!isSoft && !ft.includes("fence")) return false;
+    }
+
+    const lanternLoc = { x: fenceLoc.x, y: fenceLoc.y + 1, z: fenceLoc.z };
+    const lanternBlock = dimension.getBlock(lanternLoc);
+    if (!lanternBlock) return false;
+
+    // Ensure the lantern spot is air or replaceable foliage (never solid rock or chest)
+    if (!lanternBlock.isAir && lanternBlock.typeId !== "minecraft:air") {
+      const lt = lanternBlock.typeId;
+      const isLanternSoft = lt.includes("air") || lt.includes("leaves") || lt.includes("grass") || lt.includes("flower") || lt.includes("petal");
+      if (!isLanternSoft) return false;
+    }
+
+    // Set fence first
+    fenceBlock.setType(fenceType);
+    totalBlocksPlacedThisBuild++;
+
+    // Set lantern directly on top of fence
+    lanternBlock.setType(lanternType);
+    totalBlocksPlacedThisBuild++;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+
 function placeSurfaceVegetation(dimension, theme, loc, seed) {
   const { x, y, z } = loc;
   try {
@@ -2068,26 +2147,26 @@ function buildSatelliteIslet(dimension, theme, center, maxR, seed, index) {
   try {
     const tr = theme.trait;
     if (tr === "ore_rich") {
-      // Raw mineral boulder
+      // Raw mineral boulder with lantern on fence
       safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, theme.tier >= 3 ? "minecraft:raw_gold_block" : "minecraft:raw_iron_block");
-      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:lantern");
+      placeLanternWithFence(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:oak_fence", "minecraft:lantern");
     } else if (tr === "village" || tr === "animals") {
-      // Abandoned campsite
+      // Abandoned campsite with lantern on fence post
       safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:campfire");
       safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy + 1, z: sz }, "minecraft:barrel");
-      safeAirOnlySetBlock(dimension, { x: sx - 1, y: sy + 1, z: sz }, "minecraft:lantern");
+      placeLanternWithFence(dimension, { x: sx - 1, y: sy + 1, z: sz }, "minecraft:oak_fence", "minecraft:lantern");
     } else if (tr === "dungeon" || theme.biome.includes("nether")) {
-      // Spire with crying obsidian & soul lantern
+      // Spire with crying obsidian & soul lantern on fence
       safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:crying_obsidian");
-      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:soul_lantern");
+      placeLanternWithFence(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:nether_brick_fence", "minecraft:soul_lantern");
     } else if (tr === "ancient_shrine") {
       // Quartz monolith
       safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:chiseled_quartz_block");
       safeAirOnlySetBlock(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:sea_lantern");
     } else {
-      // Flowering azalea bonsai or wild flora
+      // Flowering azalea bonsai with lantern on fence post
       safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:flowering_azalea");
-      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy + 1, z: sz }, "minecraft:lantern");
+      placeLanternWithFence(dimension, { x: sx + 1, y: sy + 1, z: sz }, "minecraft:oak_fence", "minecraft:lantern");
     }
   } catch (fe) {}
 }
@@ -2459,7 +2538,7 @@ function buildThemedStructure(dimension, theme, center) {
           safeAirOnlySetBlock(dimension, { x: sx + x, y: sy + 3, z: sz + z }, "minecraft:sandstone_slab");
         }
       }
-      safeAirOnlySetBlock(dimension, { x: sx, y: sy, z: sz + 1 }, "minecraft:lantern");
+      placeLanternWithFence(dimension, { x: sx, y: sy, z: sz + 1 }, "minecraft:birch_fence", "minecraft:lantern");
       safeAirOnlySetBlock(dimension, { x: sx, y: sy, z: sz + 2 }, "minecraft:crafting_table");
       safeAirOnlySetBlock(dimension, { x: sx + 4, y: sy, z: sz + 2 }, "minecraft:cauldron");
       placeStructureChest(dimension, { x: sx + 1, y: sy, z: sz + 2 }, [
@@ -2591,7 +2670,7 @@ function buildThemedStructure(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 1 }, "minecraft:soul_sand");
       safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy + 1, z: sz + 1 }, "minecraft:nether_wart");
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 2 }, "minecraft:chiseled_nether_bricks");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy + 1, z: sz + 2 }, "minecraft:soul_lantern");
+      placeLanternWithFence(dimension, { x: sx + 2, y: sy + 1, z: sz + 2 }, "minecraft:nether_brick_fence", "minecraft:soul_lantern");
       safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 3 }, "minecraft:brewing_stand");
       placeStructureChest(dimension, { x: sx + 3, y: sy, z: sz + 3 }, [
         { id: "minecraft:blaze_rod", count: 4 },
@@ -2625,7 +2704,7 @@ function buildThemedStructure(dimension, theme, center) {
       }
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 2 }, "minecraft:gold_block");
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy + 1, z: sz + 2 }, "minecraft:gold_block");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy + 2, z: sz + 2 }, "minecraft:soul_lantern");
+      placeLanternWithFence(dimension, { x: sx + 2, y: sy + 2, z: sz + 2 }, "minecraft:nether_brick_fence", "minecraft:soul_lantern");
       safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 1 }, "minecraft:smithing_table");
       safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 1 }, "minecraft:crying_obsidian");
       safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 3 }, "minecraft:crying_obsidian");
@@ -3157,7 +3236,7 @@ function buildThemedStructure(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 1 }, "minecraft:sculk");
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 3 }, "minecraft:sculk");
       safeAirOnlySetBlock(dimension, { x: sx, y: sy, z: sz }, "minecraft:cobbled_deepslate_wall");
-      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:soul_lantern");
+      placeLanternWithFence(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:nether_brick_fence", "minecraft:soul_lantern");
       placeStructureChest(dimension, { x: sx + 3, y: sy, z: sz + 3 }, [
         { id: "minecraft:echo_shard", count: 3 },
         { id: "minecraft:disc_fragment_5", count: 2 },
@@ -3626,21 +3705,10 @@ function buildThemedStructure(dimension, theme, center) {
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
-  // Chunk loading safety check: verify center AND all 4 cardinal edge bounds
-  // This guarantees island is never partially materialized or cut off at chunk boundaries!
-  const checkR = theme.size === "huge" ? 14 : (theme.size === "big" ? 11 : 8);
+  // Chunk loading safety check: verify island center block exists
   try {
-    const testPoints = [
-      { x: cx, y: cy, z: cz },
-      { x: cx - checkR, y: cy, z: cz },
-      { x: cx + checkR, y: cy, z: cz },
-      { x: cx, y: cy, z: cz - checkR },
-      { x: cx, y: cy, z: cz + checkR }
-    ];
-    for (const pt of testPoints) {
-      const b = dimension.getBlock(pt);
-      if (!b) return 0; // Boundary chunk unloaded, defer build until fully loaded!
-    }
+    const centerBlock = dimension.getBlock({ x: cx, y: cy, z: cz });
+    if (!centerBlock) return 0; // Center chunk unloaded, defer build until loaded!
   } catch (e) {
     return 0;
   }
@@ -3904,14 +3972,50 @@ export function buildThemedIsland(dimension, theme, center) {
   } catch (te) {}
 
   // 8. CORNER LIGHTING POSTS:
-  const lanternPosts = [
-    { x: cx + 3, y: coreY + 1, z: cz - 2 },
-    { x: cx - 3, y: coreY + 1, z: cz + 3 },
-    { x: cx + 2, y: coreY + 1, z: cz + 4 }
+  // Dynamically find valid solid ground perimeter spots, place thematic fence and lantern on top!
+  const themeFence = getThemeFenceType(theme);
+  const themeLantern = getThemeLanternType(theme);
+
+  const candidateOffsets = [
+    { dx: 3, dz: -2 },
+    { dx: -4, dz: 2 },
+    { dx: 2, dz: 4 },
+    { dx: -3, dz: -3 },
+    { dx: 4, dz: 2 },
+    { dx: -2, dz: 4 },
+    { dx: 1, dz: -4 },
+    { dx: -4, dz: -2 }
   ];
-  for (const lp of lanternPosts) {
-    safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y, z: lp.z }, "minecraft:oak_fence");
-    safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y + 1, z: lp.z }, "minecraft:lantern");
+
+  let postsPlaced = 0;
+  for (const off of candidateOffsets) {
+    if (postsPlaced >= 3) break;
+    const px = cx + off.dx;
+    const pz = cz + off.dz;
+
+    // Scan downward from cy + 6 to cy - 4 to find the highest solid surface block
+    let groundY = null;
+    for (let scanY = cy + 6; scanY >= cy - 4; scanY--) {
+      const b = dimension.getBlock({ x: px, y: scanY, z: pz });
+      if (!b || b.isAir || b.typeId === "minecraft:air") continue;
+      const t = b.typeId;
+      // Skip fluids, chests, trees/leaves, and fences/walls
+      if (t.includes("water") || t.includes("lava") || t.includes("chest") || t.includes("leaves") || t.includes("fence") || t.includes("log") || t.includes("wall") || t.includes("bedrock") || t.includes("lodestone")) continue;
+      // Skip soft surface plants/crops (we will overwrite if they're on top of solid ground)
+      if (t.includes("grass") || t.includes("flower") || t.includes("petal") || t.includes("fern") || t.includes("bush") || t.includes("crop") || t.includes("carrot") || t.includes("wheat") || t.includes("potato") || t.includes("beetroot") || t.includes("pumpkin") || t.includes("melon") || t.includes("roots") || t.includes("fungus") || t.includes("reeds") || t.includes("bamboo") || t.includes("deadbush")) {
+        continue;
+      }
+      // Found solid ground!
+      groundY = scanY;
+      break;
+    }
+
+    if (groundY === null) continue;
+
+    const fenceLoc = { x: px, y: groundY + 1, z: pz };
+    if (placeLanternWithFence(dimension, fenceLoc, themeFence, themeLantern)) {
+      postsPlaced++;
+    }
   }
 
   // 9. THEMATIC COMPANION MOB (if not already spawned by structure):

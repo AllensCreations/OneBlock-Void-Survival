@@ -2,7 +2,7 @@ import { world, system, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { OVERWORLD_PHASES, NETHER_PHASES, END_PHASES } from "./phases.js";
 import { RARITY_TIERS, DIMENSION_TRADE_POOLS } from "./rarities.js";
-import { ISLAND_THEMES, getIslandLocation, buildThemedIsland, isIslandPhysicallyBuilt, getIslandBlockPool } from "./islands.js";
+import { ISLAND_THEMES, OVERWORLD_ISLAND_ORDER, getIslandLocation, buildThemedIsland, isIslandPhysicallyBuilt, getIslandBlockPool } from "./islands.js";
 // Admin Build Configuration
 // In Survival: false (pure vanilla experience: no Actionbar HUD, no !run or admin command intercepts)
 // In Admin World: true (enables !run auto-break testing runner, !hud toggle, !admin GUI, and inspector tools)
@@ -828,7 +828,7 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
     // Also attempt temporary ticking area to preload chunk and guarantee immediate materialization:
     const areaName = `temp_isl_${theme.id.slice(0, 8)}`;
     try { dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
-    try { dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.z} 4 ${areaName}`); } catch (e) {}
+    try { dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 3 ${areaName} true`); } catch (e) {}
 
     system.runTimeout(() => {
       try {
@@ -840,7 +840,7 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
         }
       } catch (ie2) {}
       try { dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
-    }, 8);
+    }, 20);
   } catch (err) {}
 }
 
@@ -852,79 +852,57 @@ function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
     // Avoid triggering island rifts during the tutorial in overworld
     if (dimKey === "overworld" && totalCount < TUTORIAL_BLOCKS.length) return;
 
-    // 1. Determine active tier for current dimension:
-    let currentTier;
-    if (targetDim === "nether") {
-      currentTier = phaseIndex < 4 ? 3 : 4;
-    } else if (targetDim === "the_end") {
-      currentTier = 4;
-    } else {
-      currentTier = phaseIndex < 4 ? 1 : (phaseIndex < 8 ? 2 : (phaseIndex < 12 ? 3 : 4));
-    }
-
-    // 2. Track blocks mined since last island spawn in this dimension:
+    // 1. Track blocks mined since last island spawn in this dimension:
     const lastMineProp = `last_island_mine_count_${dimKey}`;
     const lastMineCount = world.getDynamicProperty(lastMineProp) ?? 0;
     const blocksSinceLast = totalCount - lastMineCount;
 
-    // 3. Dynamic Pity timer: roughly 1 island per 120 blocks mined (~0.8% chance per block)
+    // 2. Dynamic Pity timer: roughly 1 island per 120 blocks mined (~0.8% chance per block)
     const isPity = (blocksSinceLast >= 120);
     const isRandom = (Math.random() < 0.008);
 
     if (!isPity && !isRandom) return;
 
-    // 4. Find all unspawned islands strictly matching the dimension and unlocked tiers
-    const unspawnedCurrentTier = [];
-    const unspawnedEarlierTiers = [];
+    let selectedTheme = null;
 
-    for (const t of ISLAND_THEMES) {
-      if ((t.dimension || "overworld") !== targetDim) continue;
-      if (t.tier > currentTier) continue; // Locked future tier!
-      const isSpawned = world.getDynamicProperty(`island_spawned_${t.id}`);
-      if (!isSpawned) {
-        if (t.tier === currentTier) {
-          unspawnedCurrentTier.push(t);
-        } else {
-          unspawnedEarlierTiers.push(t);
+    if (targetDim === "overworld") {
+      // STRICT SEQUENTIAL CIRCLE PROGRESSION:
+      // Focus on Circle 1 first (Ring 1, 6 islands, r=72m).
+      // Only when ALL 6 islands of Circle 1 are materialized, advance to Circle 2 (Ring 2, 8 islands, r=125m)!
+      // Only when ALL 8 islands of Circle 2 are materialized, advance to Circle 3 (Ring 3, 10 islands, r=180m)!
+      // Only when ALL 10 islands of Circle 3 are materialized, advance to Circle 4 (Ring 4, 9 islands, r=240m) until the end!
+      const circles = [
+        OVERWORLD_ISLAND_ORDER.slice(0, 6),   // Circle 1 (r=72m): sky_oasis, cherry, mushroom, desert_well, bamboo, bee
+        OVERWORLD_ISLAND_ORDER.slice(6, 14),  // Circle 2 (r=125m): pumpkin, melon, bakery, aquarium, crypt, badlands, ice, jungle
+        OVERWORLD_ISLAND_ORDER.slice(14, 24), // Circle 3 (r=180m): deepslate, fossil, blacksmith, armory, spider, creeper, slime, geode, witch, watchtower
+        OVERWORLD_ISLAND_ORDER.slice(24, 33)  // Circle 4 (r=240m): monument, library, alchemist, trial, pale, sculk, tuff, pantheon, stronghold
+      ];
+
+      for (const circleIds of circles) {
+        for (const id of circleIds) {
+          if (!world.getDynamicProperty(`island_spawned_${id}`)) {
+            selectedTheme = ISLAND_THEMES.find(t => t.id === id);
+            break;
+          }
+        }
+        if (selectedTheme) break; // Found next unspawned island in current active circle!
+      }
+    } else if (targetDim === "nether") {
+      const netherThemes = ISLAND_THEMES.filter(t => t.dimension === "nether");
+      for (const t of netherThemes) {
+        if (!world.getDynamicProperty(`island_spawned_${t.id}`)) {
+          selectedTheme = t;
+          break;
         }
       }
-    }
-
-    if (unspawnedCurrentTier.length === 0 && unspawnedEarlierTiers.length === 0) return;
-
-    // 5. Weighted Tier Pool Selection: 70% current tier, 30% earlier tiers
-    let candidatePool = [];
-    const rollTier = Math.random();
-
-    if (unspawnedCurrentTier.length > 0 && (rollTier < 0.70 || unspawnedEarlierTiers.length === 0)) {
-      candidatePool = unspawnedCurrentTier;
-    } else if (unspawnedEarlierTiers.length > 0) {
-      candidatePool = unspawnedEarlierTiers;
     } else {
-      candidatePool = unspawnedCurrentTier;
-    }
-
-    if (candidatePool.length === 0) return;
-
-    // Dispersed Selection: Pick the candidate that is furthest from the last materialized island in this dimension!
-    let selectedTheme = null;
-    const lastX = world.getDynamicProperty(`last_island_x_${dimKey}`);
-    const lastZ = world.getDynamicProperty(`last_island_z_${dimKey}`);
-
-    if (lastX !== undefined && lastZ !== undefined && candidatePool.length > 1) {
-      // Sort candidates by distance to last spawned island descending (furthest first)
-      candidatePool.sort((a, b) => {
-        const locA = getIslandLocation(0, 0, a);
-        const locB = getIslandLocation(0, 0, b);
-        const distA = Math.hypot(locA.center.x - lastX, locA.center.z - lastZ);
-        const distB = Math.hypot(locB.center.x - lastX, locB.center.z - lastZ);
-        return distB - distA;
-      });
-      // Pick the furthest candidate (or from top 2 for subtle variety)
-      const topCount = Math.min(2, candidatePool.length);
-      selectedTheme = candidatePool[Math.floor(Math.random() * topCount)];
-    } else {
-      selectedTheme = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+      const endThemes = ISLAND_THEMES.filter(t => t.dimension === "the_end");
+      for (const t of endThemes) {
+        if (!world.getDynamicProperty(`island_spawned_${t.id}`)) {
+          selectedTheme = t;
+          break;
+        }
+      }
     }
 
     if (!selectedTheme) return;
@@ -1239,7 +1217,17 @@ export function summonNextIslandAdmin(player) {
   try {
     const dimKey = getDimKey(player.dimension.id);
     const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
-    let nextTheme = ISLAND_THEMES.find(t => (t.dimension || "overworld") === targetDim && !world.getDynamicProperty(`island_spawned_${t.id}`));
+    let nextTheme = null;
+    if (targetDim === "overworld") {
+      for (const id of OVERWORLD_ISLAND_ORDER) {
+        if (!world.getDynamicProperty(`island_spawned_${id}`)) {
+          nextTheme = ISLAND_THEMES.find(t => t.id === id);
+          break;
+        }
+      }
+    } else {
+      nextTheme = ISLAND_THEMES.find(t => (t.dimension || "overworld") === targetDim && !world.getDynamicProperty(`island_spawned_${t.id}`));
+    }
     if (!nextTheme) {
       nextTheme = ISLAND_THEMES.find(t => !world.getDynamicProperty(`island_spawned_${t.id}`));
     }
@@ -1255,24 +1243,24 @@ export function summonNextIslandAdmin(player) {
 
 export function summonAllIslandsAdmin(player) {
   try {
-    player.sendMessage("\n§e[Admin] Summoning all 42 Secret Islands into the void...");
+    player.sendMessage("\n§e[Admin] Summoning all 43 Secret Islands into the void...");
     let count = 0;
     for (let i = 0; i < ISLAND_THEMES.length; i++) {
       const theme = ISLAND_THEMES[i];
-      const loc = getIslandLocation(i, 42, theme);
+      const loc = getIslandLocation(i, ISLAND_THEMES.length, theme);
       world.setDynamicProperty(`island_spawned_${theme.id}`, true);
       world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
       world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
       world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
 
-      // Staggered builder with 4-chunk ticking area preloading (rotating slots 0-7)
-      const staggerDelay = i * 12;
+      // Staggered builder with 3-chunk ticking area preloading (rotating slots 0-7)
+      const staggerDelay = i * 15;
       system.runTimeout(() => {
         try {
           const areaSlot = i % 8;
           const areaName = `isl_run_${areaSlot}`;
           try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e1) {}
-          try { player.dimension.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.z} 4 ${areaName}`); } catch (e2) {}
+          try { player.dimension.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.y} ${loc.center.z} 3 ${areaName} true`); } catch (e2) {}
           system.runTimeout(() => {
             try {
               if (!isIslandPhysicallyBuilt(player.dimension, loc.center)) {
@@ -1281,7 +1269,7 @@ export function summonAllIslandsAdmin(player) {
               }
             } catch (e3) {}
             try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e4) {}
-          }, 8);
+          }, 15);
         } catch (e) {}
       }, staggerDelay);
       count++;
