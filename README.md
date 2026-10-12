@@ -1,4 +1,4 @@
-# 🌌 OneBlock Void Survival [Bedrock Edition]
+# 🌌 OneBlocked [by AllensCreations] - Bedrock Edition
 
 **Created by**: AllensCreations  
 **Supported Versions**: Minecraft Bedrock v1.20 – v1.26+ (MCPE, Windows 10/11, iOS, Android, Xbox, PlayStation, Switch)  
@@ -7,7 +7,7 @@
 ---
 
 ## 🌟 Introduction & Welcome
-Welcome to **OneBlock Void Survival**, an ultra-polished, feature-rich infinite OneBlock adventure built from the ground up for Minecraft Bedrock! 
+Welcome to **OneBlocked by AllensCreations**, an ultra-polished, feature-rich infinite OneBlock adventure built from the ground up for Minecraft Bedrock! 
 
 You spawn floating in an empty void above a single magical regenerative block. Mine it to progress through **27 complete biome phases**, build your floating empire, unlock authentic **42+ Secret Void Islands**, trade with the mystical **Dimension Shifter**, and conquer the void across all 3 dimensions!
 

@@ -399,7 +399,7 @@ function startPhaseTransition(dimKey, dimension, newPhaseIdx, isGameComplete) {
               fadeOutDuration: 15,
               subtitle: `§6${nextPhase.name}`
             });
-            p.sendMessage(`§6§l[OneBlock] §eCongratulations! Reached §aPhase ${newPhaseIdx + 1}: ${nextPhase.name}§e! §7(By AllensCreations on MCPEDL.COM)`);
+            p.sendMessage(`§d§l[OneBlocked] §eCongratulations! Reached §aPhase ${newPhaseIdx + 1}: ${nextPhase.name}§e! §7(by §bAllensCreations§7)`);
             p.playSound("random.levelup", { pitch: 1.0, volume: 1.0 });
           } catch (e) {}
         }
@@ -629,7 +629,9 @@ function updateScoreboard() {
   try {
     let objective = world.scoreboard.getObjective("oneblock_stats");
     if (!objective) {
-      objective = world.scoreboard.addObjective("oneblock_stats", "§e§lONEBLOCK VOID§r");
+      objective = world.scoreboard.addObjective("oneblock_stats", "§l§dOne§5Blocked§r");
+    } else {
+      objective.displayName = "§l§dOne§5Blocked§r";
     }
 
     world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {

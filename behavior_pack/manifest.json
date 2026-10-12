@@ -1,8 +1,8 @@
 {
   "format_version": 2,
   "header": {
-    "description": "OneBlock Void Survival World - Supports MCPE 1.20 to 1.26+",
-    "name": "OneBlock Void Survival",
+    "description": "OneBlocked by AllensCreations - Supports MCPE 1.20 to 1.26+",
+    "name": "§l§dOne§5Blocked §r§8[§bAllensCreations§8]",
     "uuid": "6f42a0f9-6c11-4974-9bb5-075b3447d2d9",
     "version": [1, 0, 0],
     "min_engine_version": [1, 20, 0]
