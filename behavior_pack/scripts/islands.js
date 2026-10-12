@@ -121,12 +121,12 @@ export const ISLAND_THEMES = [
   },
   {
     "id": "stronghold_portal",
-    "dimension": "the_end",
+    "dimension": "overworld",
     "size": "big",
     "trait": "dungeon",
-    "biome": "the_end",
+    "biome": "deep_dark",
     "tier": 4,
-    "y": 40,
+    "y": 52,
     "name": "Stronghold End Chamber",
     "color": "§d",
     "floor": "minecraft:stone_bricks",
@@ -1444,12 +1444,50 @@ export const ISLAND_THEMES = [
         "count": 16
       }
     ]
+  },
+  {
+    "id": "elytra_hangar",
+    "dimension": "the_end",
+    "size": "huge",
+    "trait": "dungeon",
+    "biome": "the_end",
+    "tier": 4,
+    "y": 68,
+    "name": "End Ship Hangar",
+    "color": "§d",
+    "floor": "minecraft:purpur_block",
+    "subfloor": "minecraft:end_stone_bricks",
+    "base": "minecraft:purpur_pillar",
+    "feature": "end_ship",
+    "mob": "minecraft:shulker",
+    "chest": [
+      {
+        "id": "minecraft:elytra",
+        "count": 1
+      },
+      {
+        "id": "minecraft:firework_rocket",
+        "count": 32
+      },
+      {
+        "id": "minecraft:potion",
+        "count": 2
+      },
+      {
+        "id": "minecraft:diamond",
+        "count": 4
+      },
+      {
+        "id": "minecraft:shulker_shell",
+        "count": 4
+      }
+    ]
   }
 ];
 
 // Deterministic 4-Ring Non-Overlapping Layout:
-// - Overworld: 32 islands arranged across 4 rings (Ring 1 @ 72m, Ring 2 @ 125m, Ring 3 @ 180m, Ring 4 @ 240m)
-//   Guarantees minimum distance >= 52.63 blocks between ANY two island centers (0% overlap, 28+ blocks open void!)
+// - Overworld: 33 islands arranged across 4 rings (Ring 1 @ 72m, Ring 2 @ 125m, Ring 3 @ 180m, Ring 4 @ 240m)
+//   Guarantees minimum distance >= 52.63 blocks between ANY two island centers (0% overlap, 27+ blocks open void!)
 // - Nether: 7 islands arranged in a 75m ring (min distance 64.2m)
 // - The End: 3 islands arranged in a 85m ring (min distance 147m)
 export const OVERWORLD_ISLAND_ORDER = [
@@ -1459,8 +1497,8 @@ export const OVERWORLD_ISLAND_ORDER = [
   "pumpkin_patch", "melon_greenhouse", "bakery_windmill", "aquarium_atoll", "ancient_crypt", "badlands_mesa", "ice_spike_peak", "jungle_temple",
   // Ring 3 (10 islands, r=180m): Ancient forges, fossils, armories, dungeons, slime & witch swamp
   "deepslate_forge", "fossil_excavation", "blacksmith_workshop", "armory_vault", "spider_nest", "creeper_dungeon", "slime_biosphere", "amethyst_geode", "witch_swamp_hut", "pillager_watchtower",
-  // Ring 4 (8 islands, r=240m): Arcane libraries, breeze trial vault, pale garden, sculk & pantheon
-  "ocean_monument_shrine", "library_observatory", "alchemist_laboratory", "trial_vault", "pale_garden_spire", "sculk_laboratory", "tuff_golem_sanctuary", "golden_pantheon"
+  // Ring 4 (9 islands, r=240m): Arcane libraries, breeze trial vault, pale garden, sculk, pantheon & stronghold end chamber
+  "ocean_monument_shrine", "library_observatory", "alchemist_laboratory", "trial_vault", "pale_garden_spire", "sculk_laboratory", "tuff_golem_sanctuary", "golden_pantheon", "stronghold_portal"
 ];
 
 export function getIslandLocation(index, total, theme, lastPos = null) {
@@ -1475,7 +1513,7 @@ export function getIslandLocation(index, total, theme, lastPos = null) {
       slotIdx = OVERWORLD_ISLAND_ORDER.indexOf(theme.id);
     }
     if (slotIdx < 0) {
-      slotIdx = index % 32;
+      slotIdx = index % 33;
     }
 
     if (slotIdx < 6) {
@@ -1491,9 +1529,9 @@ export function getIslandLocation(index, total, theme, lastPos = null) {
       distance = 180;
       angle = 18 + (slotIdx - 14) * (360 / 10);
     } else {
-      // Ring 4: 8 islands @ 240m
+      // Ring 4: 9 islands @ 240m
       distance = 240;
-      angle = 45 + (slotIdx - 24) * (360 / 8);
+      angle = 45 + (slotIdx - 24) * (360 / 9);
     }
   } else if (targetDim === "nether") {
     const netherThemes = ISLAND_THEMES.filter(t => t.dimension === "nether");
@@ -1502,7 +1540,7 @@ export function getIslandLocation(index, total, theme, lastPos = null) {
     distance = 75;
     angle = 12 + nIdx * (360 / 7);
   } else {
-    // The End
+    // The End (3 islands: end_city_tower, void_gateway_outpost, elytra_hangar)
     const endThemes = ISLAND_THEMES.filter(t => t.dimension === "the_end");
     let eIdx = theme ? endThemes.findIndex(t => t.id === theme.id) : index;
     if (eIdx < 0) eIdx = index % 3;
@@ -1898,11 +1936,11 @@ export function getIslandArchetype(theme) {
     return "atoll";
   }
   // 2. SPIRE / PEAK:
-  if (id.includes("spire") || id.includes("peak") || feat === "copper_spire" || id === "end_city_tower" || id === "glowstone_meteor" || id === "ice_spike_peak") {
+  if (id.includes("spire") || id.includes("peak") || feat === "copper_spire" || id === "end_city_tower" || id === "glowstone_meteor" || id === "ice_spike_peak" || id === "elytra_hangar") {
     return "spire";
   }
   // 3. TERRACE / STEPPED PLATEAU:
-  if (id === "badlands_mesa" || id === "ancient_crypt" || id === "fossil_excavation" || id === "blacksmith_workshop" || id === "armory_vault" || id === "tuff_golem_sanctuary" || id === "bastion_treasury" || id === "trial_vault") {
+  if (id === "badlands_mesa" || id === "ancient_crypt" || id === "fossil_excavation" || id === "blacksmith_workshop" || id === "armory_vault" || id === "tuff_golem_sanctuary" || id === "bastion_treasury" || id === "trial_vault" || id === "stronghold_portal") {
     return "terrace";
   }
   // 4. ARCHIPELAGO / ISLETS:
@@ -2097,7 +2135,8 @@ export function getIslandBlockPool(theme) {
     tuff_golem_sanctuary: ["minecraft:tuff", "minecraft:polished_tuff", "minecraft:deepslate", "minecraft:chiseled_stone_bricks", "minecraft:stone"],
     meteorite_crater: ["minecraft:blackstone", "minecraft:crying_obsidian", "minecraft:obsidian", "minecraft:magma", "minecraft:ancient_debris"],
     golden_pantheon: ["minecraft:quartz_block", "minecraft:smooth_quartz", "minecraft:gold_block", "minecraft:raw_gold_block", "minecraft:sea_lantern"],
-    void_gateway_outpost: ["minecraft:end_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:purpur_pillar"]
+    void_gateway_outpost: ["minecraft:end_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:purpur_pillar"],
+    elytra_hangar: ["minecraft:purpur_block", "minecraft:end_bricks", "minecraft:purpur_pillar", "minecraft:end_rod", "minecraft:diamond_block", "minecraft:end_stone"]
   };
   return pools[theme.id] || [theme.floor, theme.subfloor, theme.base];
 }
@@ -2420,7 +2459,7 @@ function buildThemedStructure(dimension, theme, center) {
           safeAirOnlySetBlock(dimension, { x: sx + x, y: sy + 3, z: sz + z }, "minecraft:sandstone_slab");
         }
       }
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy + 2, z: sz + 2 }, "minecraft:lantern");
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy, z: sz + 1 }, "minecraft:lantern");
       safeAirOnlySetBlock(dimension, { x: sx, y: sy, z: sz + 2 }, "minecraft:crafting_table");
       safeAirOnlySetBlock(dimension, { x: sx + 4, y: sy, z: sz + 2 }, "minecraft:cauldron");
       placeStructureChest(dimension, { x: sx + 1, y: sy, z: sz + 2 }, [
@@ -2702,44 +2741,115 @@ function buildThemedStructure(dimension, theme, center) {
     }
 
     case "portal_frame": {
-      // 10. Stronghold End Chamber (6x6 offset at cx-5, cz+3)
-      const sx = cx - 5;
-      const sz = cz + 3;
-      const sy = cy + 1;
-      for (let x = 0; x <= 5; x++) {
-        for (let z = 0; z <= 5; z++) {
-          safeAirOnlySetBlock(dimension, { x: sx + x, y: sy - 1, z: sz + z }, (x + z) % 2 === 0 ? "minecraft:stone_bricks" : "minecraft:cracked_stone_bricks");
+      // 10. Stronghold End Chamber (Authentic 7x7 Vanilla 12-Frame Portal Room)
+      const sy = cy + 4;
+      // Stone Brick Chamber Foundation
+      for (let x = -3; x <= 3; x++) {
+        for (let z = -3; z <= 3; z++) {
+          if (Math.abs(x) <= 1 && Math.abs(z) <= 1) {
+            const b = dimension.getBlock({ x: cx + x, y: sy - 1, z: cz + z });
+            if (b) b.setType("minecraft:lava");
+          } else {
+            safeAirOnlySetBlock(dimension, { x: cx + x, y: sy - 1, z: cz + z }, (x + z) % 2 === 0 ? "minecraft:stone_bricks" : "minecraft:cracked_stone_bricks");
+          }
         }
       }
+      // Chamber Perimeter Stone Columns
       for (let y = 0; y <= 3; y++) {
-        safeAirOnlySetBlock(dimension, { x: sx, y: sy + y, z: sz }, "minecraft:mossy_stone_bricks");
-        safeAirOnlySetBlock(dimension, { x: sx + 5, y: sy + y, z: sz }, "minecraft:mossy_stone_bricks");
-        safeAirOnlySetBlock(dimension, { x: sx, y: sy + y, z: sz + 5 }, "minecraft:mossy_stone_bricks");
-        safeAirOnlySetBlock(dimension, { x: sx + 5, y: sy + y, z: sz + 5 }, "minecraft:mossy_stone_bricks");
+        safeAirOnlySetBlock(dimension, { x: cx - 3, y: sy + y, z: cz - 3 }, "minecraft:mossy_stone_bricks");
+        safeAirOnlySetBlock(dimension, { x: cx + 3, y: sy + y, z: cz - 3 }, "minecraft:mossy_stone_bricks");
+        safeAirOnlySetBlock(dimension, { x: cx - 3, y: sy + y, z: cz + 3 }, "minecraft:mossy_stone_bricks");
+        safeAirOnlySetBlock(dimension, { x: cx + 3, y: sy + y, z: cz + 3 }, "minecraft:mossy_stone_bricks");
       }
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy - 1, z: sz + 2 }, "minecraft:lava");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy - 1, z: sz + 2 }, "minecraft:lava");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy - 1, z: sz + 3 }, "minecraft:lava");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy - 1, z: sz + 3 }, "minecraft:lava");
-      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 2 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 3 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 4, y: sy, z: sz + 2 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 4, y: sy, z: sz + 3 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 1 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 1 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 4 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 4 }, "minecraft:end_portal_frame");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy + 1, z: sz + 2 }, "minecraft:iron_bars");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy + 1, z: sz + 2 }, "minecraft:iron_bars");
-      placeStructureChest(dimension, { x: sx, y: sy, z: sz + 2 }, [
-        { id: "minecraft:ender_eye", count: 8 },
+
+      // Helper to place native inward-facing end portal frame
+      const placePortalFrame = (fx, fy, fz, dir) => {
+        if (safeAirOnlySetBlock(dimension, { x: fx, y: fy, z: fz }, "minecraft:end_portal_frame")) {
+          try {
+            dimension.runCommand(`setblock ${fx} ${fy} ${fz} end_portal_frame ["direction": ${dir}] replace`);
+          } catch (e) {}
+        }
+      };
+
+      // 12 Authentic Inward-Facing End Portal Frames:
+      // North Edge (faces South, dir 0)
+      placePortalFrame(cx - 1, sy, cz - 2, 0);
+      placePortalFrame(cx, sy, cz - 2, 0);
+      placePortalFrame(cx + 1, sy, cz - 2, 0);
+
+      // South Edge (faces North, dir 2)
+      placePortalFrame(cx - 1, sy, cz + 2, 2);
+      placePortalFrame(cx, sy, cz + 2, 2);
+      placePortalFrame(cx + 1, sy, cz + 2, 2);
+
+      // West Edge (faces East, dir 3)
+      placePortalFrame(cx - 2, sy, cz - 1, 3);
+      placePortalFrame(cx - 2, sy, cz, 3);
+      placePortalFrame(cx - 2, sy, cz + 1, 3);
+
+      // East Edge (faces West, dir 1)
+      placePortalFrame(cx + 2, sy, cz - 1, 1);
+      placePortalFrame(cx + 2, sy, cz, 1);
+      placePortalFrame(cx + 2, sy, cz + 1, 1);
+
+      // Corner Steps & Pillars
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: sy, z: cz - 2 }, "minecraft:stone_bricks");
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: sy, z: cz - 2 }, "minecraft:stone_bricks");
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: sy, z: cz + 2 }, "minecraft:stone_bricks");
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: sy, z: cz + 2 }, "minecraft:stone_bricks");
+
+      // Hanging Iron Bars & Spawner Pedestal above the lava pool
+      safeAirOnlySetBlock(dimension, { x: cx, y: sy + 2, z: cz }, "minecraft:iron_bars");
+      safeAirOnlySetBlock(dimension, { x: cx, y: sy + 3, z: cz }, "minecraft:iron_bars");
+      safeAirOnlySetBlock(dimension, { x: cx, y: sy + 1, z: cz }, "minecraft:spawner");
+
+      // Stronghold Loot Chest (Guaranteed 12 Eyes of Ender for vanilla activation)
+      placeStructureChest(dimension, { x: cx - 3, y: sy, z: cz }, [
+        { id: "minecraft:ender_eye", count: 12 },
+        { id: "minecraft:diamond_sword", count: 1 },
+        { id: "minecraft:golden_apple", count: 3 },
+        { id: "minecraft:iron_block", count: 2 },
         { id: "minecraft:enchanted_book", count: 1 },
-        { id: "minecraft:iron_sword", count: 1 },
-        { id: "minecraft:iron_ingot", count: 6 },
-        { id: "minecraft:bookshelf", count: 2 }
+        { id: "minecraft:bookshelf", count: 4 }
       ]);
       try {
-        dimension.spawnEntity("minecraft:silverfish", { x: sx + 2.5, y: sy, z: sz + 2.5 });
+        dimension.spawnEntity("minecraft:silverfish", { x: cx + 0.5, y: sy + 1.2, z: cz + 0.5 });
+        mobSpawned = true;
+      } catch (e) {}
+      break;
+    }
+
+    case "end_ship": {
+      // 31. End Ship Hangar (Purpur Dock & Dragon Prow)
+      const sy = cy + 1;
+      for (let x = -3; x <= 3; x++) {
+        for (let z = -3; z <= 3; z++) {
+          safeAirOnlySetBlock(dimension, { x: cx + x, y: sy - 1, z: cz + z }, "minecraft:purpur_block");
+        }
+      }
+      // Purpur Pillars & End Rods
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: sy, z: cz - 2 }, "minecraft:purpur_pillar");
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: sy + 1, z: cz - 2 }, "minecraft:purpur_pillar");
+      safeAirOnlySetBlock(dimension, { x: cx - 2, y: sy + 2, z: cz - 2 }, "minecraft:end_rod");
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: sy, z: cz - 2 }, "minecraft:purpur_pillar");
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: sy + 1, z: cz - 2 }, "minecraft:purpur_pillar");
+      safeAirOnlySetBlock(dimension, { x: cx + 2, y: sy + 2, z: cz - 2 }, "minecraft:end_rod");
+
+      // Ship Prow with Dragon Head & Brewing Stand
+      safeAirOnlySetBlock(dimension, { x: cx, y: sy, z: cz + 2 }, "minecraft:purpur_stairs");
+      safeAirOnlySetBlock(dimension, { x: cx, y: sy + 1, z: cz + 2 }, "minecraft:dragon_head");
+      safeAirOnlySetBlock(dimension, { x: cx - 1, y: sy, z: cz }, "minecraft:brewing_stand");
+
+      // End Ship Loot Chest (Elytra, Fireworks, Potions, Shulker Shells)
+      placeStructureChest(dimension, { x: cx + 1, y: sy, z: cz }, [
+        { id: "minecraft:elytra", count: 1 },
+        { id: "minecraft:firework_rocket", count: 32 },
+        { id: "minecraft:potion", count: 2 },
+        { id: "minecraft:diamond", count: 4 },
+        { id: "minecraft:shulker_shell", count: 4 }
+      ]);
+      try {
+        dimension.spawnEntity("minecraft:shulker", { x: cx + 0.5, y: sy + 1, z: cz + 0.5 });
         mobSpawned = true;
       } catch (e) {}
       break;

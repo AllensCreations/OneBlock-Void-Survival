@@ -947,6 +947,64 @@ function incrementDimensionCount(dimKey, dimension) {
   const newState = getDimensionState(dimKey);
   const phases = getPhasesForDim(dimKey);
 
+  // 1. Tutorial Step 15 Completion & Normal Starter Island Introduction:
+  if (dimKey === "overworld" && prevCount === TUTORIAL_BLOCKS.length - 1 && newCount === TUTORIAL_BLOCKS.length) {
+    // Solidify and lock bedrock anchor directly below OneBlock at (0, 63, 0)
+    try {
+      const bBedrock = dimension.getBlock({ x: ONEBLOCK_POS.x, y: ONEBLOCK_POS.y - 1, z: ONEBLOCK_POS.z });
+      if (bBedrock) bBedrock.setType("minecraft:bedrock");
+    } catch (be) {}
+
+    // Materialize Theme 0 ("sky_oasis" Lush Floral Oasis) as introductory normal island
+    if (!world.getDynamicProperty("island_spawned_sky_oasis")) {
+      world.setDynamicProperty("island_spawned_sky_oasis", true);
+      materializeIsland(dimension, ISLAND_THEMES[0], 0, newCount);
+    }
+
+    // Celebrate tutorial completion with celestial title and audio cues
+    for (const p of world.getAllPlayers()) {
+      try {
+        p.onScreenDisplay.setTitle("§a§l★ TUTORIAL COMPLETE ★§r", {
+          subtitle: "§eWelcome to OneBlock Void! Your journey begins now.",
+          fadeInDuration: 10,
+          stayDuration: 85,
+          fadeOutDuration: 20
+        });
+        p.sendMessage("\n§a§l[OneBlock] ★ TUTORIAL COMPLETED! ★§r");
+        p.sendMessage("§eBedrock anchor permanently solidified beneath your feet at §6(0, 63, 0)§e.");
+        p.sendMessage("§bAn introductory floating island §a§lLush Floral Oasis§r §bhas materialized in the distance!\n");
+        p.playSound("ui.toast.challenge_complete", { pitch: 1.0, volume: 1.0 });
+      } catch (pe) {}
+    }
+  }
+
+  // 2. Stronghold End Chamber Milestone (Overworld Ring 4):
+  // Automatically manifests when reaching Phase 11+ or Nether mined blocks >= 250
+  const netherMined = world.getDynamicProperty("ob_nether_count") ?? 0;
+  if (dimKey === "overworld" && (newState.phaseIndex >= 11 || netherMined >= 250)) {
+    if (!world.getDynamicProperty("island_spawned_stronghold_portal")) {
+      const strongholdTheme = ISLAND_THEMES.find(t => t.id === "stronghold_portal");
+      if (strongholdTheme) {
+        world.setDynamicProperty("island_spawned_stronghold_portal", true);
+        materializeIsland(dimension, strongholdTheme, newState.phaseIndex, newCount);
+        for (const p of world.getAllPlayers()) {
+          try {
+            p.onScreenDisplay.setTitle("§5§l✦ END PORTAL DUNGEON ✦§r", {
+              subtitle: "§dThe Stronghold End Chamber has materialized in Ring 4!",
+              fadeInDuration: 10,
+              stayDuration: 90,
+              fadeOutDuration: 20
+            });
+            p.sendMessage("\n§5§l★ LEGENDARY DUNGEON DISCOVERED ★§r");
+            p.sendMessage("§dThe §5§lStronghold End Chamber§r §dhas materialized in the deep void!");
+            p.sendMessage("§eFollow the starlight trail in Ring 4 to locate the 12-frame End Portal!\n");
+            p.playSound("ui.toast.challenge_complete", { pitch: 0.9, volume: 1.0 });
+          } catch (pe) {}
+        }
+      }
+    }
+  }
+
   // Random Chance Island Materialization with Pity Timer in current dimension
   checkRandomIslandSpawn(dimension, newState.phaseIndex, newCount);
 
@@ -1989,6 +2047,23 @@ world.afterEvents.playerDimensionChange.subscribe((event) => {
           player.sendMessage(`§e§l[OneBlock Guide] §aWelcome to the ${dimKey === "nether" ? "Nether" : "The End"}!`);
           player.sendMessage(`§6➤ Your Dimension OneBlock is waiting at coordinates: §bX: 0, Y: 64, Z: 0`);
           player.sendMessage(`§7Bridge toward (0, 64, 0) to find your infinite block!`);
+        }
+      } catch (err) {}
+    });
+  } else if (dimKey === "overworld") {
+    system.run(() => {
+      try {
+        const netherMined = world.getDynamicProperty("ob_nether_count") ?? 0;
+        if (netherMined >= 250 && !world.getDynamicProperty("island_spawned_stronghold_portal")) {
+          const strongholdTheme = ISLAND_THEMES.find(t => t.id === "stronghold_portal");
+          if (strongholdTheme) {
+            world.setDynamicProperty("island_spawned_stronghold_portal", true);
+            const owState = getDimensionState("overworld");
+            materializeIsland(toDimension, strongholdTheme, owState.phaseIndex, owState.count);
+            player.sendMessage("\n§5§l★ LEGENDARY DUNGEON DISCOVERED ★§r");
+            player.sendMessage("§dReturning from the Nether has awakened the §5§lStronghold End Chamber§r §din the Overworld void!");
+            player.sendMessage("§eFollow the starlight trail in Ring 4 to locate the 12-frame End Portal!\n");
+          }
         }
       } catch (err) {}
     });
