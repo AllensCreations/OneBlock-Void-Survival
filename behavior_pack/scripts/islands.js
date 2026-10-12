@@ -1338,7 +1338,7 @@ export function buildThemedIsland(dimension, theme, center) {
   const ridgeAngle = ((seed % 8) * Math.PI) / 4;
 
   const isOreRich = theme.trait === "ore_rich";
-  const oreChance = isOreRich ? 28 : 15;
+  const oreChance = isOreRich ? 15 : 8;
 
   const maxR = Math.ceil(baseRadius + amp1 + amp2 + amp3 + 1);
 
@@ -1534,20 +1534,12 @@ export function buildThemedIsland(dimension, theme, center) {
       } catch (ve) {}
 
     } else if (tr === "animals") {
-      // Build animal paddock & spawn pastoral creatures
+      // Natural animal resting spot with hay & water cauldron (no restricting fences - animals wander freely)
       const px = cx - 3;
       const pz = cz + 3;
-      for (let ox = -2; ox <= 2; ox++) {
-        for (let oz = -2; oz <= 2; oz++) {
-          const isBorder = (Math.abs(ox) === 2 || Math.abs(oz) === 2);
-          if (isBorder && !(ox === 0 && oz === 2)) {
-            safeAirOnlySetBlock(dimension, { x: px + ox, y: cy + 1, z: pz + oz }, "minecraft:oak_fence");
-          }
-        }
-      }
-      safeAirOnlySetBlock(dimension, { x: px, y: cy + 1, z: pz + 2 }, "minecraft:oak_fence_gate");
       safeAirOnlySetBlock(dimension, { x: px - 1, y: cy + 1, z: pz - 1 }, "minecraft:cauldron");
       safeAirOnlySetBlock(dimension, { x: px + 1, y: cy + 1, z: pz - 1 }, "minecraft:hay_block");
+      safeAirOnlySetBlock(dimension, { x: px, y: cy + 1, z: pz + 2 }, "minecraft:carved_pumpkin");
 
       // Themed animals spawn:
       try {

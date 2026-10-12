@@ -825,6 +825,9 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
 
 function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
   try {
+    // Avoid triggering island rifts during the tutorial
+    if (totalCount < TUTORIAL_BLOCKS.length) return;
+
     // 1. Determine player's active tier based on phase:
     // Phase 1-4 (idx 0-3): Tier 1
     // Phase 5-8 (idx 4-7): Tier 2
@@ -836,12 +839,9 @@ function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
     const lastMineCount = world.getDynamicProperty("last_island_mine_count") ?? 0;
     const blocksSinceLast = totalCount - lastMineCount;
 
-    // 3. Dynamic Pity timer:
-    // First island spawns early (at 35 blocks mined or 2.5% chance) so players experience islands early!
-    // Subsequent islands spawn with 100 block pity or 1.2% chance per block.
-    const isFirstIsland = (lastMineCount === 0);
-    const isPity = isFirstIsland ? (blocksSinceLast >= 35) : (blocksSinceLast >= 100);
-    const isRandom = isFirstIsland ? (Math.random() < 0.025) : (Math.random() < 0.012);
+    // 3. Dynamic Pity timer: roughly 1 island per 120 blocks mined (~0.8% chance per block)
+    const isPity = (blocksSinceLast >= 120);
+    const isRandom = (Math.random() < 0.008);
 
     if (!isPity && !isRandom) return;
 
@@ -2105,33 +2105,45 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
 
 
 // Method 2: Proactive Auto-Discovery on Arrival (Walking onto the Island platform)
+// Throttled to once per second (every 20 ticks) with in-memory caching to eliminate CPU lag
+const activeIslandTargetCache = new Map();
+let lastCacheRefresh = 0;
+
+function getActiveSpawnedIslands() {
+  if (tickCounter - lastCacheRefresh > 5 || activeIslandTargetCache.size === 0) {
+    lastCacheRefresh = tickCounter;
+    activeIslandTargetCache.clear();
+    for (const t of ISLAND_THEMES) {
+      if (world.getDynamicProperty(`island_registered_${t.id}`)) continue;
+      const tx = world.getDynamicProperty(`island_target_x_${t.id}`);
+      const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
+      if (tx !== undefined && tz !== undefined) {
+        const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 65;
+        let arrivalDist = 8.5;
+        if (t.size === "huge") arrivalDist = 14.0;
+        else if (t.size === "big") arrivalDist = 11.0;
+        else if (t.size === "medium") arrivalDist = 8.5;
+        else if (t.size === "compact") arrivalDist = 6.5;
+        activeIslandTargetCache.set(t.id, { theme: t, tx, ty, tz, arrivalDist });
+      }
+    }
+  }
+  return activeIslandTargetCache;
+}
+
 system.runInterval(() => {
   try {
+    const activeIslands = getActiveSpawnedIslands();
+    if (activeIslands.size === 0) return;
+
     for (const player of world.getAllPlayers()) {
       const pLoc = player.location;
-      for (const t of ISLAND_THEMES) {
-        const tx = world.getDynamicProperty(`island_target_x_${t.id}`);
-        const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
-        if (tx !== undefined && tz !== undefined) {
-          const dist = Math.hypot(pLoc.x - tx, pLoc.z - tz);
-          // Scale-based arrival detection radius:
-          let arrivalDist = 8.5;
-          if (t.size === "huge") arrivalDist = 14.0;
-          else if (t.size === "big") arrivalDist = 11.0;
-          else if (t.size === "medium") arrivalDist = 8.5;
-          else if (t.size === "compact") arrivalDist = 6.5;
-
-          // When player arrives on the island platform
-          if (dist <= arrivalDist) {
-            if (!world.getDynamicProperty(`island_registered_${t.id}`)) {
-              const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 65;
-              triggerIslandRegistration(player, t, { x: tx, y: ty, z: tz });
-              break;
-            } else {
-              // If already registered, ensure any remaining compass automatically dissolves
-              removeIslandCompassFromPlayer(player, t);
-            }
-          }
+      for (const [themeId, data] of activeIslands) {
+        const dist = Math.hypot(pLoc.x - data.tx, pLoc.z - data.tz);
+        if (dist <= data.arrivalDist) {
+          triggerIslandRegistration(player, data.theme, { x: data.tx, y: data.ty, z: data.tz });
+          activeIslands.delete(themeId);
+          break;
         }
       }
     }
