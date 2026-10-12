@@ -1149,8 +1149,8 @@ export const ISLAND_THEMES = [
     "y": 64,
     "name": "Tropical Melon Greenhouse",
     "color": "§a",
-    "floor": "minecraft:farmland",
-    "subfloor": "minecraft:mud",
+    "floor": "minecraft:moss_block",
+    "subfloor": "minecraft:rooted_dirt",
     "base": "minecraft:jungle_planks",
     "feature": "glass_dome",
     "mob": null,
@@ -1251,8 +1251,8 @@ export const ISLAND_THEMES = [
     "y": 70,
     "name": "Windmill Grain Haven",
     "color": "§e",
-    "floor": "minecraft:farmland",
-    "subfloor": "minecraft:dirt",
+    "floor": "minecraft:grass_block",
+    "subfloor": "minecraft:coarse_dirt",
     "base": "minecraft:smooth_stone",
     "feature": "hay_spire",
     "mob": "minecraft:villager_v2",
@@ -1447,44 +1447,67 @@ export const ISLAND_THEMES = [
   }
 ];
 
-// Computes deterministic fixed locations around the central base (0, 64, 0):
-// - Overworld: 32 islands arranged in a staggered 2-ring rosette (16 inner at 42m, 16 outer at 60m)
-//   Permuted with stride 17 so consecutive island indices land on opposite sides (~100m+ away)
-// - Nether: 7 islands arranged in a 45m ring around the Nether base, permuted with stride 4 (~88m away)
-// - The End: 3 islands arranged in a 45m ring around The End altar (120 degrees apart)
+// Deterministic 4-Ring Non-Overlapping Layout:
+// - Overworld: 32 islands arranged across 4 rings (Ring 1 @ 72m, Ring 2 @ 125m, Ring 3 @ 180m, Ring 4 @ 240m)
+//   Guarantees minimum distance >= 52.63 blocks between ANY two island centers (0% overlap, 28+ blocks open void!)
+// - Nether: 7 islands arranged in a 75m ring (min distance 64.2m)
+// - The End: 3 islands arranged in a 85m ring (min distance 147m)
+export const OVERWORLD_ISLAND_ORDER = [
+  // Ring 1 (6 islands, r=72m): Starter floral, nature, pandas, bees & mushrooms
+  "sky_oasis", "cherry_sanctuary", "mushroom_haven", "desert_well_oasis", "bamboo_monastery", "bee_apiary",
+  // Ring 2 (8 islands, r=125m): Farms, coral atolls, desert crypt, badlands gold, ice & jungle
+  "pumpkin_patch", "melon_greenhouse", "bakery_windmill", "aquarium_atoll", "ancient_crypt", "badlands_mesa", "ice_spike_peak", "jungle_temple",
+  // Ring 3 (10 islands, r=180m): Ancient forges, fossils, armories, dungeons, slime & witch swamp
+  "deepslate_forge", "fossil_excavation", "blacksmith_workshop", "armory_vault", "spider_nest", "creeper_dungeon", "slime_biosphere", "amethyst_geode", "witch_swamp_hut", "pillager_watchtower",
+  // Ring 4 (8 islands, r=240m): Arcane libraries, breeze trial vault, pale garden, sculk & pantheon
+  "ocean_monument_shrine", "library_observatory", "alchemist_laboratory", "trial_vault", "pale_garden_spire", "sculk_laboratory", "tuff_golem_sanctuary", "golden_pantheon"
+];
+
 export function getIslandLocation(index, total, theme, lastPos = null) {
   const targetDim = (theme && theme.dimension) || "overworld";
-  const dimThemes = ISLAND_THEMES.filter(t => (t.dimension || "overworld") === targetDim);
-  let themeIdx = theme ? dimThemes.findIndex(t => t.id === theme.id) : index;
-  if (themeIdx < 0) themeIdx = index % (dimThemes.length || 1);
 
   let distance;
   let angle;
 
   if (targetDim === "overworld") {
-    // 32 slots: 16 inner (42m), 16 outer (60m)
-    // Permutation stride 17 guarantees consecutive theme indices land on opposite sides (~100m away)
-    const slotIdx = (themeIdx * 17) % 32;
-    if (slotIdx % 2 === 0) {
-      // Inner ring: radius 42m
-      distance = 42;
-      const k = Math.floor(slotIdx / 2);
-      angle = k * (360 / 16);
+    let slotIdx = -1;
+    if (theme && theme.id) {
+      slotIdx = OVERWORLD_ISLAND_ORDER.indexOf(theme.id);
+    }
+    if (slotIdx < 0) {
+      slotIdx = index % 32;
+    }
+
+    if (slotIdx < 6) {
+      // Ring 1: 6 islands @ 72m
+      distance = 72;
+      angle = 15 + slotIdx * (360 / 6);
+    } else if (slotIdx < 14) {
+      // Ring 2: 8 islands @ 125m
+      distance = 125;
+      angle = 30 + (slotIdx - 6) * (360 / 8);
+    } else if (slotIdx < 24) {
+      // Ring 3: 10 islands @ 180m
+      distance = 180;
+      angle = 18 + (slotIdx - 14) * (360 / 10);
     } else {
-      // Outer ring: radius 60m, staggered by 11.25 degrees into the gaps
-      distance = 60;
-      const k = Math.floor(slotIdx / 2);
-      angle = 11.25 + k * (360 / 16);
+      // Ring 4: 8 islands @ 240m
+      distance = 240;
+      angle = 45 + (slotIdx - 24) * (360 / 8);
     }
   } else if (targetDim === "nether") {
-    // 7 islands: 45m ring, permuted with stride 4 across opposite sides
-    distance = 45;
-    const slotIdx = (themeIdx * 4) % 7;
-    angle = slotIdx * (360 / 7);
+    const netherThemes = ISLAND_THEMES.filter(t => t.dimension === "nether");
+    let nIdx = theme ? netherThemes.findIndex(t => t.id === theme.id) : index;
+    if (nIdx < 0) nIdx = index % 7;
+    distance = 75;
+    angle = 12 + nIdx * (360 / 7);
   } else {
-    // The End: 3 islands at 45m ring (120 degrees apart)
-    distance = 45;
-    angle = (themeIdx % 3) * (360 / 3);
+    // The End
+    const endThemes = ISLAND_THEMES.filter(t => t.dimension === "the_end");
+    let eIdx = theme ? endThemes.findIndex(t => t.id === theme.id) : index;
+    if (eIdx < 0) eIdx = index % 3;
+    distance = 85;
+    angle = eIdx * 120;
   }
 
   const rad = (angle * Math.PI) / 180;
@@ -1553,14 +1576,22 @@ function safeAirOnlySetBlock(dimension, loc, typeId) {
 //   Ore-Rich Mine, Dungeon / Mobs, Lush Flora Tree, Ancient Shrine
 
 function getRockBlock(theme, dx, dz, d, seed) {
-  if (theme.biome === "the_end") return "minecraft:end_stone";
-  if (theme.biome.includes("nether") || theme.biome.includes("valley")) {
+  if (theme.biome === "the_end") {
+    const eh = Math.abs((dx * 31 + dz * 19 + d * 13 + seed) % 100);
+    return eh < 65 ? "minecraft:end_stone" : (eh < 88 ? "minecraft:end_stone_bricks" : "minecraft:purpur_block");
+  }
+  if (theme.biome.includes("nether") || theme.biome.includes("valley") || theme.biome.includes("deltas")) {
     const nh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
-    return nh < 55 ? "minecraft:netherrack" : (nh < 80 ? "minecraft:blackstone" : "minecraft:basalt");
+    if (d >= 6 && nh < 35) return "minecraft:crying_obsidian";
+    if (nh < 45) return "minecraft:netherrack";
+    if (nh < 75) return "minecraft:blackstone";
+    if (nh < 90) return "minecraft:basalt";
+    return "minecraft:polished_blackstone";
   }
   if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
-    // Authentic Mojang Badlands Horizontal Terracotta Strata:
+    // Authentic Mojang Badlands Horizontal Terracotta Strata (7 distinct colors):
     const band = (d + Math.floor(Math.abs(dx * 0.15 + dz * 0.1))) % 7;
+    if (d >= 6 && Math.abs((dx * 17 + dz * 23 + seed) % 100) < 40) return "minecraft:red_sandstone";
     if (band === 0) return "minecraft:terracotta";
     if (band === 1) return "minecraft:orange_terracotta";
     if (band === 2) return "minecraft:yellow_terracotta";
@@ -1571,44 +1602,83 @@ function getRockBlock(theme, dx, dz, d, seed) {
   }
   if (theme.biome === "desert") {
     const dh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
-    return dh < 45 ? "minecraft:sandstone" : (dh < 70 ? "minecraft:smooth_sandstone" : (dh < 88 ? "minecraft:cut_sandstone" : "minecraft:chiseled_sandstone"));
+    if (d >= 6 && dh < 50) return "minecraft:terracotta";
+    return dh < 40 ? "minecraft:sandstone" : (dh < 65 ? "minecraft:smooth_sandstone" : (dh < 85 ? "minecraft:cut_sandstone" : "minecraft:chiseled_sandstone"));
   }
   if (theme.biome.includes("ocean") || theme.biome.includes("warm_ocean")) {
     const oh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
-    return oh < 50 ? "minecraft:prismarine" : (oh < 80 ? "minecraft:dark_prismarine" : "minecraft:prismarine_bricks");
+    if (d >= 5 && oh < 40) return "minecraft:smooth_sandstone";
+    return oh < 45 ? "minecraft:prismarine" : (oh < 75 ? "minecraft:dark_prismarine" : "minecraft:prismarine_bricks");
   }
   if (theme.biome.includes("ice") || theme.biome.includes("frozen")) {
     const ih = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
-    return ih < 50 ? "minecraft:packed_ice" : (ih < 80 ? "minecraft:blue_ice" : "minecraft:snow_block");
+    return ih < 40 ? "minecraft:packed_ice" : (ih < 70 ? "minecraft:blue_ice" : (ih < 85 ? "minecraft:snow_block" : "minecraft:calcite"));
   }
   if (theme.id === "amethyst_geode") {
-    return d <= 2 ? "minecraft:calcite" : "minecraft:smooth_basalt";
+    return d <= 2 ? "minecraft:calcite" : (d <= 5 ? "minecraft:smooth_basalt" : "minecraft:tuff");
   }
   if (theme.biome === "deep_dark" || d >= 7) {
-    return ((dx + dz + d) % 3 === 0) ? "minecraft:cobbled_deepslate" : "minecraft:deepslate";
+    const ddh = Math.abs((dx * 19 + dz * 29 + d * 11 + seed) % 100);
+    if (ddh < 45) return "minecraft:deepslate";
+    if (ddh < 75) return "minecraft:cobbled_deepslate";
+    if (ddh < 90) return "minecraft:tuff";
+    return "minecraft:polished_deepslate";
   }
   // Integrate biome-specific base rock at lower depths:
   if (d >= 4 && theme.base && theme.base !== "minecraft:stone") {
     const bh = Math.abs((dx * 37 + dz * 23 + d * 11 + seed) % 100);
-    if (bh < 60) return theme.base;
+    if (bh < 55) return theme.base;
   }
-  // Realistic natural rock mix:
+  // Realistic natural multi-rock mix (stone, andesite, diorite, granite, tuff, calcite):
   const h = Math.abs((dx * 43 + dz * 29 + d * 13 + seed) % 100);
-  if (h < 42) return "minecraft:stone";
-  if (h < 58) return "minecraft:andesite";
-  if (h < 74) return "minecraft:diorite";
-  if (h < 88) return "minecraft:granite";
-  return "minecraft:tuff";
+  if (h < 35) return "minecraft:stone";
+  if (h < 52) return "minecraft:andesite";
+  if (h < 68) return "minecraft:diorite";
+  if (h < 82) return "minecraft:granite";
+  if (h < 92) return "minecraft:tuff";
+  return "minecraft:calcite";
 }
 
 function getOreBlock(theme, depth, dx, dz, seed) {
-  // Badlands / Mesa: Super rich in Gold Ore and Raw Gold Blocks (vanilla Minecraft Mesa trait)
+  // Badlands / Mesa: Super rich in Gold Ore, Deepslate Gold, and Raw Gold Blocks (Mojang Mesa signature!)
   if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
     const gh = Math.abs((dx * 53 + dz * 31 + depth * 17 + seed) % 100);
-    if (gh < 60) return "minecraft:gold_ore";
-    if (gh < 85) return "minecraft:raw_gold_block";
-    return depth >= 6 ? "minecraft:deepslate_gold_ore" : "minecraft:gold_ore";
+    if (gh < 50) return "minecraft:gold_ore";
+    if (gh < 75) return "minecraft:raw_gold_block";
+    return depth >= 5 ? "minecraft:deepslate_gold_ore" : "minecraft:gold_ore";
   }
+  // Deepslate Forge: Ore rich in Iron, Deepslate Iron, Raw Iron Blocks & Diamonds
+  if (theme.id === "deepslate_forge") {
+    const fh = Math.abs((dx * 47 + dz * 37 + depth * 13 + seed) % 100);
+    if (fh < 40) return "minecraft:deepslate_iron_ore";
+    if (fh < 65) return "minecraft:raw_iron_block";
+    if (fh < 85) return "minecraft:deepslate_diamond_ore";
+    return "minecraft:deepslate_gold_ore";
+  }
+  // Bastion Treasury: Nether Gold, Gilded Blackstone, Ancient Debris
+  if (theme.id === "bastion_treasury") {
+    const bh = Math.abs((dx * 41 + dz * 29 + depth * 19 + seed) % 100);
+    if (bh < 45) return "minecraft:nether_gold_ore";
+    if (bh < 75) return "minecraft:gilded_blackstone";
+    if (bh < 90) return "minecraft:gold_block";
+    return "minecraft:ancient_debris";
+  }
+  // Ancient Crypt: Sandstone Crypt with Gold, Lapis, Emerald
+  if (theme.id === "ancient_crypt") {
+    const ch = Math.abs((dx * 43 + dz * 31 + depth * 17 + seed) % 100);
+    if (ch < 45) return "minecraft:gold_ore";
+    if (ch < 75) return "minecraft:lapis_ore";
+    if (ch < 90) return "minecraft:raw_gold_block";
+    return "minecraft:emerald_ore";
+  }
+  // Tuff Golem Sanctuary: Copper Ore & Raw Copper Blocks
+  if (theme.id === "tuff_golem_sanctuary") {
+    const th = Math.abs((dx * 37 + dz * 23 + depth * 19 + seed) % 100);
+    if (th < 50) return "minecraft:copper_ore";
+    if (th < 80) return "minecraft:raw_copper_block";
+    return "minecraft:iron_ore";
+  }
+
   const isNether = theme.biome.includes("nether") || theme.biome.includes("valley") || theme.biome.includes("deltas");
   if (isNether) {
     const no = Math.abs((dx * 19 + dz * 23 + seed) % 100);
@@ -1616,6 +1686,7 @@ function getOreBlock(theme, depth, dx, dz, seed) {
     if (no < 90) return "minecraft:nether_gold_ore";
     return theme.tier >= 3 ? "minecraft:ancient_debris" : "minecraft:nether_gold_ore";
   }
+
   const isDeep = depth >= 6 || theme.biome === "deep_dark";
   const oh = Math.abs((dx * 71 + dz * 37 + depth * 19 + seed) % 100);
 
@@ -1642,21 +1713,95 @@ function getOreBlock(theme, depth, dx, dz, seed) {
 }
 
 function getSubsoilBlock(theme, dx, dz, seed) {
-  if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
-    const sh = Math.abs((dx * 13 + dz * 29 + seed) % 100);
-    return sh < 50 ? "minecraft:terracotta" : (sh < 80 ? "minecraft:red_sandstone" : "minecraft:orange_terracotta");
-  }
-  if (theme.floor.includes("red_sand")) return "minecraft:red_sandstone";
-  if (theme.floor.includes("sand")) return theme.subfloor || "minecraft:sandstone";
-  if (theme.floor.includes("nylium")) return "minecraft:netherrack";
-  if (theme.floor.includes("end_stone")) return "minecraft:end_stone";
-  if (theme.floor.includes("tuff")) return "minecraft:tuff";
+  const sh = Math.abs((dx * 37 + dz * 29 + seed) % 100);
 
-  const sh = Math.random() * 100;
-  if (sh < 65) return "minecraft:dirt";
-  if (sh < 80) return "minecraft:coarse_dirt";
-  if (sh < 92) return "minecraft:dirt_with_roots";
-  return "minecraft:gravel";
+  if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
+    if (sh < 35) return "minecraft:terracotta";
+    if (sh < 65) return "minecraft:red_sandstone";
+    if (sh < 85) return "minecraft:orange_terracotta";
+    return "minecraft:yellow_terracotta";
+  }
+  if (theme.floor.includes("red_sand")) {
+    return sh < 50 ? "minecraft:red_sandstone" : "minecraft:smooth_red_sandstone";
+  }
+  if (theme.floor.includes("sand")) {
+    if (sh < 45) return "minecraft:sandstone";
+    if (sh < 75) return "minecraft:smooth_sandstone";
+    return "minecraft:cut_sandstone";
+  }
+  if (theme.floor.includes("nylium") || theme.biome.includes("nether")) {
+    if (sh < 45) return "minecraft:netherrack";
+    if (sh < 70) return "minecraft:soul_soil";
+    if (sh < 88) return "minecraft:blackstone";
+    return "minecraft:soul_sand";
+  }
+  if (theme.floor.includes("end_stone") || theme.biome === "the_end") {
+    if (sh < 60) return "minecraft:end_stone";
+    if (sh < 85) return "minecraft:end_stone_bricks";
+    return "minecraft:purpur_block";
+  }
+  if (theme.floor.includes("tuff") || theme.biome === "deep_dark") {
+    if (sh < 40) return "minecraft:tuff";
+    if (sh < 70) return "minecraft:polished_tuff";
+    if (sh < 88) return "minecraft:deepslate";
+    return "minecraft:cobbled_deepslate";
+  }
+  if (theme.biome.includes("ocean") || theme.biome.includes("warm_ocean")) {
+    if (sh < 45) return "minecraft:sand";
+    if (sh < 70) return "minecraft:gravel";
+    if (sh < 88) return "minecraft:clay";
+    return "minecraft:prismarine";
+  }
+  if (theme.biome.includes("swamp")) {
+    if (sh < 40) return "minecraft:mud";
+    if (sh < 70) return "minecraft:clay";
+    if (sh < 88) return "minecraft:coarse_dirt";
+    return "minecraft:dirt_with_roots";
+  }
+  if (theme.biome.includes("ice") || theme.biome.includes("frozen")) {
+    if (sh < 45) return "minecraft:packed_ice";
+    if (sh < 75) return "minecraft:snow_block";
+    return "minecraft:diorite";
+  }
+
+  // Standard organic flora & forest subsoil blend:
+  if (sh < 45) return "minecraft:dirt";
+  if (sh < 70) return "minecraft:coarse_dirt";
+  if (sh < 85) return "minecraft:dirt_with_roots";
+  if (sh < 94) return "minecraft:gravel";
+  return "minecraft:mud";
+}
+
+// Ground-check validator: ensures plants and vegetation are placed strictly on valid solid ground, never on air!
+export function isSolidGroundForPlant(dimension, loc, plantTypeId) {
+  try {
+    const ground = dimension.getBlock(loc);
+    if (!ground || ground.isAir || ground.typeId === "minecraft:air") return false;
+    const gType = ground.typeId;
+    if (gType.includes("water") || gType.includes("lava")) return false;
+
+    if (plantTypeId === "minecraft:deadbush" || plantTypeId === "minecraft:cactus") {
+      return gType.includes("sand") || gType.includes("terracotta") || gType.includes("gravel") || gType.includes("dirt");
+    }
+    if (plantTypeId.includes("crimson") || plantTypeId.includes("warped")) {
+      return gType.includes("nylium") || gType.includes("netherrack") || gType.includes("dirt") || gType.includes("soul");
+    }
+    if (plantTypeId.includes("mushroom") || plantTypeId.includes("fungus")) {
+      return gType.includes("mycelium") || gType.includes("podzol") || gType.includes("nylium") || gType.includes("dirt") || gType.includes("stone");
+    }
+    // Grass, flowers, saplings, pink petals, sweet berries, bamboo, ferns:
+    return gType.includes("grass") || gType.includes("dirt") || gType.includes("podzol") ||
+           gType.includes("mycelium") || gType.includes("moss") || gType.includes("mud") ||
+           gType.includes("sand") || gType.includes("clay") || gType.includes("terracotta") ||
+           gType.includes("tuff");
+  } catch (e) {
+    return false;
+  }
+}
+
+function safePlantSetBlock(dimension, groundLoc, plantLoc, plantTypeId) {
+  if (!isSolidGroundForPlant(dimension, groundLoc, plantTypeId)) return false;
+  return safeAirOnlySetBlock(dimension, plantLoc, plantTypeId);
 }
 
 function placeSurfaceVegetation(dimension, theme, loc, seed) {
@@ -1666,75 +1811,106 @@ function placeSurfaceVegetation(dimension, theme, loc, seed) {
 
     if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
       if (roll < 0.12) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:deadbush");
       } else if (roll < 0.18) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cactus");
-        if (Math.random() < 0.4) safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:cactus");
+        if (safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:cactus")) {
+          if (Math.random() < 0.4) safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:cactus");
+        }
       }
     } else if (theme.biome === "cherry_grove" || theme.id === "cherry_sanctuary") {
       // Natural scattered pink petals (pure organic distribution like vanilla cherry groves)
       if (roll < 0.48) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:pink_petals");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:pink_petals");
       }
     } else if (theme.id === "bamboo_monastery") {
       // Organic bamboo cluster with variable heights and short grass
       if (roll < 0.22) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:bamboo");
-        if (Math.random() < 0.65) safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:bamboo");
-        if (Math.random() < 0.35) safeAirOnlySetBlock(dimension, { x, y: y + 3, z }, "minecraft:bamboo");
+        if (safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:bamboo")) {
+          if (Math.random() < 0.65 && safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:bamboo")) {
+            if (Math.random() < 0.35) safeAirOnlySetBlock(dimension, { x, y: y + 3, z }, "minecraft:bamboo");
+          }
+        }
       } else if (roll < 0.55) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:short_grass");
       }
     } else if (theme.id === "pumpkin_patch") {
       // Scattered pumpkins and grass
       if (roll < 0.16) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, Math.random() < 0.25 ? "minecraft:carved_pumpkin" : "minecraft:pumpkin");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, Math.random() < 0.25 ? "minecraft:carved_pumpkin" : "minecraft:pumpkin");
       } else if (roll < 0.50) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:short_grass");
       }
     } else if (theme.id === "melon_greenhouse") {
       if (roll < 0.18) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:melon_block");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:melon_block");
       } else if (roll < 0.50) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:short_grass");
       }
     } else if (theme.id === "bee_apiary") {
       // Lush wildflower meadow
-      if (roll < 0.15) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
-      else if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
-      else if (roll < 0.40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
-      else if (roll < 0.52) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:allium");
-      else if (roll < 0.62) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
-      else if (roll < 0.78) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+      if (roll < 0.15) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:dandelion");
+      else if (roll < 0.28) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:poppy");
+      else if (roll < 0.40) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:cornflower");
+      else if (roll < 0.52) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:allium");
+      else if (roll < 0.62) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
+      else if (roll < 0.78) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:short_grass");
     } else if (theme.floor === "minecraft:grass_block") {
       // Natural vanilla meadow: irregular grass, scattered flowers, and open spaces
       if (roll < 0.32) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:short_grass");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:short_grass");
       } else if (roll < 0.36) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:dandelion");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:dandelion");
       } else if (roll < 0.40) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:poppy");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:poppy");
       } else if (roll < 0.44) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cornflower");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:cornflower");
       } else if (roll < 0.47) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:oxeye_daisy");
       } else if (roll < 0.50) {
-        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:azure_bluet");
+        safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:azure_bluet");
       }
     } else if (theme.floor === "minecraft:podzol") {
-      if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:fern");
-      else if (roll < 0.42) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:sweet_berry_bush");
-      else if (roll < 0.50) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:large_fern");
+      if (roll < 0.28) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:fern");
+      else if (roll < 0.42) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:sweet_berry_bush");
+      else if (roll < 0.50) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:large_fern");
     } else if (theme.floor.includes("sand")) {
-      if (roll < 0.12) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");
+      if (roll < 0.12) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:deadbush");
     } else if (theme.floor === "minecraft:crimson_nylium") {
-      if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_roots");
-      else if (roll < 0.40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:crimson_fungus");
+      if (roll < 0.28) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:crimson_roots");
+      else if (roll < 0.40) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:crimson_fungus");
     } else if (theme.floor === "minecraft:warped_nylium") {
-      if (roll < 0.28) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_roots");
-      else if (roll < 0.40) safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:warped_fungus");
+      if (roll < 0.28) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:warped_roots");
+      else if (roll < 0.40) safePlantSetBlock(dimension, loc, { x, y: y + 1, z }, "minecraft:warped_fungus");
     }
   } catch (e) {}
+}
+
+// 5 Geological Archetypes Classifier:
+// atoll (sunken lagoon crater), spire (needle peak & deep vertical root),
+// terrace (stepped flat plateaus), archipelago (cluster islets), rolling (organic hills)
+export function getIslandArchetype(theme) {
+  if (theme.archetype) return theme.archetype;
+  const id = theme.id;
+  const feat = theme.feature || "";
+
+  // 1. ATOLL / LAGOON / CRATER:
+  if (id === "aquarium_atoll" || id === "ocean_monument_shrine" || id === "meteorite_crater" || id === "amethyst_geode" || id === "slime_biosphere") {
+    return "atoll";
+  }
+  // 2. SPIRE / PEAK:
+  if (id.includes("spire") || id.includes("peak") || feat === "copper_spire" || id === "end_city_tower" || id === "glowstone_meteor" || id === "ice_spike_peak") {
+    return "spire";
+  }
+  // 3. TERRACE / STEPPED PLATEAU:
+  if (id === "badlands_mesa" || id === "ancient_crypt" || id === "fossil_excavation" || id === "blacksmith_workshop" || id === "armory_vault" || id === "tuff_golem_sanctuary" || id === "bastion_treasury" || id === "trial_vault") {
+    return "terrace";
+  }
+  // 4. ARCHIPELAGO / ISLETS:
+  if (id === "mushroom_haven" || id === "cherry_sanctuary" || id === "bamboo_monastery" || id === "crimson_forest_isle" || id === "warped_forest_isle" || id === "void_gateway_outpost") {
+    return "archipelago";
+  }
+  // 5. ROLLING (Organic hills & bluffs):
+  return "rolling";
 }
 
 // =========================================================================
@@ -2460,6 +2636,21 @@ function buildThemedStructure(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: sx, y: sy, z: sz + 4 }, "minecraft:composter");
       safeAirOnlySetBlock(dimension, { x: sx + 4, y: sy, z: sz + 4 }, "minecraft:hay_block");
       safeAirOnlySetBlock(dimension, { x: sx + 4, y: sy + 1, z: sz + 4 }, "minecraft:hay_block");
+
+      // Dedicated Irrigated Wheat & Carrot Plot (100% Hydrated with permanent water canal)
+      const fx = cx + 2;
+      const fz = cz - 2;
+      safeAirOnlySetBlock(dimension, { x: fx, y: cy - 1, z: fz }, "minecraft:stone");
+      safeAirOnlySetBlock(dimension, { x: fx, y: cy, z: fz }, "minecraft:water");
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oz = -1; oz <= 1; oz++) {
+          if (ox !== 0 || oz !== 0) {
+            safeAirOnlySetBlock(dimension, { x: fx + ox, y: cy, z: fz + oz }, "minecraft:farmland");
+            safeAirOnlySetBlock(dimension, { x: fx + ox, y: cy + 1, z: fz + oz }, (ox + oz) % 2 === 0 ? "minecraft:wheat" : "minecraft:carrots");
+          }
+        }
+      }
+
       placeStructureChest(dimension, { x: sx + 1, y: sy, z: sz + 4 }, [
         { id: "minecraft:bread", count: 8 },
         { id: "minecraft:wheat", count: 16 },
@@ -2749,8 +2940,10 @@ function buildThemedStructure(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz }, "minecraft:air");
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy + 1, z: sz }, "minecraft:air");
       safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy - 1, z: sz + 2 }, "minecraft:water");
-      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 2 }, "minecraft:melon");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 2 }, "minecraft:pumpkin");
+      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy - 1, z: sz + 2 }, "minecraft:farmland");
+      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy - 1, z: sz + 2 }, "minecraft:farmland");
+      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 2 }, "minecraft:melon_block");
+      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 2 }, "minecraft:carved_pumpkin");
       safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 1 }, "minecraft:bamboo");
       safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 1 }, "minecraft:composter");
       placeStructureChest(dimension, { x: sx + 2, y: sy, z: sz + 3 }, [
@@ -3135,25 +3328,33 @@ function buildThemedStructure(dimension, theme, center) {
       const sx = cx + 3;
       const sz = cz + 3;
       const sy = cy + 1;
+      // Foundation rim:
       for (let x = 0; x <= 4; x++) {
         for (let z = 0; z <= 4; z++) {
+          safeAirOnlySetBlock(dimension, { x: sx + x, y: sy - 2, z: sz + z }, "minecraft:prismarine");
           safeAirOnlySetBlock(dimension, { x: sx + x, y: sy - 1, z: sz + z }, "minecraft:cut_sandstone");
         }
       }
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 2 }, "minecraft:water");
-      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy, z: sz + 2 }, "minecraft:water");
-      safeAirOnlySetBlock(dimension, { x: sx + 3, y: sy, z: sz + 2 }, "minecraft:water");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 1 }, "minecraft:water");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy, z: sz + 3 }, "minecraft:water");
-      safeAirOnlySetBlock(dimension, { x: sx + 2, y: sy - 1, z: sz + 2 }, "minecraft:sea_pickle");
+      // Rich 2-deep clear coral lagoon with sea lantern base and vibrant live corals!
+      for (let x = 1; x <= 3; x++) {
+        for (let z = 1; z <= 3; z++) {
+          const bedBlock = (x === 2 && z === 2) ? "minecraft:sea_lantern" : ((x + z) % 2 === 0 ? "minecraft:tube_coral_block" : "minecraft:brain_coral_block");
+          safeAirOnlySetBlock(dimension, { x: sx + x, y: sy - 1, z: sz + z }, bedBlock);
+          safeAirOnlySetBlock(dimension, { x: sx + x, y: sy, z: sz + z }, "minecraft:water");
+          safeAirOnlySetBlock(dimension, { x: sx + x, y: sy + 1, z: sz + z }, "minecraft:water");
+        }
+      }
       placeStructureChest(dimension, { x: sx + 1, y: sy, z: sz + 1 }, [
-        { id: "minecraft:tube_coral_block", count: 4 },
-        { id: "minecraft:brain_coral_block", count: 4 },
-        { id: "minecraft:sea_pickle", count: 4 },
-        { id: "minecraft:nautilus_shell", count: 1 }
+        { id: "minecraft:tube_coral_block", count: 8 },
+        { id: "minecraft:brain_coral_block", count: 8 },
+        { id: "minecraft:bubble_coral_block", count: 8 },
+        { id: "minecraft:sea_pickle", count: 8 },
+        { id: "minecraft:sponge", count: 2 },
+        { id: "minecraft:heart_of_the_sea", count: 1 },
+        { id: "minecraft:nautilus_shell", count: 2 }
       ]);
       try {
-        dimension.spawnEntity("minecraft:axolotl", { x: sx + 2.5, y: sy, z: sz + 2.5 });
+        dimension.spawnEntity("minecraft:axolotl", { x: sx + 2.5, y: sy + 2, z: sz + 2.5 });
         mobSpawned = true;
       } catch (e) {}
       break;
@@ -3364,11 +3565,12 @@ export function buildThemedIsland(dimension, theme, center) {
   const ridgeAngle = ((seed % 8) * Math.PI) / 4;
 
   const isOreRich = theme.trait === "ore_rich";
-  const oreChance = isOreRich ? 15 : 8;
+  const oreChance = isOreRich ? 18 : 7; // Rich ore density (18%) vs standard/flora (7%)
+  const archetype = getIslandArchetype(theme);
 
   const maxR = Math.ceil(baseRadius + amp1 + amp2 + amp3 + 1);
 
-  // 3. TERRAIN VOLUME GENERATION:
+  // 3. TERRAIN VOLUME GENERATION (5 GEOLOGICAL ARCHETYPES):
   for (let dx = -maxR; dx <= maxR; dx++) {
     for (let dz = -maxR; dz <= maxR; dz++) {
       const angle = Math.atan2(dz, dx);
@@ -3376,28 +3578,74 @@ export function buildThemedIsland(dimension, theme, center) {
       const dist = Math.sqrt(dx * dx + dz * dz);
 
       if (dist <= shapeMod) {
-        // Natural surface elevation (rolling topography):
-        const dot = Math.cos(angle - ridgeAngle);
         let surfaceY = cy;
-        if (dot > 0.35 && dist > 1.5) {
-          surfaceY = cy + 1;
-        }
-        if (dot > 0.72 && dist > 3.0) {
-          surfaceY = cy + 2; // Upper bluff crest
+        let depth = Math.max(1, Math.round((shapeMod - dist) * 1.35));
+        let isLagoon = false;
+
+        if (archetype === "atoll") {
+          // Central sunken lagoon crater with perimeter ring reef
+          if (dist <= shapeMod * 0.45) {
+            isLagoon = true;
+            surfaceY = cy - 1;
+            depth = Math.max(2, Math.round((shapeMod * 0.45 - dist) * 0.9) + 2);
+          } else {
+            surfaceY = cy;
+            depth = Math.max(1, Math.round((shapeMod - dist) * 1.25));
+          }
+        } else if (archetype === "spire") {
+          // Conical needle peak rising sharply at center and deep vertical underside stalactite
+          const norm = Math.max(0, 1 - (dist / shapeMod));
+          surfaceY = cy + Math.round(norm * norm * 5);
+          depth = Math.max(1, Math.round((shapeMod - dist) * 1.5 + norm * norm * 6));
+        } else if (archetype === "terrace") {
+          // Crisp 3-tier stepped geological plateaus
+          if (dist <= shapeMod * 0.35) {
+            surfaceY = cy + 3; // Summit plateau
+          } else if (dist <= shapeMod * 0.68) {
+            surfaceY = cy + 1; // Mid terrace
+          } else {
+            surfaceY = cy; // Lower perimeter terrace
+          }
+          depth = Math.max(2, Math.round((shapeMod - dist) * 1.25));
+        } else if (archetype === "archipelago") {
+          // Main islet + satellite stepping islets with natural gap channels
+          const lobe = Math.cos(3 * angle);
+          if (dist > shapeMod * 0.65 && lobe < -0.25) {
+            // Natural channel / water gap between islets
+            continue;
+          }
+          surfaceY = (dist > shapeMod * 0.65) ? cy - 1 : cy;
+          depth = Math.max(1, Math.round((shapeMod - dist) * 1.15));
+        } else {
+          // Rolling topography (gentle natural rolling hills)
+          const dot = Math.cos(angle - ridgeAngle);
+          if (dot > 0.35 && dist > 1.5) surfaceY = cy + 1;
+          if (dot > 0.72 && dist > 3.0) surfaceY = cy + 2;
+          depth = Math.max(1, Math.round((shapeMod - dist) * 1.35));
         }
 
-        // POND ALCOVE (for water spring / nature):
-        const isSpringPond = (theme.trait === "water_spring" || theme.trait === "animals") && (dot < -0.45 && dist >= 2.0 && dist <= 4.2);
+        // POND ALCOVE (for water spring / nature if rolling):
+        const dot = Math.cos(angle - ridgeAngle);
+        const isSpringPond = (archetype === "rolling") && (theme.trait === "water_spring" || theme.trait === "animals") && (dot < -0.45 && dist >= 2.0 && dist <= 4.2);
 
         // Place surface layer:
-        if (isSpringPond) {
+        if (isLagoon) {
+          if (theme.biome.includes("nether") || theme.id === "meteorite_crater") {
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, "minecraft:lava");
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, "minecraft:magma");
+          } else {
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, "minecraft:water");
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, "minecraft:water");
+            safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 2, z: cz + dz }, ((dx + dz) % 2 === 0) ? "minecraft:tube_coral_block" : "minecraft:brain_coral_block");
+          }
+        } else if (isSpringPond) {
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy, z: cz + dz }, "minecraft:water");
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - 1, z: cz + dz }, "minecraft:clay");
         } else {
           safeAirOnlySetBlock(dimension, { x: cx + dx, y: surfaceY, z: cz + dz }, theme.floor);
           placeSurfaceVegetation(dimension, theme, { x: cx + dx, y: surfaceY, z: cz + dz }, seed);
 
-          // Fill elevated hill step underneath with subsoil
+          // Fill elevated hill/terrace/spire steps underneath with subsoil & rock
           if (surfaceY > cy) {
             for (let upY = cy; upY < surfaceY; upY++) {
               safeAirOnlySetBlock(dimension, { x: cx + dx, y: upY, z: cz + dz }, getSubsoilBlock(theme, dx, dz, seed));
@@ -3406,14 +3654,13 @@ export function buildThemedIsland(dimension, theme, center) {
         }
 
         // 4. SUBSOIL & ROCK STRATA UNDERSIDE:
-        const depth = Math.max(1, Math.round((shapeMod - dist) * 1.35));
         for (let d = 1; d <= depth; d++) {
           let blockMat;
           if (d <= 2) {
-            // Subsoil layer (dirt / coarse dirt / rooted dirt / gravel)
+            // Subsoil layer (rich 2-4 organic subsoil blocks)
             blockMat = getSubsoilBlock(theme, dx, dz, seed);
           } else {
-            // Stone strata with real ore veins!
+            // Stone strata with real ore veins (rich vs poor economy)
             const oreHash = Math.random() * 100;
             if (oreHash < oreChance) {
               blockMat = getOreBlock(theme, d, dx, dz, seed);
@@ -3447,9 +3694,12 @@ export function buildThemedIsland(dimension, theme, center) {
   }
 
   // 5. TEMPORARY ISLAND ONEBLOCK CORE (30-50 Blocks Capacity):
-  // Placed flush directly at the island surface center (cx, cy, cz) - no lodestone!
-  // When all 30-50 blocks are mined, this block solidifies into the Sacred Treasure Chest.
-  const obPos = { x: cx, y: cy, z: cz };
+  // Placed flush directly at the island surface center (cx, coreY, cz) matching archetype height!
+  let coreY = cy;
+  if (archetype === "spire") coreY = cy + 5;
+  else if (archetype === "terrace") coreY = cy + 3;
+
+  const obPos = { x: cx, y: coreY, z: cz };
   try {
     const maxBlocks = 30 + Math.floor(Math.random() * 21); // 30 to 50 randomized blocks
     world.setDynamicProperty(`island_ob_x_${theme.id}`, obPos.x);
@@ -3489,7 +3739,7 @@ export function buildThemedIsland(dimension, theme, center) {
     }
 
     // Bedrock foundation directly underneath the Island OneBlock
-    const underBlock = dimension.getBlock({ x: cx, y: cy - 1, z: cz });
+    const underBlock = dimension.getBlock({ x: cx, y: coreY - 1, z: cz });
     if (underBlock) {
       try {
         underBlock.setType("minecraft:bedrock");
@@ -3505,7 +3755,7 @@ export function buildThemedIsland(dimension, theme, center) {
       { x: 0, z: -1 }
     ];
     for (const off of besideOffsets) {
-      const bBlock = dimension.getBlock({ x: cx + off.x, y: cy, z: cz + off.z });
+      const bBlock = dimension.getBlock({ x: cx + off.x, y: coreY, z: cz + off.z });
       if (bBlock) {
         try {
           bBlock.setType("minecraft:bedrock");
@@ -3545,9 +3795,9 @@ export function buildThemedIsland(dimension, theme, center) {
 
   // 8. CORNER LIGHTING POSTS:
   const lanternPosts = [
-    { x: cx + 3, y: cy + 1, z: cz - 2 },
-    { x: cx - 3, y: cy + 1, z: cz + 3 },
-    { x: cx + 2, y: cy + 1, z: cz + 4 }
+    { x: cx + 3, y: coreY + 1, z: cz - 2 },
+    { x: cx - 3, y: coreY + 1, z: cz + 3 },
+    { x: cx + 2, y: coreY + 1, z: cz + 4 }
   ];
   for (const lp of lanternPosts) {
     safeAirOnlySetBlock(dimension, { x: lp.x, y: lp.y, z: lp.z }, "minecraft:oak_fence");
@@ -3557,7 +3807,7 @@ export function buildThemedIsland(dimension, theme, center) {
   // 9. THEMATIC COMPANION MOB (if not already spawned by structure):
   if (theme.mob && !structureMobSpawned) {
     try {
-      dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1.2, z: cz - 1.5 });
+      dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: coreY + 1.2, z: cz - 1.5 });
     } catch (e) {}
   }
 
