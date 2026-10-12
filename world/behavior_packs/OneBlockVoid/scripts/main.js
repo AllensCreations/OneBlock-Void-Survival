@@ -1256,16 +1256,43 @@ export function openAdminIslandMenu(player) {
 
 export function giveAdminInspectorTool(player) {
   try {
-    const item = new ItemStack("minecraft:compass", 1);
-    item.nameTag = "§6§lIsland Inspector Compass§r";
-    item.setLore([
-      "§e[Admin Inspection Tool]",
-      "§aRight-click to open Island Inspector GUI!",
-      "§bTeleport to any of the 42 secret void islands",
-      "§dor pre-generate all of them with 1 click."
-    ]);
     const inv = player.getComponent("minecraft:inventory")?.container;
-    if (inv) inv.addItem(item);
+    if (!inv) return;
+
+    let hasCompass = false;
+    let hasRunner = false;
+
+    for (let i = 0; i < inv.size; i++) {
+      const it = inv.getItem(i);
+      if (it && it.nameTag) {
+        if (it.nameTag.includes("Island Inspector")) hasCompass = true;
+        if (it.nameTag.includes("Auto-Break Runner")) hasRunner = true;
+      }
+    }
+
+    if (!hasCompass) {
+      const compass = new ItemStack("minecraft:compass", 1);
+      compass.nameTag = "§6§lIsland Inspector Compass§r";
+      compass.setLore([
+        "§e[Admin Inspection Tool]",
+        "§aRight-click to open Island Inspector GUI!",
+        "§bTeleport to any of the 42 secret void islands",
+        "§dor pre-generate all of them with 1 click."
+      ]);
+      inv.addItem(compass);
+    }
+
+    if (!hasRunner) {
+      const runner = new ItemStack("minecraft:nether_star", 1);
+      runner.nameTag = "§e⚡ §6§lAuto-Break Runner§r";
+      runner.setLore([
+        "§e[Admin Testing Tool]",
+        "§aRight-click or Tap Screen to Start/Stop!",
+        "§bRapidly mines OneBlock at 10 blocks/sec",
+        "§dSummons islands with starlight trails & advances phases."
+      ]);
+      inv.addItem(runner);
+    }
   } catch (e) {}
 }
 
@@ -1937,8 +1964,8 @@ world.afterEvents.playerSpawn.subscribe((event) => {
       // Check if admin map or admin player: grant Island Inspector Tool
       if (isAdmin(player)) {
         giveAdminInspectorTool(player);
-        player.sendMessage("§6[Admin Tool] Island Inspector Compass delivered! Right-click or type !admin to inspect all 42 islands.");
-        player.sendMessage("§e[Admin Fast-Test] Type §b!run§e or §brun§e in chat to start/stop rapid auto-mining to test phase & island spawns!");
+        player.sendMessage("§6[Admin Tool] Island Inspector Compass & Auto-Break Star delivered!");
+        player.sendMessage("§e[Admin Fast-Test] Right-click the Nether Star (or type §b!run§e / §b/scriptevent run§e) to start/stop rapid auto-mining!");
       }
 
         // Welcome introduction & creator thank you
@@ -1987,16 +2014,36 @@ world.beforeEvents.chatSend.subscribe((event) => {
   }
 });
 
-// Item use hook for Island Inspector Compass
+// Item use hook for Island Inspector Compass & Auto-Break Runner Star
 world.beforeEvents.itemUse.subscribe((event) => {
   try {
     const { itemStack, source } = event;
-    if (itemStack && itemStack.nameTag && itemStack.nameTag.includes("Island Inspector")) {
+    if (!itemStack || !itemStack.nameTag) return;
+
+    if (itemStack.nameTag.includes("Island Inspector")) {
       if (!isAdmin(source)) return;
       event.cancel = true;
       system.run(() => {
         openAdminIslandMenu(source);
       });
+    } else if (itemStack.nameTag.includes("Auto-Break Runner")) {
+      if (!isAdmin(source)) return;
+      event.cancel = true;
+      system.run(() => {
+        toggleAdminAutoBreak(source);
+      });
+    }
+  } catch (e) {}
+});
+
+// Native Bedrock ScriptEvent hook (/scriptevent run or /scriptevent ob:run)
+system.afterEvents.scriptEventReceive.subscribe((event) => {
+  try {
+    const { id, sourceEntity } = event;
+    if (id === "run" || id === "ob:run" || id === "test:run") {
+      if (sourceEntity && isAdmin(sourceEntity)) {
+        toggleAdminAutoBreak(sourceEntity);
+      }
     }
   } catch (e) {}
 });
