@@ -60,9 +60,20 @@ Every island that materializes is a unique, natural floating micro-continent pos
 - **Minimalist Actionbar HUD**: Shows current dimension, phase name, phase block progress, and total mined blocks:
   `§a[Overworld] §ePhase 3: §fCherry Grove §7[§b24§7/§b50§7] §eTotal: §6124`
 - **Toggle Command**: Type `!hud` in chat anytime to toggle the Actionbar HUD on or off.
-- **Admin Inspector & Testing Suite**: In admin worlds (`OneBlock_Void_Survival_Admin.mcworld`) or with the admin tag:
-  - **Auto-Break Test Runner (`!run` / `run` / `/run`)**: Starts a high-speed automated mining loop (10 blocks/sec) that simulates real mining progression, rapidly triggers island summons with celestial beams, and logs stats on the Actionbar HUD. Type `!run` again to stop anytime.
-  - **Admin GUI (`!admin` or `!islands`)**: Open the interactive form menu to toggle the auto-break runner, summon specific islands, teleport to coordinates, or cycle phases instantly.
+- **Admin Inspector & Zero-Item Testing Suite**: In admin worlds (`OneBlock_Void_Survival_Admin.mcworld`):
+  - 🕹️ **Zero-Item Physical Console at Spawn `(3, 65, -2..1)`**:
+    - **Button 1 `[⚡ Auto-Break]`**: Toggles rapid automated mining runner (10 blocks/sec).
+    - **Button 2 `[✦ Next Island]`**: Instantly summons and materializes the next secret island.
+    - **Button 3 `[🌟 Summon All]`**: Summons and builds all 42 islands across the void.
+    - **Button 4 `[📜 Admin Menu]`**: Opens the full interactive modal GUI.
+  - 🧎 **Double-Crouch Anywhere**: Double-tap Sneak (crouch) anywhere in the world to instantly pop up the Admin Inspector GUI!
+  - 💬 **Plain Chat Commands (No Slash Needed)**:
+    - Type `run` to start / stop the Auto-Break runner.
+    - Type `run all` to summon all 42 islands AND start the Auto-Break runner!
+    - Type `all` to materialize all 42 secret void islands.
+    - Type `next` to summon the next secret island.
+    - Type `menu` to open the Admin GUI form.
+  - ⌨️ **Native Bedrock Commands**: `/scriptevent ob:run`, `/scriptevent ob:all`, `/scriptevent ob:menu`.
 
 ---
 

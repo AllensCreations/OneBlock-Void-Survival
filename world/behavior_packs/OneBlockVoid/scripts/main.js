@@ -2,6 +2,7 @@ import { world, system, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { OVERWORLD_PHASES, NETHER_PHASES, END_PHASES } from "./phases.js";
 import { RARITY_TIERS, DIMENSION_TRADE_POOLS } from "./rarities.js";
+import { ISLAND_THEMES, getIslandLocation, buildThemedIsland, isIslandPhysicallyBuilt, getIslandBlockPool } from "./islands.js";
 // Admin Build Configuration
 // In Survival: false (pure vanilla experience: no Actionbar HUD, no !run or admin command intercepts)
 // In Admin World: true (enables !run auto-break testing runner, !hud toggle, !admin GUI, and inspector tools)
@@ -762,6 +763,7 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
     world.setDynamicProperty("last_island_z", islandLoc.center.z);
 
     // Store active island target in world dynamic properties for navigation/arrival
+    world.setDynamicProperty(`island_spawned_${theme.id}`, true);
     world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
     world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y);
     world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
@@ -814,18 +816,31 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
       }
     } catch (pe) {}
 
-    // 3. PRELOAD CHUNK & BUILD ISLAND:
-    const areaName = `isl_${theme.id}`.slice(0, 16);
+    // 3. PHYSICAL MATERIALIZATION & CHUNK PRELOAD:
+    // First, try immediate build if chunk is already loaded (e.g. inner 42m ring)
     try {
-      dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.y} ${islandLoc.center.z} 2 ${areaName}`);
-    } catch (tce) {}
+      const placed = buildThemedIsland(dimension, theme, islandLoc.center);
+      if (placed > 0) {
+        world.setDynamicProperty(`island_built_${theme.id}`, true);
+      }
+    } catch (ie1) {}
+
+    // Also attempt temporary ticking area to preload chunk and guarantee immediate materialization:
+    const areaName = "temp_isl";
+    try { dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
+    try { dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.z} 2 ${areaName}`); } catch (e) {}
 
     system.runTimeout(() => {
       try {
-        buildThemedIsland(dimension, theme, islandLoc.center);
-        world.setDynamicProperty(`island_built_${theme.id}`, true);
-      } catch (ie) {}
-    }, 10);
+        if (!isIslandPhysicallyBuilt(dimension, islandLoc.center)) {
+          const placed = buildThemedIsland(dimension, theme, islandLoc.center);
+          if (placed > 0) {
+            world.setDynamicProperty(`island_built_${theme.id}`, true);
+          }
+        }
+      } catch (ie2) {}
+      try { dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
+    }, 4);
   } catch (err) {}
 }
 
@@ -1122,6 +1137,9 @@ export function toggleAdminAutoBreak(player) {
 
 // Fast Auto-Break Runner Tick Loop (runs every 2 ticks / 0.1s -> 10 blocks/sec)
 system.runInterval(() => {
+  if (IS_ADMIN_BUILD) {
+    try { checkAdminDoubleSneak(); } catch (se) {}
+  }
   if (!isAutoBreakRunning) return;
   try {
     for (const player of world.getAllPlayers()) {
@@ -1159,17 +1177,126 @@ system.runInterval(() => {
   } catch (err) {}
 }, 2);
 
+export function summonNextIslandAdmin(player) {
+  try {
+    const dimKey = getDimKey(player.dimension.id);
+    const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
+    let nextTheme = ISLAND_THEMES.find(t => (t.dimension || "overworld") === targetDim && !world.getDynamicProperty(`island_spawned_${t.id}`));
+    if (!nextTheme) {
+      nextTheme = ISLAND_THEMES.find(t => !world.getDynamicProperty(`island_spawned_${t.id}`));
+    }
+    if (!nextTheme) {
+      player.sendMessage("§e[Admin] All islands have already been summoned!");
+      return;
+    }
+    const state = getDimensionState(dimKey);
+    materializeIsland(player.dimension, nextTheme, state.phaseIndex, state.count);
+    player.sendMessage(`§a[Admin] ★ Summoned Island: §l${nextTheme.name}§r§a!`);
+  } catch (e) {}
+}
+
+export function summonAllIslandsAdmin(player) {
+  try {
+    player.sendMessage("\n§e[Admin] Summoning all 42 Secret Islands into the void...");
+    let count = 0;
+    for (let i = 0; i < ISLAND_THEMES.length; i++) {
+      const theme = ISLAND_THEMES[i];
+      const loc = getIslandLocation(i, 42, theme);
+      world.setDynamicProperty(`island_spawned_${theme.id}`, true);
+      world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
+      world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
+      world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
+
+      // Staggered builder with temporary ticking area
+      system.runTimeout(() => {
+        try {
+          const areaName = "temp_all";
+          try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e1) {}
+          try { player.dimension.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.z} 2 ${areaName}`); } catch (e2) {}
+          system.runTimeout(() => {
+            try {
+              if (!isIslandPhysicallyBuilt(player.dimension, loc.center)) {
+                const placed = buildThemedIsland(player.dimension, theme, loc.center);
+                if (placed > 0) world.setDynamicProperty(`island_built_${theme.id}`, true);
+              }
+            } catch (e3) {}
+            try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e4) {}
+          }, 3);
+        } catch (e) {}
+      }, i * 4);
+      count++;
+    }
+    system.runTimeout(() => {
+      player.sendMessage(`§a[Admin] ★ All ${count} Secret Islands successfully summoned & registered in the void!`);
+      player.playSound("random.levelup", { pitch: 1.2, volume: 1.0 });
+    }, count * 4 + 10);
+  } catch (e) {}
+}
+
+export function setupAdminStation(dimension) {
+  if (!IS_ADMIN_BUILD) return;
+  try {
+    for (let z = -2; z <= 1; z++) {
+      // Bedrock foundation underneath walkway and podium
+      const bUnderWalk = dimension.getBlock({ x: 2, y: 63, z });
+      if (bUnderWalk && bUnderWalk.typeId !== "minecraft:bedrock") bUnderWalk.setType("minecraft:bedrock");
+      const bUnderPod = dimension.getBlock({ x: 3, y: 63, z });
+      if (bUnderPod && bUnderPod.typeId !== "minecraft:bedrock") bUnderPod.setType("minecraft:bedrock");
+
+      // Polished Blackstone Bricks Walkway
+      const bWalk = dimension.getBlock({ x: 2, y: 64, z });
+      if (bWalk && bWalk.typeId !== "minecraft:polished_blackstone_bricks") bWalk.setType("minecraft:polished_blackstone_bricks");
+
+      // Polished Blackstone Console Base
+      const bPod = dimension.getBlock({ x: 3, y: 64, z });
+      if (bPod && bPod.typeId !== "minecraft:polished_blackstone") bPod.setType("minecraft:polished_blackstone");
+
+      // Interactive Buttons on top of console
+      const bBtn = dimension.getBlock({ x: 3, y: 65, z });
+      if (bBtn && (bBtn.isAir || bBtn.typeId === "minecraft:air")) {
+        bBtn.setType("minecraft:stone_button");
+      }
+    }
+  } catch (e) {}
+}
+
+const playerSneakHistory = new Map();
+
+export function checkAdminDoubleSneak() {
+  if (!IS_ADMIN_BUILD) return;
+  for (const player of world.getAllPlayers()) {
+    try {
+      const isSneaking = player.isSneaking;
+      const hist = playerSneakHistory.get(player.id) || { wasSneaking: false, lastTapTick: 0 };
+
+      if (isSneaking && !hist.wasSneaking) {
+        const now = tickCounter;
+        if (now - hist.lastTapTick <= 24 && now - hist.lastTapTick >= 2) {
+          hist.lastTapTick = 0;
+          openAdminIslandMenu(player);
+          player.playSound("random.orb", { pitch: 1.2, volume: 1.0 });
+        } else {
+          hist.lastTapTick = now;
+        }
+      }
+      hist.wasSneaking = isSneaking;
+      playerSneakHistory.set(player.id, hist);
+    } catch (e) {}
+  }
+}
+
 export function openAdminIslandMenu(player) {
   try {
     if (!isAdmin(player)) return;
     const form = new ActionFormData();
     form.title("§6§lISLAND INSPECTOR (ADMIN)§r");
-    form.body("§eSelect an island to inspect in Creative Mode.\n§7Clicking an island generates it in the void and teleports you directly there!\n§bTotal: 42 Secret Themed Islands");
+    form.body("§eSelect an action or island to inspect in Creative Mode.\n§7Zero-item controls: Buttons at spawn, Double-Crouch, or chat 'run'!\n§bTotal: 42 Secret Themed Islands");
 
     const runnerLabel = isAutoBreakRunning ? "§c§l⏹ STOP AUTO-BREAK RUNNER§r\n§8(Click to halt auto-mining)" : "§a§l▶ START AUTO-BREAK RUNNER§r\n§8(Rapidly mine & summon islands)";
-    form.button("§c§l⚡ PRE-BUILD ALL 42 ISLANDS§r\n§8(Generates all void islands)", "textures/ui/refresh_light");
     form.button(runnerLabel, "textures/ui/speed_effect");
-    form.button("§d§l✦ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live announcement & particle trail)", "textures/ui/portal_icon");
+    form.button("§6§l🌟 SUMMON ALL 42 ISLANDS§r\n§8(Materialize all void islands)", "textures/ui/refresh_light");
+    form.button("§d§l✦ SUMMON NEXT ISLAND§r\n§8(Instantly manifest next secret island)", "textures/ui/icon_recipe_nature");
+    form.button("§b§l⚡ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live celestial sounds & starlight trail)", "textures/ui/portal_icon");
 
     for (let i = 0; i < ISLAND_THEMES.length; i++) {
       const theme = ISLAND_THEMES[i];
@@ -1183,68 +1310,59 @@ export function openAdminIslandMenu(player) {
       if (response.canceled || response.selection === undefined) return;
 
       if (response.selection === 0) {
-        // Pre-build all 42 islands across the void
-        player.sendMessage("\n§e[Admin] Generating all 42 Themed Islands into the void...");
-        let count = 0;
-        for (let i = 0; i < ISLAND_THEMES.length; i++) {
-          const theme = ISLAND_THEMES[i];
-          const loc = getIslandLocation(i, 42, theme);
-          system.runTimeout(() => {
-            try {
-              buildThemedIsland(player.dimension, theme, loc.center);
-              world.setDynamicProperty(`island_built_${theme.id}`, true);
-              world.setDynamicProperty(`island_spawned_${theme.id}`, true);
-              world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
-              world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
-              world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
-            } catch (e) {}
-          }, i * 2);
-          count++;
-        }
-        system.runTimeout(() => {
-          player.sendMessage(`§a[Admin] ★ All ${count} Secret Islands successfully materialized in the void!`);
-          player.playSound("random.levelup", { pitch: 1.2, volume: 1.0 });
-        }, count * 2 + 5);
-        return;
-      }
-
-      if (response.selection === 1) {
-        // Toggle Auto-Break Runner
         toggleAdminAutoBreak(player);
         return;
       }
 
+      if (response.selection === 1) {
+        summonAllIslandsAdmin(player);
+        return;
+      }
+
       if (response.selection === 2) {
-        // Test live manifestation announcement, sounds & particle trail on OneBlock
+        summonNextIslandAdmin(player);
+        return;
+      }
+
+      if (response.selection === 3) {
         materializeIsland(player.dimension, ISLAND_THEMES[0], 0, 10);
         player.sendMessage("§d[Admin] ★ Triggered live Rift Manifestation announcement, celestial sounds & starlight trail!");
         return;
       }
 
       // Specific Island Selected
-      const themeIndex = response.selection - 3;
+      const themeIndex = response.selection - 4;
       const theme = ISLAND_THEMES[themeIndex];
       if (!theme) return;
 
       const loc = getIslandLocation(themeIndex, 42, theme);
       const targetPos = { x: loc.center.x, y: loc.center.y + 3, z: loc.center.z };
 
-      // Ensure island is built in that loaded chunk
-      try {
-        buildThemedIsland(player.dimension, theme, loc.center);
-        world.setDynamicProperty(`island_built_${theme.id}`, true);
-        world.setDynamicProperty(`island_spawned_${theme.id}`, true);
-        world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
-        world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
-        world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
-      } catch (e) {}
+      // Record island target dynamic properties
+      world.setDynamicProperty(`island_spawned_${theme.id}`, true);
+      world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
+      world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
+      world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
 
-      // Teleport player and grant Creative Mode + Night Vision
+      // TELEPORT FIRST so chunk loads around player!
       try {
         player.teleport(targetPos, { dimension: player.dimension, checkForBlocks: false });
         try { player.setGameMode("creative"); } catch (e) {}
         try { player.addEffect("night_vision", 999999, { showParticles: false }); } catch (e) {}
       } catch (tpe) {}
+
+      // Build island once chunk has loaded around newly teleported player
+      system.runTimeout(() => {
+        try {
+          const center = { x: loc.center.x, y: loc.center.y, z: loc.center.z };
+          if (!isIslandPhysicallyBuilt(player.dimension, center)) {
+            const placed = buildThemedIsland(player.dimension, theme, center);
+            if (placed > 0) {
+              world.setDynamicProperty(`island_built_${theme.id}`, true);
+            }
+          }
+        } catch (be) {}
+      }, 4);
 
       player.sendMessage(`\n${theme.color}★ [Admin Inspector] Teleported to §l${theme.name}§r${theme.color}!`);
       player.sendMessage(`§eCoordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`);
@@ -1961,11 +2079,16 @@ world.afterEvents.playerSpawn.subscribe((event) => {
       // Cleanly wipe any lingering scoreboard sidebar
       clearScoreboardObjective();
 
-      // Check if admin map or admin player: grant Island Inspector Tool
+      // Check if admin map or admin player: setup physical station & display zero-item control guide
       if (isAdmin(player)) {
-        giveAdminInspectorTool(player);
-        player.sendMessage("§6[Admin Tool] Island Inspector Compass & Auto-Break Star delivered!");
-        player.sendMessage("§e[Admin Fast-Test] Right-click the Nether Star (or type §b!run§e / §b/scriptevent run§e) to start/stop rapid auto-mining!");
+        if (IS_ADMIN_BUILD) {
+          try { setupAdminStation(player.dimension); } catch (se) {}
+        }
+        player.sendMessage("\n§6=== ONEBLOCK ADMIN CONTROLS (ZERO ITEMS NEEDED) ===");
+        player.sendMessage("§e1. Physical Buttons: §7Console at (3, 65, -2..1) right beside spawn");
+        player.sendMessage("§e2. Double-Crouch: §7Double-tap Sneak anywhere to open Admin GUI");
+        player.sendMessage("§e3. Chat Commands: §7Type §brun§7, §brun all§7, §ball§7, or §bmenu§7 (no slash!)");
+        player.sendMessage("§e4. Bedrock Command: §7Type §b/scriptevent ob:run§7 or §b/scriptevent ob:menu§r\n");
       }
 
         // Welcome introduction & creator thank you
@@ -1981,12 +2104,85 @@ world.afterEvents.playerSpawn.subscribe((event) => {
     });
 });
 
-// Chat command helpers (!hud, !admin, !islands, !run)
+// Chat command helpers (zero-item friendly, no slash required!)
 world.beforeEvents.chatSend.subscribe((event) => {
   const { message, sender } = event;
-  const msg = message.trim().toLowerCase();
+  const raw = message.trim();
+  const msg = raw.toLowerCase();
 
-  // In pure Survival, ignore admin commands completely to preserve 100% vanilla experience
+  // Admin World Chat Intercepts (No slash needed!)
+  if (IS_ADMIN_BUILD || isAdmin(sender)) {
+    if (msg === "run" || msg === "!run" || msg === "/run" || msg === "start" || msg === "break") {
+      event.cancel = true;
+      system.run(() => {
+        toggleAdminAutoBreak(sender);
+      });
+      return;
+    }
+
+    if (msg === "run all" || msg === "!run all" || msg === "runall" || msg === "!runall") {
+      event.cancel = true;
+      system.run(() => {
+        summonAllIslandsAdmin(sender);
+        if (!isAutoBreakRunning) {
+          toggleAdminAutoBreak(sender);
+        }
+      });
+      return;
+    }
+
+    if (msg === "all" || msg === "!all" || msg === "summon all" || msg === "!summon all" || msg === "islands" || msg === "!islands") {
+      event.cancel = true;
+      system.run(() => {
+        summonAllIslandsAdmin(sender);
+      });
+      return;
+    }
+
+    if (msg === "island" || msg === "!island" || msg === "next" || msg === "!next") {
+      event.cancel = true;
+      system.run(() => {
+        summonNextIslandAdmin(sender);
+      });
+      return;
+    }
+
+    if (msg === "menu" || msg === "!menu" || msg === "admin" || msg === "!admin" || msg === "gui" || msg === "!gui") {
+      event.cancel = true;
+      system.run(() => {
+        openAdminIslandMenu(sender);
+      });
+      return;
+    }
+
+    if (msg === "stop" || msg === "!stop" || msg === "halt") {
+      event.cancel = true;
+      system.run(() => {
+        if (isAutoBreakRunning) {
+          toggleAdminAutoBreak(sender);
+        } else {
+          sender.sendMessage("§e[Admin] Auto-Break is not currently running.");
+        }
+      });
+      return;
+    }
+
+    if (msg === "help" || msg === "!help" || msg === "commands") {
+      event.cancel = true;
+      system.run(() => {
+        sender.sendMessage("\n§6=== ADMIN COMMANDS (ZERO ITEMS NEEDED) ===");
+        sender.sendMessage("§b• run §7- Start / Stop fast Auto-Break runner");
+        sender.sendMessage("§b• run all §7- Summon all 42 islands AND start Auto-Break");
+        sender.sendMessage("§b• all §7- Summon all 42 secret islands into the void");
+        sender.sendMessage("§b• next §7- Summon next secret island");
+        sender.sendMessage("§b• menu §7- Open Admin Island Inspector GUI");
+        sender.sendMessage("§b• Double-Crouch §7- Double-tap sneak anywhere to open GUI\n");
+      });
+      return;
+    }
+  }
+
+  // HUD command for Survival or Admin
   if (msg === "!hud") {
     if (!isAdmin(sender)) return;
     event.cancel = true;
@@ -1999,22 +2195,33 @@ world.beforeEvents.chatSend.subscribe((event) => {
         sender.sendMessage("§e[HUD] Actionbar HUD hidden!");
       }
     });
-  } else if (msg === "!admin" || msg === "!islands") {
-    if (!isAdmin(sender)) return;
-    event.cancel = true;
-    system.run(() => {
-      openAdminIslandMenu(sender);
-    });
-  } else if (msg === "!run" || msg === "/run" || (IS_ADMIN_BUILD && msg === "run")) {
-    if (!isAdmin(sender)) return;
-    event.cancel = true;
-    system.run(() => {
-      toggleAdminAutoBreak(sender);
-    });
   }
 });
 
-// Item use hook for Island Inspector Compass & Auto-Break Runner Star
+// Physical Button Push Listener for Admin Station
+world.afterEvents.buttonPush.subscribe((event) => {
+  if (!IS_ADMIN_BUILD) return;
+  try {
+    const { block, source } = event;
+    if (!source || source.typeId !== "minecraft:player") return;
+    const loc = block.location;
+
+    // Detect push on podium buttons at x: 3, y: 65 (or x: 3, y: 64)
+    if (loc.x === 3 && (loc.y === 65 || loc.y === 64)) {
+      if (loc.z === -2) {
+        toggleAdminAutoBreak(source);
+      } else if (loc.z === -1) {
+        summonNextIslandAdmin(source);
+      } else if (loc.z === 0) {
+        summonAllIslandsAdmin(source);
+      } else if (loc.z === 1) {
+        openAdminIslandMenu(source);
+      }
+    }
+  } catch (e) {}
+});
+
+// Item use hook preserved for backward compatibility
 world.beforeEvents.itemUse.subscribe((event) => {
   try {
     const { itemStack, source } = event;
@@ -2040,10 +2247,17 @@ world.beforeEvents.itemUse.subscribe((event) => {
 system.afterEvents.scriptEventReceive.subscribe((event) => {
   try {
     const { id, sourceEntity } = event;
+    const player = sourceEntity && sourceEntity.typeId === "minecraft:player" ? sourceEntity : null;
+    if (!player || !isAdmin(player)) return;
+
     if (id === "run" || id === "ob:run" || id === "test:run") {
-      if (sourceEntity && isAdmin(sourceEntity)) {
-        toggleAdminAutoBreak(sourceEntity);
-      }
+      toggleAdminAutoBreak(player);
+    } else if (id === "all" || id === "ob:all" || id === "ob:summon_all") {
+      summonAllIslandsAdmin(player);
+    } else if (id === "menu" || id === "ob:menu" || id === "admin" || id === "ob:admin") {
+      openAdminIslandMenu(player);
+    } else if (id === "island" || id === "ob:island" || id === "next") {
+      summonNextIslandAdmin(player);
     }
   } catch (e) {}
 });
@@ -2290,17 +2504,17 @@ function getActiveSpawnedIslands() {
     lastCacheRefresh = tickCounter;
     activeIslandTargetCache.clear();
     for (const t of ISLAND_THEMES) {
-      if (world.getDynamicProperty(`island_registered_${t.id}`)) continue;
       const tx = world.getDynamicProperty(`island_target_x_${t.id}`);
       const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
       if (tx !== undefined && tz !== undefined) {
-        const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 65;
+        const ty = world.getDynamicProperty(`island_target_y_${t.id}`) ?? 64;
         let arrivalDist = 8.5;
         if (t.size === "huge") arrivalDist = 14.0;
         else if (t.size === "big") arrivalDist = 11.0;
         else if (t.size === "medium") arrivalDist = 8.5;
         else if (t.size === "compact") arrivalDist = 6.5;
-        activeIslandTargetCache.set(t.id, { theme: t, tx, ty, tz, arrivalDist });
+        const isRegistered = world.getDynamicProperty(`island_registered_${t.id}`) === true;
+        activeIslandTargetCache.set(t.id, { theme: t, tx, ty, tz, arrivalDist, isRegistered });
       }
     }
   }
@@ -2321,21 +2535,24 @@ system.runInterval(() => {
         if ((data.theme.dimension || "overworld") !== targetDim) continue;
         const dist = Math.hypot(pLoc.x - data.tx, pLoc.z - data.tz);
 
-        // Proactive building: If player is within 60 blocks of island target, ensure island blocks are materialized
-        if (dist <= 60 && !world.getDynamicProperty(`island_built_${data.theme.id}`)) {
-          world.setDynamicProperty(`island_built_${data.theme.id}`, true);
-          try {
-            buildThemedIsland(player.dimension, data.theme, { x: data.tx, y: data.ty - 1, z: data.tz });
-          } catch (pbe) {}
+        // Proactive building: If player is within 64 blocks of island target, ensure island blocks are materialized
+        if (dist <= 64) {
+          const center = { x: data.tx, y: data.ty, z: data.tz };
+          if (!isIslandPhysicallyBuilt(player.dimension, center)) {
+            const placed = buildThemedIsland(player.dimension, data.theme, center);
+            if (placed > 0) {
+              world.setDynamicProperty(`island_built_${data.theme.id}`, true);
+            }
+          }
         }
 
-        if (dist <= data.arrivalDist) {
+        if (!data.isRegistered && dist <= data.arrivalDist) {
           triggerIslandRegistration(player, data.theme, { x: data.tx, y: data.ty, z: data.tz });
-          activeIslands.delete(themeId);
+          data.isRegistered = true;
           break;
         }
       }
     }
   } catch (e) {}
-}, 20);
+}, 10);
 

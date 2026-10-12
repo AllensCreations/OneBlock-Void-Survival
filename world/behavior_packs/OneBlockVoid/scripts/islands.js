@@ -995,6 +995,22 @@ export function getIslandLocation(index, total, theme, lastPos = null) {
   };
 }
 
+// Physical existence verification: checks if island anchor or surface blocks physically exist
+export function isIslandPhysicallyBuilt(dimension, center) {
+  try {
+    const under = dimension.getBlock({ x: center.x, y: center.y - 1, z: center.z });
+    if (!under) return false; // Chunk unloaded
+    if (under.typeId === "minecraft:bedrock") return true;
+    const b = dimension.getBlock(center);
+    if (b && !b.isAir && b.typeId !== "minecraft:air") return true;
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+let totalBlocksPlacedThisBuild = 0;
+
 // Strictly places blocks only where air currently exists.
 // Never overwrites player-placed blocks, structures, or bridges!
 function safeAirOnlySetBlock(dimension, loc, typeId) {
@@ -1002,6 +1018,7 @@ function safeAirOnlySetBlock(dimension, loc, typeId) {
     const b = dimension.getBlock(loc);
     if (b && (b.isAir || b.typeId === "minecraft:air")) {
       b.setType(typeId);
+      totalBlocksPlacedThisBuild++;
       return true;
     }
   } catch (e) {}
@@ -1512,6 +1529,18 @@ function buildIslandNaturalTree(dimension, theme, center) {
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
+  // Chunk loading safety check: if center block cannot be queried, chunk is unloaded
+  try {
+    const centerBlock = dimension.getBlock(center);
+    if (!centerBlock) {
+      return 0; // Chunk unloaded, defer build until player approaches
+    }
+  } catch (e) {
+    return 0;
+  }
+
+  totalBlocksPlacedThisBuild = 0;
+
   // 1. AUTO-CHANGE BIOME: Paint true native Minecraft biome across island volume
   try {
     const biomeName = theme.biome || "plains";
@@ -1642,23 +1671,35 @@ export function buildThemedIsland(dimension, theme, center) {
       let placed = false;
       try {
         obBlock.setType(pool[0]);
-        if (!obBlock.isAir && obBlock.typeId !== "minecraft:air") placed = true;
+        if (!obBlock.isAir && obBlock.typeId !== "minecraft:air") {
+          placed = true;
+          totalBlocksPlacedThisBuild++;
+        }
       } catch (e1) {}
       if (!placed) {
         try {
           obBlock.setType(theme.floor);
-          if (!obBlock.isAir && obBlock.typeId !== "minecraft:air") placed = true;
+          if (!obBlock.isAir && obBlock.typeId !== "minecraft:air") {
+            placed = true;
+            totalBlocksPlacedThisBuild++;
+          }
         } catch (e2) {}
       }
       if (!placed) {
-        try { obBlock.setType("minecraft:dirt"); } catch (e3) {}
+        try {
+          obBlock.setType("minecraft:dirt");
+          totalBlocksPlacedThisBuild++;
+        } catch (e3) {}
       }
     }
 
     // Bedrock foundation directly underneath the Island OneBlock
     const underBlock = dimension.getBlock({ x: cx, y: cy - 1, z: cz });
     if (underBlock) {
-      try { underBlock.setType("minecraft:bedrock"); } catch (ue) {}
+      try {
+        underBlock.setType("minecraft:bedrock");
+        totalBlocksPlacedThisBuild++;
+      } catch (ue) {}
     }
 
     // The blocks directly beside the Island OneBlock are Bedrock
@@ -1671,7 +1712,10 @@ export function buildThemedIsland(dimension, theme, center) {
     for (const off of besideOffsets) {
       const bBlock = dimension.getBlock({ x: cx + off.x, y: cy, z: cz + off.z });
       if (bBlock) {
-        try { bBlock.setType("minecraft:bedrock"); } catch (se) {}
+        try {
+          bBlock.setType("minecraft:bedrock");
+          totalBlocksPlacedThisBuild++;
+        } catch (se) {}
       }
     }
   } catch (e) {}
@@ -1881,4 +1925,6 @@ export function buildThemedIsland(dimension, theme, center) {
       dimension.spawnEntity(theme.mob, { x: cx + 0.5, y: cy + 1.2, z: cz - 1.5 });
     } catch (e) {}
   }
+
+  return totalBlocksPlacedThisBuild;
 }
