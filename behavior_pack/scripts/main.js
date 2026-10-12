@@ -826,9 +826,9 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
     } catch (ie1) {}
 
     // Also attempt temporary ticking area to preload chunk and guarantee immediate materialization:
-    const areaName = "temp_isl";
+    const areaName = `temp_isl_${theme.id.slice(0, 8)}`;
     try { dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
-    try { dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.z} 2 ${areaName}`); } catch (e) {}
+    try { dimension.runCommand(`tickingarea add circle ${islandLoc.center.x} ${islandLoc.center.z} 4 ${areaName}`); } catch (e) {}
 
     system.runTimeout(() => {
       try {
@@ -840,7 +840,7 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
         }
       } catch (ie2) {}
       try { dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
-    }, 4);
+    }, 8);
   } catch (err) {}
 }
 
@@ -1207,12 +1207,14 @@ export function summonAllIslandsAdmin(player) {
       world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
       world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
 
-      // Staggered builder with temporary ticking area
+      // Staggered builder with 4-chunk ticking area preloading (rotating slots 0-7)
+      const staggerDelay = i * 12;
       system.runTimeout(() => {
         try {
-          const areaName = "temp_all";
+          const areaSlot = i % 8;
+          const areaName = `isl_run_${areaSlot}`;
           try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e1) {}
-          try { player.dimension.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.z} 2 ${areaName}`); } catch (e2) {}
+          try { player.dimension.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.z} 4 ${areaName}`); } catch (e2) {}
           system.runTimeout(() => {
             try {
               if (!isIslandPhysicallyBuilt(player.dimension, loc.center)) {
@@ -1221,15 +1223,15 @@ export function summonAllIslandsAdmin(player) {
               }
             } catch (e3) {}
             try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e4) {}
-          }, 3);
+          }, 8);
         } catch (e) {}
-      }, i * 4);
+      }, staggerDelay);
       count++;
     }
     system.runTimeout(() => {
       player.sendMessage(`§a[Admin] ★ All ${count} Secret Islands successfully summoned & registered in the void!`);
       player.playSound("random.levelup", { pitch: 1.2, volume: 1.0 });
-    }, count * 4 + 10);
+    }, count * 12 + 20);
   } catch (e) {}
 }
 
@@ -2535,8 +2537,8 @@ system.runInterval(() => {
         if ((data.theme.dimension || "overworld") !== targetDim) continue;
         const dist = Math.hypot(pLoc.x - data.tx, pLoc.z - data.tz);
 
-        // Proactive building: If player is within 64 blocks of island target, ensure island blocks are materialized
-        if (dist <= 64) {
+        // Proactive building: If player is within 100 blocks of island target (8-chunk sim distance = 128 blocks)
+        if (dist <= 100) {
           const center = { x: data.tx, y: data.ty, z: data.tz };
           if (!isIslandPhysicallyBuilt(player.dimension, center)) {
             const placed = buildThemedIsland(player.dimension, data.theme, center);

@@ -1000,7 +1000,10 @@ export function isIslandPhysicallyBuilt(dimension, center) {
   try {
     const under = dimension.getBlock({ x: center.x, y: center.y - 1, z: center.z });
     if (!under) return false; // Chunk unloaded
-    if (under.typeId === "minecraft:bedrock") return true;
+    if (under.typeId === "minecraft:bedrock") {
+      const offBlock = dimension.getBlock({ x: center.x + 3, y: center.y, z: center.z });
+      if (offBlock && !offBlock.isAir && offBlock.typeId !== "minecraft:air") return true;
+    }
     const b = dimension.getBlock(center);
     if (b && !b.isAir && b.typeId !== "minecraft:air") return true;
     return false;
@@ -1042,6 +1045,32 @@ function getRockBlock(theme, dx, dz, d, seed) {
     const nh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
     return nh < 55 ? "minecraft:netherrack" : (nh < 80 ? "minecraft:blackstone" : "minecraft:basalt");
   }
+  if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
+    // Authentic Mojang Badlands Horizontal Terracotta Strata:
+    const band = (d + Math.floor(Math.abs(dx * 0.15 + dz * 0.1))) % 7;
+    if (band === 0) return "minecraft:terracotta";
+    if (band === 1) return "minecraft:orange_terracotta";
+    if (band === 2) return "minecraft:yellow_terracotta";
+    if (band === 3) return "minecraft:red_sandstone";
+    if (band === 4) return "minecraft:red_terracotta";
+    if (band === 5) return "minecraft:brown_terracotta";
+    return "minecraft:white_terracotta";
+  }
+  if (theme.biome === "desert") {
+    const dh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
+    return dh < 45 ? "minecraft:sandstone" : (dh < 70 ? "minecraft:smooth_sandstone" : (dh < 88 ? "minecraft:cut_sandstone" : "minecraft:chiseled_sandstone"));
+  }
+  if (theme.biome.includes("ocean") || theme.biome.includes("warm_ocean")) {
+    const oh = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
+    return oh < 50 ? "minecraft:prismarine" : (oh < 80 ? "minecraft:dark_prismarine" : "minecraft:prismarine_bricks");
+  }
+  if (theme.biome.includes("ice") || theme.biome.includes("frozen")) {
+    const ih = Math.abs((dx * 31 + dz * 17 + d * 7 + seed) % 100);
+    return ih < 50 ? "minecraft:packed_ice" : (ih < 80 ? "minecraft:blue_ice" : "minecraft:snow_block");
+  }
+  if (theme.id === "amethyst_geode") {
+    return d <= 2 ? "minecraft:calcite" : "minecraft:smooth_basalt";
+  }
   if (theme.biome === "deep_dark" || d >= 7) {
     return ((dx + dz + d) % 3 === 0) ? "minecraft:cobbled_deepslate" : "minecraft:deepslate";
   }
@@ -1055,6 +1084,13 @@ function getRockBlock(theme, dx, dz, d, seed) {
 }
 
 function getOreBlock(theme, depth, dx, dz, seed) {
+  // Badlands / Mesa: Super rich in Gold Ore and Raw Gold Blocks (vanilla Minecraft Mesa trait)
+  if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
+    const gh = Math.abs((dx * 53 + dz * 31 + depth * 17 + seed) % 100);
+    if (gh < 60) return "minecraft:gold_ore";
+    if (gh < 85) return "minecraft:raw_gold_block";
+    return depth >= 6 ? "minecraft:deepslate_gold_ore" : "minecraft:gold_ore";
+  }
   const isNether = theme.biome.includes("nether") || theme.biome.includes("valley") || theme.biome.includes("deltas");
   if (isNether) {
     const no = Math.abs((dx * 19 + dz * 23 + seed) % 100);
@@ -1088,6 +1124,11 @@ function getOreBlock(theme, depth, dx, dz, seed) {
 }
 
 function getSubsoilBlock(theme, dx, dz, seed) {
+  if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
+    const sh = Math.abs((dx * 13 + dz * 29 + seed) % 100);
+    return sh < 50 ? "minecraft:terracotta" : (sh < 80 ? "minecraft:red_sandstone" : "minecraft:orange_terracotta");
+  }
+  if (theme.floor.includes("red_sand")) return "minecraft:red_sandstone";
   if (theme.floor.includes("sand")) return theme.subfloor || "minecraft:sandstone";
   if (theme.floor.includes("nylium")) return "minecraft:netherrack";
   if (theme.floor.includes("end_stone")) return "minecraft:end_stone";
@@ -1105,7 +1146,14 @@ function placeSurfaceVegetation(dimension, theme, loc, seed) {
   try {
     const roll = Math.random();
 
-    if (theme.biome === "cherry_grove" || theme.id === "cherry_sanctuary") {
+    if (theme.id === "badlands_mesa" || theme.biome === "mesa") {
+      if (roll < 0.12) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:deadbush");
+      } else if (roll < 0.18) {
+        safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:cactus");
+        if (Math.random() < 0.4) safeAirOnlySetBlock(dimension, { x, y: y + 2, z }, "minecraft:cactus");
+      }
+    } else if (theme.biome === "cherry_grove" || theme.id === "cherry_sanctuary") {
       // Natural scattered pink petals (pure organic distribution like vanilla cherry groves)
       if (roll < 0.48) {
         safeAirOnlySetBlock(dimension, { x, y: y + 1, z }, "minecraft:pink_petals");
@@ -2749,11 +2797,20 @@ function buildThemedStructure(dimension, theme, center) {
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
-  // Chunk loading safety check: if center block cannot be queried, chunk is unloaded
+  // Chunk loading safety check: verify center AND all 4 cardinal edge bounds
+  // This guarantees island is never partially materialized or cut off at chunk boundaries!
+  const checkR = theme.size === "huge" ? 14 : (theme.size === "big" ? 11 : 8);
   try {
-    const centerBlock = dimension.getBlock(center);
-    if (!centerBlock) {
-      return 0; // Chunk unloaded, defer build until player approaches
+    const testPoints = [
+      { x: cx, y: cy, z: cz },
+      { x: cx - checkR, y: cy, z: cz },
+      { x: cx + checkR, y: cy, z: cz },
+      { x: cx, y: cy, z: cz - checkR },
+      { x: cx, y: cy, z: cz + checkR }
+    ];
+    for (const pt of testPoints) {
+      const b = dimension.getBlock(pt);
+      if (!b) return 0; // Boundary chunk unloaded, defer build until fully loaded!
     }
   } catch (e) {
     return 0;
