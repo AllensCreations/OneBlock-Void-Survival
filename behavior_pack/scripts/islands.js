@@ -1307,6 +1307,95 @@ function decorateSteppingPaths(dimension, theme, center, seed) {
   }
 }
 
+// Determines the tree placement, wood log type, leaf type, and accessories per theme
+function getIslandTreePlacement(theme, center) {
+  const { cx, cy, cz } = center;
+  switch (theme.id) {
+    case "cherry_sanctuary":
+      return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:cherry_log", leaves: "minecraft:cherry_leaves", beeNest: true };
+    case "pale_garden_spire":
+      return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:pale_oak_log", leaves: "minecraft:pale_moss_block" };
+    case "jungle_temple":
+      return { pos: { x: cx - 3, y: cy, z: cz - 2 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
+    case "sky_oasis":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:oak_log", leaves: "minecraft:oak_leaves" };
+    case "bee_apiary":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:birch_log", leaves: "minecraft:birch_leaves", beeNest: true };
+    case "pumpkin_patch":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:spruce_log", leaves: "minecraft:spruce_leaves" };
+    case "bamboo_monastery":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
+    case "witch_swamp_hut":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:mangrove_log", leaves: "minecraft:mangrove_leaves" };
+    case "slime_biosphere":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:mangrove_log", leaves: "minecraft:mangrove_leaves" };
+    case "melon_greenhouse":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
+    case "bakery_windmill":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:oak_log", leaves: "minecraft:oak_leaves" };
+    case "crimson_forest_isle":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:crimson_stem", leaves: "minecraft:nether_wart_block" };
+    case "warped_forest_isle":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:warped_stem", leaves: "minecraft:warped_wart_block" };
+    case "pillager_watchtower":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:dark_oak_log", leaves: "minecraft:dark_oak_leaves" };
+    case "alchemist_laboratory":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:dark_oak_log", leaves: "minecraft:dark_oak_leaves" };
+    default:
+      return null;
+  }
+}
+
+// Builds an authentic natural vanilla tree: exactly 5-tall wood trunk with a ~33-leaf rounded canopy
+function buildIslandNaturalTree(dimension, theme, center) {
+  const treeConfig = getIslandTreePlacement(theme, center);
+  if (!treeConfig) return;
+
+  const { x: tx, y: cy, z: tz } = treeConfig.pos;
+
+  // 1. Solid foundation block under tree trunk
+  try {
+    const rootBlock = dimension.getBlock({ x: tx, y: cy, z: tz });
+    if (rootBlock && (rootBlock.isAir || rootBlock.typeId === "minecraft:air")) {
+      rootBlock.setType(theme.floor || "minecraft:dirt");
+    }
+  } catch (e) {}
+
+  // 2. Trunk: Exactly 5 blocks tall wood
+  for (let h = 1; h <= 5; h++) {
+    safeAirOnlySetBlock(dimension, { x: tx, y: cy + h, z: tz }, treeConfig.log);
+  }
+
+  // 3. Canopy Layer 1 (at cy + 4): 5x5 area with 4 outer corners cut off (20 leaves)
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dz = -2; dz <= 2; dz++) {
+      if (Math.abs(dx) === 2 && Math.abs(dz) === 2) continue; // cut 4 outer corners
+      if (dx === 0 && dz === 0) continue; // trunk location
+      safeAirOnlySetBlock(dimension, { x: tx + dx, y: cy + 4, z: tz + dz }, treeConfig.leaves);
+    }
+  }
+
+  // 4. Canopy Layer 2 (at cy + 5): 3x3 area around top trunk block (8 leaves)
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dz = -1; dz <= 1; dz++) {
+      if (dx === 0 && dz === 0) continue; // trunk location
+      safeAirOnlySetBlock(dimension, { x: tx + dx, y: cy + 5, z: tz + dz }, treeConfig.leaves);
+    }
+  }
+
+  // 5. Canopy Layer 3 (at cy + 6): Crown cross on top of trunk (5 leaves)
+  safeAirOnlySetBlock(dimension, { x: tx, y: cy + 6, z: tz }, treeConfig.leaves);
+  safeAirOnlySetBlock(dimension, { x: tx + 1, y: cy + 6, z: tz }, treeConfig.leaves);
+  safeAirOnlySetBlock(dimension, { x: tx - 1, y: cy + 6, z: tz }, treeConfig.leaves);
+  safeAirOnlySetBlock(dimension, { x: tx, y: cy + 6, z: tz + 1 }, treeConfig.leaves);
+  safeAirOnlySetBlock(dimension, { x: tx, y: cy + 6, z: tz - 1 }, treeConfig.leaves);
+
+  // 6. Bee Nest accessory (for bee and cherry themes)
+  if (treeConfig.beeNest) {
+    safeAirOnlySetBlock(dimension, { x: tx - 1, y: cy + 3, z: tz }, "minecraft:bee_nest");
+  }
+}
+
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
@@ -1622,30 +1711,7 @@ export function buildThemedIsland(dimension, theme, center) {
       }
 
     } else if (tr === "lush_flora") {
-      // Custom magnificent tree
-      const tx = cx - 3;
-      const tz = cz - 2;
-      const logMat = theme.id === "cherry_sanctuary" ? "minecraft:cherry_log" : (theme.id === "jungle_temple" ? "minecraft:jungle_log" : (theme.id === "pale_garden_spire" ? "minecraft:pale_oak_log" : "minecraft:oak_log"));
-      const leafMat = theme.id === "cherry_sanctuary" ? "minecraft:cherry_leaves" : (theme.id === "jungle_temple" ? "minecraft:jungle_leaves" : (theme.id === "pale_garden_spire" ? "minecraft:pale_moss_block" : "minecraft:oak_leaves"));
-
-      for (let h = 1; h <= 5; h++) {
-        safeAirOnlySetBlock(dimension, { x: tx, y: cy + h, z: tz }, logMat);
-      }
-      for (let lx = -2; lx <= 2; lx++) {
-        for (let lz = -2; lz <= 2; lz++) {
-          if (Math.abs(lx) + Math.abs(lz) <= 3) {
-            safeAirOnlySetBlock(dimension, { x: tx + lx, y: cy + 4, z: tz + lz }, leafMat);
-            safeAirOnlySetBlock(dimension, { x: tx + lx, y: cy + 5, z: tz + lz }, leafMat);
-            if (Math.abs(lx) <= 1 && Math.abs(lz) <= 1) {
-              safeAirOnlySetBlock(dimension, { x: tx + lx, y: cy + 6, z: tz + lz }, leafMat);
-            }
-          }
-        }
-      }
-      if (theme.id === "cherry_sanctuary") {
-        safeAirOnlySetBlock(dimension, { x: tx - 1, y: cy + 3, z: tz }, "minecraft:bee_nest");
-      }
-
+      // Built systematically via step 7b below
     } else if (tr === "ancient_shrine") {
       // Marble quartz dais & god altar with sea lanterns
       const sx = cx + 3;
@@ -1662,6 +1728,12 @@ export function buildThemedIsland(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: sx, y: cy + 2, z: sz }, "minecraft:sea_lantern");
     }
   } catch (fe) {}
+
+  // 7b. ISLAND NATURAL CANOPY TREES:
+  // Authentic 5-tall wood trunk with a ~33-leaf rounded canopy for all forest/woodland/flora themes
+  try {
+    buildIslandNaturalTree(dimension, theme, center);
+  } catch (te) {}
 
   // 8. CORNER LIGHTING POSTS:
   const lanternPosts = [
