@@ -1880,7 +1880,10 @@ system.runInterval(() => {
     if (!isAdminWorld && tickCounter % 10 === 0) {
       try {
         const ow = world.getDimension("overworld");
-        if (ow) ow.runCommand("difficulty hard");
+        if (ow) {
+          ow.runCommand("difficulty hard");
+          ow.runCommand("defaultgamemode survival");
+        }
       } catch (de) {}
     }
 

@@ -1,15 +1,16 @@
-# 🌌 OneBlocked [by AllensCreations] - Bedrock Edition
+# 🌌 OneBlock Void Survival [by AllensCreations] - Bedrock Edition
 
 **Created by**: AllensCreations  
 **Supported Versions**: Minecraft Bedrock v1.20 – v1.26+ (MCPE, Windows 10/11, iOS, Android, Xbox, PlayStation, Switch)  
+**Game Mode**: Hardcore Survival (Locked Pure Survival)  
 **Vanilla Purity**: 100% Pure Vanilla Survival (`experiments_ever_used: 0` — **Achievements Compatible & No Experimental Flags!**)
 
 ---
 
 ## 🌟 Introduction & Welcome
-Welcome to **OneBlocked by AllensCreations**, an ultra-polished, feature-rich infinite OneBlock adventure built from the ground up for Minecraft Bedrock! 
+Welcome to **OneBlock Void Survival**, an exciting Minecraft Bedrock adventure where you start floating in a vast empty void with only a single magical block beneath your feet. Mine it to progress through unique biome phases, uncover hidden secret islands, build your dream floating base, and survive the endless sky while unlocking rare rewards, powerful upgrades, and thrilling challenges. Every step of the journey brings new resources, discoveries, and surprises as you expand from a simple starter island into a grand void empire.
 
-You spawn floating in an empty void above a single magical regenerative block. Mine it to progress through **27 complete biome phases**, build your floating empire, unlock authentic **42+ Secret Void Islands**, trade with the mystical **Dimension Shifter**, and conquer the void across all 3 dimensions!
+This map is packed with handcrafted progression, dynamic events, secret islands, treasure-filled ruins, vibrant biomes, and hidden rewards around every corner. Explore village islands, ore-rich mines, lush sanctuaries, dangerous nether zones, and mysterious late-game locations while using the compass, sonar tools, and HUD systems to guide your way. With a smooth tutorial, vanilla-friendly gameplay, and plenty to be found, OneBlock Void Survival offers endless exploration!
 
 > 💬 *"Thank you so much for playing my map! I put endless love and care into balancing every single phase, tutorial step, and island exploration to give you the ultimate Bedrock Skyblock experience. Please leave a rating on MCPEDL.COM and share with your friends!"* — **AllensCreations**
 
