@@ -162,22 +162,44 @@ function hoverDropAboveOneBlock(dimension, itemStack) {
   } catch (err) {}
 }
 
-// Spawns a real Minecraft Chest block at ONEBLOCK_POS and populates it with items
-function spawnOneBlockChest(dimension, items = []) {
+// Spawns an Entity Chest (minecraft:chest_minecart) atop ONEBLOCK_POS and populates it with items
+function spawnOneBlockChest(dimension, items = [], title = "§6§l★ Mystery Chest ★§r") {
   try {
-    const block = dimension.getBlock(ONEBLOCK_POS);
-    if (block) {
-      block.setType("minecraft:chest");
-      const chestComp = block.getComponent("minecraft:inventory");
-      if (chestComp && chestComp.container) {
-        for (const item of items) {
-          if (item) {
-            chestComp.container.addItem(item);
-          }
-        }
+    const spawnLoc = { x: ONEBLOCK_POS.x + 0.5, y: ONEBLOCK_POS.y + 1.0, z: ONEBLOCK_POS.z + 0.5 };
+
+    // Remove any previous chest minecart at OneBlock to prevent clutter
+    try {
+      const existing = dimension.getEntities({
+        type: "minecraft:chest_minecart",
+        location: spawnLoc,
+        maxDistance: 1.5
+      });
+      for (const ent of existing) {
+        ent.remove();
       }
+    } catch (ee) {}
+
+    const chestEntity = dimension.spawnEntity("minecraft:chest_minecart", spawnLoc);
+    if (chestEntity) {
+      chestEntity.clearVelocity();
+      chestEntity.nameTag = title;
+
+      // Populate items safely on next tick so entity inventory container is ready
+      system.runTimeout(() => {
+        try {
+          const invComp = chestEntity.getComponent("minecraft:inventory");
+          if (invComp && invComp.container) {
+            spawnScatteredLootInChest(invComp.container, items);
+          }
+        } catch (ie) {}
+      }, 1);
+
+      dimension.spawnParticle("minecraft:totem_particle", { x: spawnLoc.x, y: spawnLoc.y + 0.5, z: spawnLoc.z });
+      dimension.playSound("random.chestopen", spawnLoc, { volume: 1.0, pitch: 1.0 });
+      return chestEntity;
     }
   } catch (e) {}
+  return null;
 }
 
 // Scatters loot across random single-chest slots (0-26) with realistic splitting, like vanilla structure loot chests
@@ -302,18 +324,30 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
         } catch (e) {}
       }, 1);
     } else {
-      // Fully mined! Core transforms into the Sacred Island Treasure Chest with scattered loot
+      // Fully mined! The last block turns into the island's floor block, and the Sacred Reward Entity Chest spawns atop it!
       world.setDynamicProperty(`island_ob_completed_${matchedTheme.id}`, true);
 
       system.run(() => {
         try {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
-            targetBlock.setType("minecraft:chest");
-            const chestComp = targetBlock.getComponent("minecraft:inventory");
-            if (chestComp && chestComp.container) {
-              spawnScatteredLootInChest(chestComp.container, matchedTheme.chest);
-            }
+            targetBlock.setType(matchedTheme.floor);
+          }
+
+          // Spawn the Sacred Reward Entity Chest sitting atop the permanent floor block
+          const chestLoc = { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 };
+          const chestEntity = dimension.spawnEntity("minecraft:chest_minecart", chestLoc);
+          if (chestEntity) {
+            chestEntity.clearVelocity();
+            chestEntity.nameTag = `${matchedTheme.color}§l[Sacred Chest] ${matchedTheme.name}§r`;
+            system.runTimeout(() => {
+              try {
+                const invComp = chestEntity.getComponent("minecraft:inventory");
+                if (invComp && invComp.container) {
+                  spawnScatteredLootInChest(invComp.container, matchedTheme.chest);
+                }
+              } catch (ie) {}
+            }, 1);
           }
         } catch (e) {}
       });
@@ -1363,9 +1397,9 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
     if (state.count === TUTORIAL_BLOCKS.length - 1) {
       try {
         const iceGift = new ItemStack("minecraft:ice", 2);
-        spawnOneBlockChest(dimension, [iceGift]);
+        spawnOneBlockChest(dimension, [iceGift], "§b§l★ Starter Gift Chest ★§r");
         for (const p of world.getAllPlayers()) {
-          p.sendMessage("§b[Starter Gift] §aA Starter Chest appeared with 2x Ice Blocks! Melt them with torches to create an infinite water pool!");
+          p.sendMessage("§b[Starter Gift] §aA Starter Entity Chest appeared with 2x Ice Blocks! Melt them with torches to create an infinite water pool!");
         }
       } catch (err) {}
     }
@@ -1466,8 +1500,8 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
           itemsToPut.push(new ItemStack(reward.id, count));
         } catch (ie) {}
       }
-      spawnOneBlockChest(dimension, itemsToPut);
-      player.sendMessage("§6[OneBlock] §e★ A Mystery Chest has appeared! Open it for phase loot! ★");
+      spawnOneBlockChest(dimension, itemsToPut, "§6§l★ Mystery Chest ★§r");
+      player.sendMessage("§6[OneBlock] §e★ A Mystery Entity Chest has appeared! Open it for phase loot! ★");
       player.playSound("random.chestopen", { pitch: 1.0, volume: 1.0 });
     } else if (roll < CHEST_CHANCE + MOB_CHANCE && phase.mobs && phase.mobs.length > 0) {
       const mobId = phase.mobs[Math.floor(Math.random() * phase.mobs.length)];
@@ -1487,24 +1521,24 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
       try {
         const book = new ItemStack("minecraft:enchanted_book", 1);
         book.nameTag = "§6§lAncient Enchantment Relic§r";
-        spawnOneBlockChest(dimension, [book]);
-        player.sendMessage("§6[OneBlock] §e★ A RELIC CHEST APPEARED WITH AN ANCIENT ENCHANTED BOOK! ★");
+        spawnOneBlockChest(dimension, [book], "§6§l★ Ancient Relic Chest ★§r");
+        player.sendMessage("§6[OneBlock] §e★ A RELIC ENTITY CHEST APPEARED WITH AN ANCIENT ENCHANTED BOOK! ★");
         player.playSound("ui.toast.challenge_complete", { pitch: 1.2, volume: 1.0 });
       } catch (e) {}
     } else if (Math.random() < 0.001) {
       // 0.1% chance: Ancient Totem of Undying inside a chest
       try {
         const totem = new ItemStack("minecraft:totem_of_undying", 1);
-        spawnOneBlockChest(dimension, [totem]);
-        player.sendMessage("§e[OneBlock] §a★ A Sacred Chest appeared with an Ancient Totem of Undying! ★");
+        spawnOneBlockChest(dimension, [totem], "§e§l★ Sacred Totem Chest ★§r");
+        player.sendMessage("§e[OneBlock] §a★ A Sacred Entity Chest appeared with an Ancient Totem of Undying! ★");
         player.playSound("random.totem", { pitch: 1.0, volume: 1.0 });
       } catch (e) {}
     } else if (dimKey === "end" && Math.random() < 0.001) {
       // 0.1% chance in The End: Dragon Egg trophy inside a chest
       try {
         const egg = new ItemStack("minecraft:dragon_egg", 1);
-        spawnOneBlockChest(dimension, [egg]);
-        player.sendMessage("§5[OneBlock] §d★ AN ENDER DRAGON EGG TROPHY CHEST HAS APPEARED! ★");
+        spawnOneBlockChest(dimension, [egg], "§5§l★ Dragon Egg Trophy Chest ★§r");
+        player.sendMessage("§5[OneBlock] §d★ AN ENDER DRAGON EGG TROPHY ENTITY CHEST HAS APPEARED! ★");
         player.playSound("ui.toast.challenge_complete", { pitch: 1.2, volume: 1.0 });
       } catch (e) {}
     }
