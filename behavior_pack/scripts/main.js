@@ -2,7 +2,20 @@ import { world, system, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { OVERWORLD_PHASES, NETHER_PHASES, END_PHASES } from "./phases.js";
 import { RARITY_TIERS, DIMENSION_TRADE_POOLS } from "./rarities.js";
-import { ISLAND_THEMES, getIslandLocation, buildThemedIsland, getIslandBlockPool } from "./islands.js";
+// Admin Build Configuration
+// In Survival: false (pure vanilla experience: no Actionbar HUD, no !run or admin command intercepts)
+// In Admin World: true (enables !run auto-break testing runner, !hud toggle, !admin GUI, and inspector tools)
+const IS_ADMIN_BUILD = false;
+
+function isAdmin(player) {
+  if (IS_ADMIN_BUILD) return true;
+  if (!player) return false;
+  try {
+    return player.hasTag("admin") || world.getDynamicProperty("is_admin_world") === true;
+  } catch (e) {
+    return false;
+  }
+}
 
 // Progressive Phase Length Scaling:
 // Early Biomes (Phases 0-4): 50 blocks (fast progression through starter woods/caves)
@@ -995,6 +1008,18 @@ function handleAutomatedBlockDestruction(dimension) {
     let nextBlockType;
     if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
       nextBlockType = TUTORIAL_BLOCKS[state.count].block;
+
+      // Automated platform placement for the first 8 Dirts (steps 0 to 7)
+      if (state.count < SURROUNDING_OFFSETS.length) {
+        const offset = SURROUNDING_OFFSETS[state.count];
+        try {
+          const sideBlock = dimension.getBlock({ x: offset.x, y: 64, z: offset.z });
+          if (sideBlock && sideBlock.isAir) {
+            sideBlock.setType("minecraft:dirt");
+            dimension.spawnParticle("minecraft:villager_happy", { x: offset.x + 0.5, y: 64.5, z: offset.z + 0.5 });
+          }
+        } catch (err) {}
+      }
     } else {
       nextBlockType = pickWeighted(phase.blocks).id;
     }
@@ -1074,9 +1099,7 @@ let isAutoBreakRunning = false;
 
 export function toggleAdminAutoBreak(player) {
   try {
-    const isAdminWorld = world.getDynamicProperty("is_admin_world");
-    if (!isAdminWorld && !player.hasTag("admin")) {
-      player.sendMessage("§c[Admin Command] This command can only be used in the Admin World or by tagged admins!");
+    if (!isAdmin(player)) {
       return;
     }
 
@@ -1091,6 +1114,9 @@ export function toggleAdminAutoBreak(player) {
       player.sendMessage("\n§c⏹ [Admin Auto-Break] Stopped auto-break simulation.");
       player.sendMessage("§7Auto-mining runner halted.\n");
       player.playSound("random.fizz", { pitch: 1.0, volume: 1.0 });
+      try {
+        player.onScreenDisplay.setActionBar("§c[Auto-Break Stopped]");
+      } catch (e) {}
     }
   } catch (err) {}
 }
@@ -1136,6 +1162,7 @@ system.runInterval(() => {
 
 export function openAdminIslandMenu(player) {
   try {
+    if (!isAdmin(player)) return;
     const form = new ActionFormData();
     form.title("§6§lISLAND INSPECTOR (ADMIN)§r");
     form.body("§eSelect an island to inspect in Creative Mode.\n§7Clicking an island generates it in the void and teleports you directly there!\n§bTotal: 42 Secret Themed Islands");
@@ -1828,8 +1855,7 @@ world.afterEvents.entityDie.subscribe((event) => {
     const dead = event.deadEntity;
     if (dead && dead.typeId === "minecraft:player") {
       const player = dead;
-      const isAdminWorld = world.getDynamicProperty("is_admin_world");
-      if (!isAdminWorld) {
+      if (!isAdmin(player)) {
         player.addTag("hardcore_fallen");
         for (const p of world.getAllPlayers()) {
           p.sendMessage(`\n§4§l☠ [HARDCORE ELIMINATION] §c${player.name} §4has fallen!§r`);
@@ -1883,9 +1909,8 @@ world.afterEvents.playerSpawn.subscribe((event) => {
         } catch (e) {}
       }
 
-      // Enforce Hardcore Survival or Spectator on spawning player
-      const isAdminWorld = world.getDynamicProperty("is_admin_world");
-      if (!isAdminWorld && !player.hasTag("admin")) {
+      // Enforce Hardcore Survival or Spectator on spawning player in official survival world
+      if (!isAdmin(player)) {
         if (player.hasTag("hardcore_fallen")) {
           try {
             player.setGameMode("spectator");
@@ -1902,17 +1927,20 @@ world.afterEvents.playerSpawn.subscribe((event) => {
             try { player.runCommand("gamemode survival @s"); } catch (e2) {}
           }
         }
+      } else {
+        try { player.addTag("admin"); } catch (e) {}
+        try { world.setDynamicProperty("is_admin_world", true); } catch (e) {}
       }
 
-        // Cleanly wipe any lingering scoreboard sidebar
-        clearScoreboardObjective();
+      // Cleanly wipe any lingering scoreboard sidebar
+      clearScoreboardObjective();
 
-        // Check if admin map or admin player: grant Island Inspector Tool
-        if (isAdminWorld || player.hasTag("admin")) {
-          giveAdminInspectorTool(player);
-          player.sendMessage("§6[Admin Tool] Island Inspector Compass delivered! Right-click or type !admin to inspect all 42 islands.");
-          player.sendMessage("§e[Admin Fast-Test] Type §b!run§e or §brun§e in chat to start/stop rapid auto-mining to test phase & island spawns!");
-        }
+      // Check if admin map or admin player: grant Island Inspector Tool
+      if (isAdmin(player)) {
+        giveAdminInspectorTool(player);
+        player.sendMessage("§6[Admin Tool] Island Inspector Compass delivered! Right-click or type !admin to inspect all 42 islands.");
+        player.sendMessage("§e[Admin Fast-Test] Type §b!run§e or §brun§e in chat to start/stop rapid auto-mining to test phase & island spawns!");
+      }
 
         // Welcome introduction & creator thank you
         player.sendMessage("\n§6==================================================");
@@ -1931,7 +1959,10 @@ world.afterEvents.playerSpawn.subscribe((event) => {
 world.beforeEvents.chatSend.subscribe((event) => {
   const { message, sender } = event;
   const msg = message.trim().toLowerCase();
+
+  // In pure Survival, ignore admin commands completely to preserve 100% vanilla experience
   if (msg === "!hud") {
+    if (!isAdmin(sender)) return;
     event.cancel = true;
     system.run(() => {
       if (sender.hasTag("hide_hud")) {
@@ -1943,11 +1974,13 @@ world.beforeEvents.chatSend.subscribe((event) => {
       }
     });
   } else if (msg === "!admin" || msg === "!islands") {
+    if (!isAdmin(sender)) return;
     event.cancel = true;
     system.run(() => {
       openAdminIslandMenu(sender);
     });
-  } else if (msg === "!run" || msg === "run" || msg === "/run") {
+  } else if (msg === "!run" || msg === "/run" || (IS_ADMIN_BUILD && msg === "run")) {
+    if (!isAdmin(sender)) return;
     event.cancel = true;
     system.run(() => {
       toggleAdminAutoBreak(sender);
@@ -1960,6 +1993,7 @@ world.beforeEvents.itemUse.subscribe((event) => {
   try {
     const { itemStack, source } = event;
     if (itemStack && itemStack.nameTag && itemStack.nameTag.includes("Island Inspector")) {
+      if (!isAdmin(source)) return;
       event.cancel = true;
       system.run(() => {
         openAdminIslandMenu(source);
@@ -2079,8 +2113,7 @@ system.runInterval(() => {
     try { tickDimensionShifters(); } catch (e) {}
 
     // Permanently Lock World Difficulty to Hard in survival world
-    const isAdminWorld = world.getDynamicProperty("is_admin_world");
-    if (!isAdminWorld && tickCounter % 10 === 0) {
+    if (!IS_ADMIN_BUILD && tickCounter % 10 === 0) {
       try {
         const ow = world.getDimension("overworld");
         if (ow) {
@@ -2090,11 +2123,11 @@ system.runInterval(() => {
       } catch (de) {}
     }
 
-    // QoL: Actionbar HUD
+    // Actionbar HUD & Gamemode Enforcement
     for (const player of world.getAllPlayers()) {
       try {
         // Permanently Lock Player GameMode in official survival world
-        if (!isAdminWorld && !player.hasTag("admin")) {
+        if (!isAdmin(player)) {
           try {
             if (player.hasTag("hardcore_fallen")) {
               if (player.getGameMode && player.getGameMode() !== "spectator") {
@@ -2116,7 +2149,9 @@ system.runInterval(() => {
             } catch (e2) {}
           }
         }
-        if (!player.hasTag("hide_hud")) {
+
+        // Actionbar HUD: Exclusively for Admin testing / when enabled
+        if (isAdmin(player) && !player.hasTag("hide_hud") && !isAutoBreakRunning) {
           const dimKey = getDimKey(player.dimension.id);
           const state = getDimensionState(dimKey);
           const progressInPhase = (state.count % BLOCKS_PER_PHASE);
