@@ -1849,13 +1849,14 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
       p.playSound("random.orb", { pitch: 1.2, volume: 0.8 });
     }
 
-    // At final step (completion), spawn a Starter Reward Chest with 2 Ice blocks for infinite water pool
+    // At final step (completion), spawn a Starter Reward Chest with 2 Ice blocks and 1 Lava Bucket
     if (state.count === TUTORIAL_BLOCKS.length - 1) {
       try {
         const iceGift = new ItemStack("minecraft:ice", 2);
-        spawnOneBlockChest(dimension, [iceGift], "§b§l★ Starter Gift Chest ★§r");
+        const lavaGift = new ItemStack("minecraft:lava_bucket", 1);
+        spawnOneBlockChest(dimension, [iceGift, lavaGift], "§b§l★ Starter Gift Chest ★§r");
         for (const p of world.getAllPlayers()) {
-          p.sendMessage("§b[Starter Gift] §aA Starter Entity Chest appeared with 2x Ice Blocks! Melt them with torches to create an infinite water pool!");
+          p.sendMessage("§b[Starter Gift] §aA Starter Gift Chest appeared with 2x Ice Blocks & 1x Lava Bucket! Create infinite water & cobblestone generators!");
         }
       } catch (err) {}
     }
