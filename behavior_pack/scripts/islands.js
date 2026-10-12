@@ -1405,23 +1405,11 @@ export function buildThemedIsland(dimension, theme, center) {
     }
   }
 
-  // 5. CENTRAL LODESTONE MONUMENT:
-  // Placed right at island center (cx, cy + 1, cz)
+  // 5. TEMPORARY ISLAND ONEBLOCK CORE (30-50 Blocks Capacity):
+  // Placed flush directly at the island surface center (cx, cy, cz) - no lodestone!
+  // When all 30-50 blocks are mined, this block solidifies into the Sacred Treasure Chest.
+  const obPos = { x: cx, y: cy, z: cz };
   try {
-    const lodeBlock = dimension.getBlock({ x: cx, y: cy + 1, z: cz });
-    if (lodeBlock) lodeBlock.setType("minecraft:lodestone");
-  } catch (le) {}
-
-  // 6. TEMPORARY ISLAND ONEBLOCK CORE (30-50 Blocks Capacity):
-  // Placed on central altar pedestal at (cx, cy + 1, cz + 1) in front of Lodestone.
-  // The treasure chest will only materialize once all blocks are mined!
-  const obPos = { x: cx, y: cy + 1, z: cz + 1 };
-  try {
-    const obFloor = dimension.getBlock({ x: obPos.x, y: obPos.y - 1, z: obPos.z });
-    if (obFloor && (obFloor.isAir || obFloor.typeId === "minecraft:air")) {
-      obFloor.setType(theme.floor);
-    }
-
     const maxBlocks = 30 + Math.floor(Math.random() * 21); // 30 to 50 randomized blocks
     world.setDynamicProperty(`island_ob_x_${theme.id}`, obPos.x);
     world.setDynamicProperty(`island_ob_y_${theme.id}`, obPos.y);
@@ -1430,7 +1418,7 @@ export function buildThemedIsland(dimension, theme, center) {
     world.setDynamicProperty(`island_ob_mined_${theme.id}`, 0);
     world.setDynamicProperty(`island_ob_completed_${theme.id}`, false);
 
-    // Initial block from theme's curated block pool
+    // Initial block from theme's curated block pool placed flush on the surface
     const pool = getIslandBlockPool(theme);
     const obBlock = dimension.getBlock(obPos);
     if (obBlock) obBlock.setType(pool[0]);

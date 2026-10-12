@@ -580,7 +580,7 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
 
     // Store active island target in world dynamic properties for radar navigation
     world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
-    world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y + 1);
+    world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y);
     world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
 
     // 2. Build the themed Skyblock island and award compass
@@ -596,17 +596,12 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
           p.onScreenDisplay.setActionBar(`§e⚡ A secret island (${theme.name}) has materialized! Check your compass!`);
 
           p.sendMessage(`\n${theme.color}⚡ [Secret Island Materialized] §fThe mysterious §l${theme.name}§r ${theme.color}has appeared in the void!`);
-          p.sendMessage(`§eA mystical Compass has been delivered! §6Target Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`);
+          p.sendMessage(`§eA mystical Compass has been delivered! §6Target Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y} §bZ: ${islandLoc.center.z}`);
           p.sendMessage(`§7(Coordinates are inscribed directly on the Compass item tooltip / lore!)\n`);
 
-          // Award Authentic Lodestone Tracking Compass directly into player inventory (or hovering at OneBlock)
+          // Award Mystical Tracking Compass directly into player inventory (or hovering at OneBlock)
           try {
-            let compass;
-            try {
-              compass = new ItemStack("minecraft:lodestone_compass", 1);
-            } catch (lce) {
-              compass = new ItemStack("minecraft:compass", 1);
-            }
+            const compass = new ItemStack("minecraft:compass", 1);
 
             const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
             const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
@@ -616,25 +611,12 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
               `§7Mystical Island Explorer Compass`,
               `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
               `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
-              `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y + 1} §bZ: ${islandLoc.center.z}`,
+              `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y} §bZ: ${islandLoc.center.z}`,
               `§7-----------------------`,
               `§aHold in hand for Radar HUD & Light Trail!`,
               `§bRight-Click for Interactive Sonar Ping!`,
               `§eAuto-dissolves when you reach the island!`
             ]);
-
-            // Attune Compass to the island Lodestone location via Bedrock Script API
-            const lodestonePos = { x: islandLoc.center.x, y: islandLoc.center.y + 1, z: islandLoc.center.z };
-            try {
-              const tracker = compass.getComponent("minecraft:lodestone_tracker");
-              if (tracker) {
-                if (typeof tracker.setLodestonePosition === "function") {
-                  tracker.setLodestonePosition(lodestonePos);
-                } else if ("trackingPosition" in tracker) {
-                  tracker.trackingPosition = lodestonePos;
-                }
-              }
-            } catch (te) {}
 
             const inv = p.getComponent("minecraft:inventory")?.container;
             if (inv && inv.emptySlotsCount > 0) {
@@ -776,62 +758,103 @@ function ensureOneBlock(dimension) {
   } catch (err) {}
 }
 
-// Sidebar Scoreboard displaying live Dimension, Phase name, Phase progress, and Total blocks
+let previousScoreboardLines = [];
+
+// Modern RPG Sidebar Scoreboard following the Player's Username & Live Stats
 function updateScoreboard() {
   try {
-    let objective = world.scoreboard.getObjective("oneblock_stats");
-    if (!objective) {
-      objective = world.scoreboard.addObjective("oneblock_stats", "§l§dOne§5Blocked§r");
-    } else {
-      objective.displayName = "§l§dOne§5Blocked§r";
-    }
-
-    world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
-      objective: objective
-    });
+    const players = world.getAllPlayers();
+    const primaryPlayer = players.length > 0 ? players[0] : null;
+    const playerName = primaryPlayer ? primaryPlayer.name : "Survivor";
 
     const owState = getDimensionState("overworld");
     const netherState = getDimensionState("nether");
     const endState = getDimensionState("end");
+    const totalMined = owState.count + netherState.count + endState.count;
 
-    // Format distinct, clean scoreboard lines
+    let currentDimKey = "overworld";
+    if (primaryPlayer) {
+      currentDimKey = getDimKey(primaryPlayer.dimension.id);
+    }
+    const activeState = getDimensionState(currentDimKey);
+    const activePhase = activeState.phase;
+    const phaseName = activePhase?.name || `Phase ${activeState.phaseIndex + 1}`;
+
+    // Blocks mined towards next island pity guarantee (150 blocks)
+    const lastMineCount = world.getDynamicProperty("last_island_mine_count") ?? 0;
+    const pityMined = Math.min(150, Math.max(0, owState.count - lastMineCount));
+
+    // Modern RPG Scoreboard Layout (Player-following):
     const lines = [
-      "§7-----------------§r",
-      `§aOverworld: §fPhase ${owState.phaseIndex + 1}`,
-      `§7Progress: §b${owState.phaseProgress}§7/§b${owState.currentPhaseLength}`,
-      `§cNether: §fPhase ${netherState.phaseIndex + 1}`,
-      `§dThe End: §fPhase ${endState.phaseIndex + 1}`,
-      `§eTotal Mined: §6${owState.count + netherState.count + endState.count}`,
-      "§7------------------§r"
+      "§7-----------------",
+      `§fPlayer: §a${playerName}`,
+      `§ePhase: §f${phaseName}`,
+      `§7Progress: §b${activeState.phaseProgress}§7/§b${activeState.currentPhaseLength}`,
+      `§6Total Mined: §e${totalMined}`,
+      `§dNext Island: §e${pityMined}/150 §7(0.8%)`,
+      "§7------------------"
     ];
 
-    // Remove obsolete participants
-    try {
-      const participants = objective.getParticipants();
-      for (const p of participants) {
-        const idName = (typeof p === "string") ? p : (p.displayName || p.id);
-        if (idName && !lines.includes(idName)) {
-          objective.removeParticipant(p);
-        }
-      }
-    } catch (pe) {}
+    const title = "§l§dOne§5Blocked §r§8[§bAllensCreations§8]";
 
-    let score = lines.length;
-    for (const line of lines) {
-      try {
-        objective.setScore(line, score--);
-      } catch (se) {}
-    }
-  } catch (e) {
-    // Robust Command Fallback
+    let success = false;
     try {
+      let objective = world.scoreboard.getObjective("oneblock_stats");
+      if (!objective) {
+        objective = world.scoreboard.addObjective("oneblock_stats", title);
+      } else {
+        objective.displayName = title;
+      }
+
+      // DisplaySlotId check: supports string "sidebar" and DisplaySlotId enum
+      const slot = (typeof DisplaySlotId !== "undefined" && DisplaySlotId.sidebar) ? DisplaySlotId.sidebar : "sidebar";
+      world.scoreboard.setObjectiveAtDisplaySlot(slot, { objective: objective });
+
+      // Clean up previous lines that are no longer present
+      try {
+        const participants = objective.getParticipants();
+        for (const p of participants) {
+          const idName = (typeof p === "string") ? p : (p.displayName || p.id);
+          if (idName && !lines.includes(idName)) {
+            objective.removeParticipant(p);
+          }
+        }
+      } catch (pe) {}
+
+      let scoreVal = lines.length;
+      for (const line of lines) {
+        objective.setScore(line, scoreVal--);
+      }
+      success = true;
+    } catch (apiErr) {
+      success = false;
+    }
+
+    // Command fallback (Rock-solid across all Bedrock engine versions)
+    if (!success) {
       const ow = world.getDimension("overworld");
       if (ow) {
-        ow.runCommand("scoreboard objectives add oneblock_stats dummy §e§lONEBLOCK VOID§r");
-        ow.runCommand("scoreboard objectives setdisplay sidebar oneblock_stats");
+        try { ow.runCommand(`scoreboard objectives add oneblock_stats dummy "${title}"`); } catch (e) {}
+        try { ow.runCommand(`scoreboard objectives setdisplay sidebar oneblock_stats`); } catch (e) {}
+
+        // Remove old lines that changed to prevent ghost entries and avoid flickering
+        for (const oldLine of previousScoreboardLines) {
+          if (!lines.includes(oldLine)) {
+            try { ow.runCommand(`scoreboard players reset "${oldLine}" oneblock_stats`); } catch (e) {}
+          }
+        }
+
+        let scoreVal = lines.length;
+        for (const line of lines) {
+          try {
+            ow.runCommand(`scoreboard players set "${line}" oneblock_stats ${scoreVal--}`);
+          } catch (e) {}
+        }
       }
-    } catch (ce) {}
-  }
+    }
+
+    previousScoreboardLines = [...lines];
+  } catch (err) {}
 }
 
 // 8 perimeter positions around (0, 64, 0)
@@ -1650,13 +1673,6 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
     // 1. AUTO-DISAPPEAR COMPASS: Remove tracking compass from player inventory & hands!
     const removedCount = removeIslandCompassFromPlayer(player, matchedTheme);
 
-    // 2. Transform lodestone to gilded monument
-    try {
-      const targetBlock = dimension.getBlock(loc);
-      if (targetBlock && targetBlock.typeId === "minecraft:lodestone") {
-        targetBlock.setType("minecraft:gilded_blackstone");
-      }
-    } catch (be) {}
 
     // 3. Launch celebration fireworks
     try {
@@ -1701,36 +1717,6 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
   } catch (err) {}
 }
 
-// Method 1: Interacting with Lodestone (Before Event)
-world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
-  const { block, itemStack, player } = event;
-  if (!block) return;
-
-  if (block.typeId === "minecraft:lodestone") {
-    event.cancel = true; // Prevent vanilla attunement so custom registration handles it cleanly
-    system.run(() => {
-      // Find theme by position or held item
-      let matchedTheme = null;
-      if (itemStack && itemStack.nameTag) {
-        matchedTheme = ISLAND_THEMES.find(t => itemStack.nameTag.toLowerCase().includes(t.name.toLowerCase()));
-      }
-      if (!matchedTheme) {
-        // Fallback: match by distance to known island targets
-        for (const t of ISLAND_THEMES) {
-          const tx = world.getDynamicProperty(`island_target_x_${t.id}`);
-          const tz = world.getDynamicProperty(`island_target_z_${t.id}`);
-          if (tx !== undefined && tz !== undefined) {
-            const d = Math.hypot(block.location.x - tx, block.location.z - tz);
-            if (d < 10) { matchedTheme = t; break; }
-          }
-        }
-      }
-      if (matchedTheme) {
-        triggerIslandRegistration(player, matchedTheme, block.location);
-      }
-    });
-  }
-});
 
 // Method 2: Proactive Auto-Discovery on Arrival (Walking onto the Island platform)
 system.runInterval(() => {
