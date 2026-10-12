@@ -2,7 +2,7 @@ import { world, system, ItemStack, DisplaySlotId } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { OVERWORLD_PHASES, NETHER_PHASES, END_PHASES } from "./phases.js";
 import { RARITY_TIERS, DIMENSION_TRADE_POOLS } from "./rarities.js";
-import { ISLAND_THEMES, getIslandLocation, buildThemedIsland } from "./islands.js";
+import { ISLAND_THEMES, getIslandLocation, buildThemedIsland, getIslandBlockPool } from "./islands.js";
 
 // Progressive Phase Length Scaling:
 // Early Biomes (Phases 0-4): 50 blocks (fast progression through starter woods/caves)
@@ -169,6 +169,158 @@ function spawnOneBlockChest(dimension, items = []) {
   } catch (e) {}
 }
 
+// Scatters loot across random single-chest slots (0-26) with realistic splitting, like vanilla structure loot chests
+function spawnScatteredLootInChest(container, chestItems = []) {
+  try {
+    if (!container || !chestItems || chestItems.length === 0) return;
+
+    // Available slot indices [0..container.size - 1] (single chest: 0..26)
+    const availableSlots = [];
+    for (let s = 0; s < container.size; s++) {
+      availableSlots.push(s);
+    }
+    // Fisher-Yates shuffle
+    for (let i = availableSlots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [availableSlots[i], availableSlots[j]] = [availableSlots[j], availableSlots[i]];
+    }
+
+    // Deconstruct chest items into smaller stacks if count > 4 for authentic structure chest distribution
+    const itemsToPlace = [];
+    for (const entry of chestItems) {
+      if (!entry) continue;
+      if (entry instanceof ItemStack) {
+        itemsToPlace.push(entry);
+        continue;
+      }
+      let itemId = typeof entry === "string" ? entry : (entry.id || entry.typeId);
+      let count = entry.count || entry.amount || 1;
+      if (!itemId) continue;
+
+      if (count > 4 && Math.random() < 0.75) {
+        const half = Math.floor(count / 2);
+        const rem = count - half;
+        try { itemsToPlace.push(new ItemStack(itemId, half)); } catch (e) {}
+        try { itemsToPlace.push(new ItemStack(itemId, rem)); } catch (e) {}
+      } else {
+        try {
+          itemsToPlace.push(new ItemStack(itemId, count));
+        } catch (e) {}
+      }
+    }
+
+    // Place into randomized slots
+    for (const stack of itemsToPlace) {
+      if (availableSlots.length === 0) break;
+      const slot = availableSlots.pop();
+      try {
+        container.setItem(slot, stack);
+      } catch (e) {
+        try { container.addItem(stack); } catch (e2) {}
+      }
+    }
+  } catch (err) {}
+}
+
+// Handles breaking of an Island Mini-OneBlock Core (30-50 blocks capacity)
+function handleIslandOneBlockBreak(dimension, loc, player) {
+  try {
+    let matchedTheme = null;
+    for (const theme of ISLAND_THEMES) {
+      const completed = world.getDynamicProperty(`island_ob_completed_${theme.id}`);
+      if (completed) continue;
+      const obX = world.getDynamicProperty(`island_ob_x_${theme.id}`);
+      if (obX === undefined) continue;
+      const obY = world.getDynamicProperty(`island_ob_y_${theme.id}`);
+      const obZ = world.getDynamicProperty(`island_ob_z_${theme.id}`);
+      if (loc.x === obX && loc.y === obY && loc.z === obZ) {
+        matchedTheme = theme;
+        break;
+      }
+    }
+    if (!matchedTheme) return;
+
+    const maxBlocks = world.getDynamicProperty(`island_ob_max_${matchedTheme.id}`) ?? 40;
+    const currentMined = (world.getDynamicProperty(`island_ob_mined_${matchedTheme.id}`) ?? 0) + 1;
+    world.setDynamicProperty(`island_ob_mined_${matchedTheme.id}`, currentMined);
+
+    const progress = currentMined / maxBlocks;
+
+    // Visual feedback ONLY via particle progression (no action bar counter text)
+    if (progress < 0.5) {
+      // Early Stage (<50%): Happy villager green sparkles
+      dimension.spawnParticle("minecraft:villager_happy", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+      dimension.playSound("random.orb", loc, { pitch: 1.0, volume: 0.6 });
+    } else if (progress < 0.85) {
+      // Mid Stage (50-85%): Golden sparks
+      dimension.spawnParticle("minecraft:wax_particle", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+      dimension.playSound("random.orb", loc, { pitch: 1.3, volume: 0.7 });
+    } else {
+      // Final Stage (>85%): Mystical Purple Amethyst & Void sparkles
+      dimension.spawnParticle("minecraft:portal_particle", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+      dimension.spawnParticle("minecraft:dragon_breath_fire", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+      dimension.playSound("block.amethyst_block.chime", loc, { pitch: 1.4, volume: 0.9 });
+    }
+
+    if (currentMined < maxBlocks) {
+      // Respawn next thematic block from the island's unique pool
+      const pool = getIslandBlockPool(matchedTheme);
+      const nextBlockId = pool[Math.floor(Math.random() * pool.length)];
+
+      system.run(() => {
+        try {
+          const targetBlock = dimension.getBlock(loc);
+          if (targetBlock) {
+            targetBlock.setType(nextBlockId);
+          }
+        } catch (e) {}
+      });
+
+      // Keep drops floating safely above altar
+      system.runTimeout(() => {
+        try {
+          const nearbyItems = dimension.getEntities({
+            type: "minecraft:item",
+            location: { x: loc.x + 0.5, y: loc.y + 0.5, z: loc.z + 0.5 },
+            maxDistance: 2.5
+          });
+          for (const itemEnt of nearbyItems) {
+            itemEnt.teleport({ x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
+            itemEnt.clearVelocity();
+          }
+        } catch (e) {}
+      }, 1);
+    } else {
+      // Fully mined! Core transforms into the Sacred Island Treasure Chest with scattered loot
+      world.setDynamicProperty(`island_ob_completed_${matchedTheme.id}`, true);
+
+      system.run(() => {
+        try {
+          const targetBlock = dimension.getBlock(loc);
+          if (targetBlock) {
+            targetBlock.setType("minecraft:chest");
+            const chestComp = targetBlock.getComponent("minecraft:inventory");
+            if (chestComp && chestComp.container) {
+              spawnScatteredLootInChest(chestComp.container, matchedTheme.chest);
+            }
+          }
+        } catch (e) {}
+      });
+
+      // Celebration effects: fireworks, totem particles, levelup sound, chat announcement
+      try {
+        dimension.spawnEntity("minecraft:fireworks_rocket", { x: loc.x + 0.5, y: loc.y + 1.5, z: loc.z + 0.5 });
+        dimension.spawnParticle("minecraft:totem_particle", { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 });
+        dimension.playSound("random.levelup", loc, { pitch: 1.2, volume: 1.0 });
+        dimension.playSound("random.totem", loc, { pitch: 1.0, volume: 0.8 });
+      } catch (e) {}
+
+      for (const p of world.getAllPlayers()) {
+        p.sendMessage(`${matchedTheme.color}★ [Island Core Conquered] §fYou have mined all blocks of the §l${matchedTheme.name}§r ${matchedTheme.color}Core! The Sacred Treasure Chest has manifested!`);
+      }
+    }
+  } catch (err) {}
+}
 
 function spawnCelebrationFireworks(dimension) {
   try {
@@ -957,6 +1109,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
   const { x, y, z } = block.location;
 
   if (x !== ONEBLOCK_POS.x || y !== ONEBLOCK_POS.y || z !== ONEBLOCK_POS.z) {
+    handleIslandOneBlockBreak(dimension, block.location, player);
     return;
   }
 
