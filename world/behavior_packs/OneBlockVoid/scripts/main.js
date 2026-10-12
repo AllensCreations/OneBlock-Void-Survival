@@ -162,44 +162,42 @@ function hoverDropAboveOneBlock(dimension, itemStack) {
   } catch (err) {}
 }
 
-// Spawns an Entity Chest (minecraft:chest_minecart) atop ONEBLOCK_POS and populates it with items
-function spawnOneBlockChest(dimension, items = [], title = "§6§l★ Mystery Chest ★§r") {
+// Spawns a real Minecraft Chest block ABOVE ONEBLOCK_POS at (0, 65, 0) and populates it with items
+function spawnOneBlockChest(dimension, items = []) {
   try {
-    const spawnLoc = { x: ONEBLOCK_POS.x + 0.5, y: ONEBLOCK_POS.y + 1.0, z: ONEBLOCK_POS.z + 0.5 };
+    const chestPos = { x: ONEBLOCK_POS.x, y: ONEBLOCK_POS.y + 1, z: ONEBLOCK_POS.z };
 
-    // Remove any previous chest minecart at OneBlock to prevent clutter
+    // Remove any lingering chest_minecart entities around OneBlock
     try {
       const existing = dimension.getEntities({
         type: "minecraft:chest_minecart",
-        location: spawnLoc,
-        maxDistance: 1.5
+        location: { x: chestPos.x + 0.5, y: chestPos.y + 0.5, z: chestPos.z + 0.5 },
+        maxDistance: 2.5
       });
-      for (const ent of existing) {
-        ent.remove();
-      }
+      for (const ent of existing) ent.remove();
     } catch (ee) {}
 
-    const chestEntity = dimension.spawnEntity("minecraft:chest_minecart", spawnLoc);
-    if (chestEntity) {
-      chestEntity.clearVelocity();
-      chestEntity.nameTag = title;
+    const block = dimension.getBlock(chestPos);
+    if (block) {
+      block.setType("minecraft:chest");
 
-      // Populate items safely on next tick so entity inventory container is ready
+      // Populate chest inventory container on next tick once block entity is instantiated
       system.runTimeout(() => {
         try {
-          const invComp = chestEntity.getComponent("minecraft:inventory");
-          if (invComp && invComp.container) {
-            spawnScatteredLootInChest(invComp.container, items);
+          const cb = dimension.getBlock(chestPos);
+          if (cb && cb.typeId === "minecraft:chest") {
+            const chestComp = cb.getComponent("minecraft:inventory");
+            if (chestComp && chestComp.container) {
+              spawnScatteredLootInChest(chestComp.container, items);
+            }
           }
         } catch (ie) {}
       }, 1);
 
-      dimension.spawnParticle("minecraft:totem_particle", { x: spawnLoc.x, y: spawnLoc.y + 0.5, z: spawnLoc.z });
-      dimension.playSound("random.chestopen", spawnLoc, { volume: 1.0, pitch: 1.0 });
-      return chestEntity;
+      dimension.spawnParticle("minecraft:totem_particle", { x: chestPos.x + 0.5, y: chestPos.y + 0.5, z: chestPos.z + 0.5 });
+      dimension.playSound("random.chestopen", chestPos, { volume: 1.0, pitch: 1.0 });
     }
   } catch (e) {}
-  return null;
 }
 
 // Scatters loot across random single-chest slots (0-26) with realistic splitting, like vanilla structure loot chests
@@ -326,6 +324,19 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           if (targetBlock) {
             targetBlock.setType(nextBlockId);
           }
+          const underBlock = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
+          if (underBlock) underBlock.setType("minecraft:bedrock");
+
+          const besideOffsets = [
+            { x: 1, z: 0 },
+            { x: -1, z: 0 },
+            { x: 0, z: 1 },
+            { x: 0, z: -1 }
+          ];
+          for (const off of besideOffsets) {
+            const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
+            if (bBlock) bBlock.setType("minecraft:cobblestone");
+          }
         } catch (e) {}
       });
 
@@ -347,12 +358,25 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
       // Fully mined! The core first reveals solid Bedrock for 3 seconds, then stabilizes into the normal floor block!
       world.setDynamicProperty(`island_ob_completed_${matchedTheme.id}`, true);
 
-      // 1. Instantly place Bedrock at the core location
+      // 1. Instantly place Bedrock at the core location and reinforce surrounding cobblestone
       system.run(() => {
         try {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
             targetBlock.setType("minecraft:bedrock");
+          }
+          const underBlock = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
+          if (underBlock) underBlock.setType("minecraft:bedrock");
+
+          const besideOffsets = [
+            { x: 1, z: 0 },
+            { x: -1, z: 0 },
+            { x: 0, z: 1 },
+            { x: 0, z: -1 }
+          ];
+          for (const off of besideOffsets) {
+            const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
+            if (bBlock) bBlock.setType("minecraft:cobblestone");
           }
         } catch (e) {}
       });
@@ -381,40 +405,66 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
         }, s * 20);
       }
 
-      // 2. Exactly 3 seconds (60 ticks) later: Bedrock transforms into normal floor block & Sacred Entity Chest spawns
+      // 2. Exactly 3 seconds (60 ticks) later: Bedrock transforms into normal floor block & Sacred Chest block spawns above
       system.runTimeout(() => {
         try {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
             targetBlock.setType(matchedTheme.floor);
           }
+          const underBlock = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
+          if (underBlock) underBlock.setType("minecraft:bedrock");
 
-          // Spawn the Sacred Reward Entity Chest sitting cleanly atop the permanent floor block
-          const chestLoc = { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 };
-          const chestEntity = dimension.spawnEntity("minecraft:chest_minecart", chestLoc);
-          if (chestEntity) {
-            chestEntity.clearVelocity();
-            chestEntity.nameTag = `${matchedTheme.color}§l[Sacred Chest] ${matchedTheme.name}§r`;
+          const besideOffsets = [
+            { x: 1, z: 0 },
+            { x: -1, z: 0 },
+            { x: 0, z: 1 },
+            { x: 0, z: -1 }
+          ];
+          for (const off of besideOffsets) {
+            const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
+            if (bBlock) bBlock.setType("minecraft:cobblestone");
+          }
+
+          // Spawn the Sacred Reward Chest block ABOVE the permanent floor block at { x: loc.x, y: loc.y + 1, z: loc.z }
+          const chestPos = { x: loc.x, y: loc.y + 1, z: loc.z };
+
+          // Remove any lingering chest_minecart entities around Island OneBlock
+          try {
+            const existing = dimension.getEntities({
+              type: "minecraft:chest_minecart",
+              location: { x: chestPos.x + 0.5, y: chestPos.y + 0.5, z: chestPos.z + 0.5 },
+              maxDistance: 2.5
+            });
+            for (const ent of existing) ent.remove();
+          } catch (ee) {}
+
+          const chestBlock = dimension.getBlock(chestPos);
+          if (chestBlock) {
+            chestBlock.setType("minecraft:chest");
             system.runTimeout(() => {
               try {
-                const invComp = chestEntity.getComponent("minecraft:inventory");
-                if (invComp && invComp.container) {
-                  spawnScatteredLootInChest(invComp.container, matchedTheme.chest);
+                const cb = dimension.getBlock(chestPos);
+                if (cb && cb.typeId === "minecraft:chest") {
+                  const chestComp = cb.getComponent("minecraft:inventory");
+                  if (chestComp && chestComp.container) {
+                    spawnScatteredLootInChest(chestComp.container, matchedTheme.chest);
+                  }
                 }
               } catch (ie) {}
             }, 1);
           }
 
           // Celebration effects: fireworks, totem particles, levelup sound, chat announcement
-          dimension.spawnEntity("minecraft:fireworks_rocket", { x: loc.x + 0.5, y: loc.y + 1.5, z: loc.z + 0.5 });
-          dimension.spawnParticle("minecraft:totem_particle", { x: loc.x + 0.5, y: loc.y + 1.0, z: loc.z + 0.5 });
+          dimension.spawnEntity("minecraft:fireworks_rocket", { x: loc.x + 0.5, y: loc.y + 2.0, z: loc.z + 0.5 });
+          dimension.spawnParticle("minecraft:totem_particle", { x: loc.x + 0.5, y: loc.y + 1.5, z: loc.z + 0.5 });
           dimension.playSound("random.levelup", loc, { pitch: 1.2, volume: 1.0 });
-          dimension.playSound("random.totem", loc, { pitch: 1.0, volume: 0.8 });
+          dimension.playSound("random.chestopen", chestPos, { pitch: 1.0, volume: 1.0 });
 
           // Message only shown to the player who mined it or players near the island (clean for multiplayer)
           const finishAudience = getNearbyIslandPlayers(dimension, loc, 48, player);
           for (const p of finishAudience) {
-            p.sendMessage(`${matchedTheme.color}★ [Island Core Conquered] §fThe Bedrock core has stabilized into the island's natural floor! The Sacred Treasure Chest has manifested!\n`);
+            p.sendMessage(`${matchedTheme.color}★ [Island Core Conquered] §fThe Bedrock core has stabilized into the island's natural floor! The Sacred Treasure Chest has manifested above!\n`);
           }
         } catch (e) {}
       }, 60);

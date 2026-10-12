@@ -1227,16 +1227,16 @@ function buildSatelliteIslet(dimension, theme, center, maxR, seed, index) {
 
 export function getIslandBlockPool(theme) {
   const pools = {
-    sky_oasis: ["minecraft:grass_block", "minecraft:oak_log", "minecraft:oak_planks", "minecraft:wheat", "minecraft:carrots", "minecraft:emerald_ore", "minecraft:hay_block"],
+    sky_oasis: ["minecraft:grass_block", "minecraft:oak_log", "minecraft:oak_planks", "minecraft:moss_block", "minecraft:melon_block", "minecraft:emerald_ore", "minecraft:hay_block"],
     ancient_crypt: ["minecraft:sandstone", "minecraft:cut_sandstone", "minecraft:chiseled_sandstone", "minecraft:gold_ore", "minecraft:raw_gold_block", "minecraft:lapis_ore"],
-    trial_vault: ["minecraft:copper_block", "minecraft:cut_copper", "minecraft:tuff_bricks", "minecraft:chiseled_tuff", "minecraft:copper_grate", "minecraft:copper_bulb"],
-    stronghold_portal: ["minecraft:stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:mossy_stone_bricks", "minecraft:iron_bars", "minecraft:bookshelf", "minecraft:chiseled_stone_bricks"],
-    cherry_sanctuary: ["minecraft:cherry_log", "minecraft:cherry_leaves", "minecraft:cherry_planks", "minecraft:pink_petals", "minecraft:bee_nest", "minecraft:honey_block"],
+    trial_vault: ["minecraft:copper_block", "minecraft:cut_copper", "minecraft:tuff_bricks", "minecraft:chiseled_tuff", "minecraft:chiseled_copper", "minecraft:copper_bulb"],
+    stronghold_portal: ["minecraft:stone_bricks", "minecraft:cracked_stone_bricks", "minecraft:mossy_stone_bricks", "minecraft:iron_block", "minecraft:bookshelf", "minecraft:chiseled_stone_bricks"],
+    cherry_sanctuary: ["minecraft:cherry_log", "minecraft:cherry_leaves", "minecraft:cherry_planks", "minecraft:cherry_wood", "minecraft:bee_nest", "minecraft:honey_block"],
     pale_garden_spire: ["minecraft:pale_oak_log", "minecraft:pale_moss_block", "minecraft:pale_oak_planks", "minecraft:pale_oak_leaves", "minecraft:creaking_heart"],
     mushroom_haven: ["minecraft:mycelium", "minecraft:red_mushroom_block", "minecraft:brown_mushroom_block", "minecraft:mushroom_stem", "minecraft:dirt"],
     badlands_mesa: ["minecraft:red_sand", "minecraft:terracotta", "minecraft:orange_terracotta", "minecraft:yellow_terracotta", "minecraft:gold_ore", "minecraft:raw_gold_block"],
-    ice_spike_peak: ["minecraft:snow_block", "minecraft:packed_ice", "minecraft:blue_ice", "minecraft:powder_snow"],
-    jungle_temple: ["minecraft:jungle_log", "minecraft:jungle_leaves", "minecraft:bamboo", "minecraft:mossy_cobblestone", "minecraft:chiseled_stone_bricks"],
+    ice_spike_peak: ["minecraft:snow_block", "minecraft:packed_ice", "minecraft:blue_ice", "minecraft:ice"],
+    jungle_temple: ["minecraft:jungle_log", "minecraft:jungle_leaves", "minecraft:bamboo_block", "minecraft:mossy_cobblestone", "minecraft:chiseled_stone_bricks"],
     nether_fortress_spire: ["minecraft:nether_brick", "minecraft:red_nether_brick", "minecraft:nether_quartz_ore", "minecraft:nether_gold_ore", "minecraft:soul_sand"],
     bastion_treasury: ["minecraft:blackstone", "minecraft:polished_blackstone_bricks", "minecraft:gilded_blackstone", "minecraft:gold_block", "minecraft:crying_obsidian"],
     crimson_forest_isle: ["minecraft:crimson_nylium", "minecraft:crimson_stem", "minecraft:crimson_hyphae", "minecraft:shroomlight", "minecraft:nether_wart_block"],
@@ -1245,43 +1245,44 @@ export function getIslandBlockPool(theme) {
     amethyst_geode: ["minecraft:amethyst_block", "minecraft:budding_amethyst", "minecraft:calcite", "minecraft:smooth_basalt", "minecraft:tinted_glass"],
     witch_swamp_hut: ["minecraft:mud", "minecraft:mud_bricks", "minecraft:mangrove_log", "minecraft:redstone_ore", "minecraft:glowstone"],
     pillager_watchtower: ["minecraft:dark_oak_log", "minecraft:dark_oak_planks", "minecraft:cobblestone", "minecraft:iron_ore", "minecraft:hay_block"],
-    desert_well_oasis: ["minecraft:sand", "minecraft:sandstone", "minecraft:cactus", "minecraft:clay", "minecraft:cut_sandstone"],
-    bamboo_monastery: ["minecraft:bamboo", "minecraft:moss_block", "minecraft:grass_block", "minecraft:bamboo_block", "minecraft:flowering_azalea"],
-    deepslate_forge: ["minecraft:deepslate", "minecraft:deepslate_iron_ore", "minecraft:raw_iron_block", "minecraft:blast_furnace", "minecraft:anvil"],
+    desert_well_oasis: ["minecraft:sand", "minecraft:sandstone", "minecraft:smooth_sandstone", "minecraft:clay", "minecraft:cut_sandstone"],
+    bamboo_monastery: ["minecraft:bamboo_mosaic", "minecraft:moss_block", "minecraft:grass_block", "minecraft:bamboo_block", "minecraft:bamboo_planks"],
+    deepslate_forge: ["minecraft:deepslate", "minecraft:deepslate_iron_ore", "minecraft:raw_iron_block", "minecraft:blast_furnace", "minecraft:iron_block"],
     ocean_monument_shrine: ["minecraft:prismarine", "minecraft:prismarine_bricks", "minecraft:dark_prismarine", "minecraft:sea_lantern", "minecraft:sponge"],
     glowstone_meteor: ["minecraft:glowstone", "minecraft:basalt", "minecraft:blackstone", "minecraft:magma", "minecraft:obsidian"],
-    end_city_tower: ["minecraft:purpur_block", "minecraft:purpur_pillar", "minecraft:end_stone_bricks", "minecraft:end_rod", "minecraft:diamond_ore"],
+    end_city_tower: ["minecraft:purpur_block", "minecraft:purpur_pillar", "minecraft:end_stone_bricks", "minecraft:diamond_ore", "minecraft:end_stone"],
     fossil_excavation: ["minecraft:bone_block", "minecraft:coarse_dirt", "minecraft:rooted_dirt", "minecraft:coal_ore", "minecraft:iron_ore"],
-    blacksmith_workshop: ["minecraft:smooth_stone", "minecraft:iron_ore", "minecraft:raw_iron_block", "minecraft:anvil", "minecraft:furnace"],
-    library_observatory: ["minecraft:bookshelf", "minecraft:chiseled_bookshelf", "minecraft:stone_bricks", "minecraft:lapis_ore", "minecraft:enchanting_table"],
-    alchemist_laboratory: ["minecraft:podzol", "minecraft:brewing_stand", "minecraft:gold_ore", "minecraft:redstone_ore", "minecraft:glass"],
-    spider_nest: ["minecraft:cobweb", "minecraft:cobblestone", "minecraft:infested_stone", "minecraft:iron_ore"],
-    creeper_dungeon: ["minecraft:mossy_cobblestone", "minecraft:tnt", "minecraft:gunpowder", "minecraft:cobblestone", "minecraft:sand"],
+    blacksmith_workshop: ["minecraft:smooth_stone", "minecraft:iron_ore", "minecraft:raw_iron_block", "minecraft:iron_block", "minecraft:furnace"],
+    library_observatory: ["minecraft:bookshelf", "minecraft:chiseled_bookshelf", "minecraft:stone_bricks", "minecraft:lapis_ore", "minecraft:lapis_block"],
+    alchemist_laboratory: ["minecraft:podzol", "minecraft:redstone_block", "minecraft:gold_ore", "minecraft:redstone_ore", "minecraft:glass"],
+    spider_nest: ["minecraft:mossy_stone_bricks", "minecraft:cobblestone", "minecraft:infested_stone", "minecraft:iron_ore"],
+    creeper_dungeon: ["minecraft:mossy_cobblestone", "minecraft:tnt", "minecraft:mossy_stone_bricks", "minecraft:cobblestone", "minecraft:sand"],
     slime_biosphere: ["minecraft:moss_block", "minecraft:clay", "minecraft:slime_block", "minecraft:mud"],
-    bee_apiary: ["minecraft:bee_nest", "minecraft:honeycomb_block", "minecraft:honey_block", "minecraft:sunflower", "minecraft:poppy", "minecraft:dandelion"],
+    bee_apiary: ["minecraft:bee_nest", "minecraft:honeycomb_block", "minecraft:honey_block", "minecraft:yellow_terracotta", "minecraft:hay_block"],
     pumpkin_patch: ["minecraft:pumpkin", "minecraft:carved_pumpkin", "minecraft:jack_o_lantern", "minecraft:hay_block", "minecraft:dirt"],
     melon_greenhouse: ["minecraft:melon_block", "minecraft:glass", "minecraft:dirt", "minecraft:grass_block", "minecraft:jungle_log"],
-    sculk_laboratory: ["minecraft:sculk", "minecraft:sculk_catalyst", "minecraft:sculk_sensor", "minecraft:deepslate", "minecraft:echo_shard"],
-    armory_vault: ["minecraft:stone_bricks", "minecraft:iron_block", "minecraft:raw_iron_block", "minecraft:chain", "minecraft:anvil"],
-    bakery_windmill: ["minecraft:hay_block", "minecraft:farmland", "minecraft:wheat", "minecraft:spruce_planks", "minecraft:spruce_log"],
-    aquarium_atoll: ["minecraft:sand", "minecraft:tube_coral_block", "minecraft:brain_coral_block", "minecraft:sea_pickle", "minecraft:sponge"],
-    tuff_golem_sanctuary: ["minecraft:tuff", "minecraft:tuff_bricks", "minecraft:chiseled_tuff", "minecraft:copper_grate", "minecraft:copper_bulb"],
+    sculk_laboratory: ["minecraft:sculk", "minecraft:sculk_catalyst", "minecraft:deepslate_tiles", "minecraft:deepslate", "minecraft:reinforced_deepslate"],
+    armory_vault: ["minecraft:stone_bricks", "minecraft:iron_block", "minecraft:raw_iron_block", "minecraft:chiseled_stone_bricks", "minecraft:cracked_stone_bricks"],
+    bakery_windmill: ["minecraft:hay_block", "minecraft:barrel", "minecraft:dried_kelp_block", "minecraft:spruce_planks", "minecraft:spruce_log"],
+    aquarium_atoll: ["minecraft:sand", "minecraft:tube_coral_block", "minecraft:brain_coral_block", "minecraft:prismarine", "minecraft:sponge"],
+    tuff_golem_sanctuary: ["minecraft:tuff", "minecraft:tuff_bricks", "minecraft:chiseled_tuff", "minecraft:polished_tuff", "minecraft:copper_bulb"],
     meteorite_crater: ["minecraft:blackstone", "minecraft:crying_obsidian", "minecraft:obsidian", "minecraft:magma", "minecraft:ancient_debris"],
     golden_pantheon: ["minecraft:quartz_block", "minecraft:smooth_quartz", "minecraft:gold_block", "minecraft:raw_gold_block", "minecraft:sea_lantern"],
-    void_gateway_outpost: ["minecraft:end_stone_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:end_rod"]
+    void_gateway_outpost: ["minecraft:end_stone_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:purpur_pillar"]
   };
   return pools[theme.id] || [theme.floor, theme.subfloor, theme.base];
 }
 
 function decorateSteppingPaths(dimension, theme, center, seed) {
   const { x: cx, y: cy, z: cz } = center;
+  // Offset paths by distance >= 2 to keep adjacent cobblestone collar around the island OneBlock clean
   const pathBlocks = [
-    { x: cx, y: cy, z: cz + 1 },
-    { x: cx, y: cy, z: cz - 1 },
-    { x: cx + 1, y: cy, z: cz },
-    { x: cx - 1, y: cy, z: cz },
-    { x: cx - 2, y: cy, z: cz - 1 },
-    { x: cx + 2, y: cy, z: cz + 1 }
+    { x: cx, y: cy, z: cz + 2 },
+    { x: cx, y: cy, z: cz - 2 },
+    { x: cx + 2, y: cy, z: cz },
+    { x: cx - 2, y: cy, z: cz },
+    { x: cx - 3, y: cy, z: cz - 1 },
+    { x: cx + 3, y: cy, z: cz + 1 }
   ];
   for (let i = 0; i < pathBlocks.length; i++) {
     const p = pathBlocks[i];
@@ -1426,6 +1427,22 @@ export function buildThemedIsland(dimension, theme, center) {
     const pool = getIslandBlockPool(theme);
     const obBlock = dimension.getBlock(obPos);
     if (obBlock) obBlock.setType(pool[0]);
+
+    // Bedrock foundation directly underneath the Island OneBlock
+    const underBlock = dimension.getBlock({ x: cx, y: cy - 1, z: cz });
+    if (underBlock) underBlock.setType("minecraft:bedrock");
+
+    // The blocks directly beside the Island OneBlock are Cobblestone
+    const besideOffsets = [
+      { x: 1, z: 0 },
+      { x: -1, z: 0 },
+      { x: 0, z: 1 },
+      { x: 0, z: -1 }
+    ];
+    for (const off of besideOffsets) {
+      const bBlock = dimension.getBlock({ x: cx + off.x, y: cy, z: cz + off.z });
+      if (bBlock) bBlock.setType("minecraft:cobblestone");
+    }
   } catch (e) {}
 
   // 6b. ORGANIC STEPPING PATHS:
