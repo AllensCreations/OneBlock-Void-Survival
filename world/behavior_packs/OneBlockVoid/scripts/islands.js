@@ -1125,18 +1125,28 @@ function buildMicroCave(dimension, theme, center, seed) {
 
   // Populate Cave Features: Pointed dripstones, glowing lichen, and high-value ore veins!
   try {
-    // Ceiling & Floor Stalactites / Stalagmites
-    for (let ox = -1; ox <= 1; ox++) {
-      for (let oz = -1; oz <= 1; oz++) {
-        if ((ox + oz + seed) % 2 === 0) {
-          const ceilBlock = dimension.getBlock({ x: caveX + ox, y: caveY + 2, z: caveZ + oz });
-          if (ceilBlock && !ceilBlock.isAir) {
-            safeAirOnlySetBlock(dimension, { x: caveX + ox, y: caveY + 1, z: caveZ + oz }, "minecraft:pointed_dripstone");
-          }
-          const floorBlock = dimension.getBlock({ x: caveX + ox, y: caveY - 2, z: caveZ + oz });
-          if (floorBlock && !floorBlock.isAir) {
-            safeAirOnlySetBlock(dimension, { x: caveX + ox, y: caveY - 1, z: caveZ + oz }, "minecraft:pointed_dripstone");
-          }
+    // Minimalized 1-2 Pointed Dripstones per island with guaranteed solid block directly above (never air)
+    let dripstonePlaced = 0;
+    const maxDripstones = 1 + (seed % 2); // strictly 1 to 2 dripstones
+    const dripCandidates = [
+      { ox: 0, oz: 0 },
+      { ox: 1, oz: -1 },
+      { ox: -1, oz: 1 }
+    ];
+    for (const cand of dripCandidates) {
+      if (dripstonePlaced >= maxDripstones) break;
+      const ceilPos = { x: caveX + cand.ox, y: caveY + 2, z: caveZ + cand.oz };
+      const dripPos = { x: caveX + cand.ox, y: caveY + 1, z: caveZ + cand.oz };
+      const ceilBlock = dimension.getBlock(ceilPos);
+      if (ceilBlock) {
+        // Ensure the top of the dripstone is always solid non-air
+        if (ceilBlock.isAir) {
+          ceilBlock.setType("minecraft:dripstone_block");
+        }
+        const b = dimension.getBlock(dripPos);
+        if (b && b.isAir) {
+          b.setType("minecraft:pointed_dripstone");
+          dripstonePlaced++;
         }
       }
     }
@@ -1426,13 +1436,16 @@ export function buildThemedIsland(dimension, theme, center) {
     // Initial block from theme's curated block pool placed flush on the surface
     const pool = getIslandBlockPool(theme);
     const obBlock = dimension.getBlock(obPos);
-    if (obBlock) obBlock.setType(pool[0]);
+    if (obBlock) {
+      obBlock.setType(pool[0]);
+      if (obBlock.isAir) obBlock.setType(theme.floor);
+    }
 
     // Bedrock foundation directly underneath the Island OneBlock
     const underBlock = dimension.getBlock({ x: cx, y: cy - 1, z: cz });
     if (underBlock) underBlock.setType("minecraft:bedrock");
 
-    // The blocks directly beside the Island OneBlock are Cobblestone
+    // The blocks directly beside the Island OneBlock are Bedrock
     const besideOffsets = [
       { x: 1, z: 0 },
       { x: -1, z: 0 },
@@ -1441,7 +1454,7 @@ export function buildThemedIsland(dimension, theme, center) {
     ];
     for (const off of besideOffsets) {
       const bBlock = dimension.getBlock({ x: cx + off.x, y: cy, z: cz + off.z });
-      if (bBlock) bBlock.setType("minecraft:cobblestone");
+      if (bBlock) bBlock.setType("minecraft:bedrock");
     }
   } catch (e) {}
 

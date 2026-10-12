@@ -323,6 +323,9 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
             targetBlock.setType(nextBlockId);
+            if (targetBlock.isAir || targetBlock.typeId === "minecraft:air") {
+              targetBlock.setType(matchedTheme.floor);
+            }
           }
           const underBlock = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
           if (underBlock) underBlock.setType("minecraft:bedrock");
@@ -335,7 +338,7 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           ];
           for (const off of besideOffsets) {
             const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
-            if (bBlock) bBlock.setType("minecraft:cobblestone");
+            if (bBlock) bBlock.setType("minecraft:bedrock");
           }
         } catch (e) {}
       });
@@ -358,7 +361,7 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
       // Fully mined! The core first reveals solid Bedrock for 3 seconds, then stabilizes into the normal floor block!
       world.setDynamicProperty(`island_ob_completed_${matchedTheme.id}`, true);
 
-      // 1. Instantly place Bedrock at the core location and reinforce surrounding cobblestone
+      // 1. Instantly place Bedrock at the core location and reinforce surrounding bedrock collar
       system.run(() => {
         try {
           const targetBlock = dimension.getBlock(loc);
@@ -376,7 +379,7 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           ];
           for (const off of besideOffsets) {
             const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
-            if (bBlock) bBlock.setType("minecraft:cobblestone");
+            if (bBlock) bBlock.setType("minecraft:bedrock");
           }
         } catch (e) {}
       });
@@ -405,16 +408,20 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
         }, s * 20);
       }
 
-      // 2. Exactly 3 seconds (60 ticks) later: Bedrock transforms into normal floor block & Sacred Chest block spawns above
+      // 2. Exactly 3 seconds (60 ticks) later: ALL Bedrock converts into normal island blocks & Sacred Chest block spawns above
       system.runTimeout(() => {
         try {
           const targetBlock = dimension.getBlock(loc);
           if (targetBlock) {
             targetBlock.setType(matchedTheme.floor);
           }
+          // Convert foundation bedrock underneath into subsoil block
           const underBlock = dimension.getBlock({ x: loc.x, y: loc.y - 1, z: loc.z });
-          if (underBlock) underBlock.setType("minecraft:bedrock");
+          if (underBlock) {
+            underBlock.setType(matchedTheme.subfloor || matchedTheme.floor);
+          }
 
+          // Convert all surrounding bedrock blocks into natural island floor
           const besideOffsets = [
             { x: 1, z: 0 },
             { x: -1, z: 0 },
@@ -423,7 +430,7 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           ];
           for (const off of besideOffsets) {
             const bBlock = dimension.getBlock({ x: loc.x + off.x, y: loc.y, z: loc.z + off.z });
-            if (bBlock) bBlock.setType("minecraft:cobblestone");
+            if (bBlock) bBlock.setType(matchedTheme.floor);
           }
 
           // Spawn the Sacred Reward Chest block ABOVE the permanent floor block at { x: loc.x, y: loc.y + 1, z: loc.z }
@@ -1520,6 +1527,9 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
     if (targetBlock && !activeCountdowns.get(dimKey)) {
       targetBlock.setType(nextBlockType);
       lastKnownOneBlockType[dimKey] = nextBlockType;
+      if (targetBlock.isAir || targetBlock.typeId === "minecraft:air") {
+        targetBlock.setType(dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt"));
+      }
     }
   } catch (e) {}
 
@@ -1535,6 +1545,9 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
       if (targetBlock && !activeCountdowns.get(dimKey)) {
         targetBlock.setType(nextBlockType);
         lastKnownOneBlockType[dimKey] = nextBlockType;
+        if (targetBlock.isAir || targetBlock.typeId === "minecraft:air") {
+          targetBlock.setType(dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt"));
+        }
       }
     } catch (e) {}
   });
