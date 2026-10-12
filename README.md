@@ -60,7 +60,9 @@ Every island that materializes is a unique, natural floating micro-continent pos
 - **Minimalist Actionbar HUD**: Shows current dimension, phase name, phase block progress, and total mined blocks:
   `§a[Overworld] §ePhase 3: §fCherry Grove §7[§b24§7/§b50§7] §eTotal: §6124`
 - **Toggle Command**: Type `!hud` in chat anytime to toggle the Actionbar HUD on or off.
-- **Admin Inspector GUI**: In admin worlds or with admin tags, type `!admin` or `!islands` to inspect, pre-generate, or teleport to any of the 42 islands.
+- **Admin Inspector & Testing Suite**: In admin worlds (`OneBlock_Void_Survival_Admin.mcworld`) or with the admin tag:
+  - **Auto-Break Test Runner (`!run` / `run` / `/run`)**: Starts a high-speed automated mining loop (10 blocks/sec) that simulates real mining progression, rapidly triggers island summons with celestial beams, and logs stats on the Actionbar HUD. Type `!run` again to stop anytime.
+  - **Admin GUI (`!admin` or `!islands`)**: Open the interactive form menu to toggle the auto-break runner, summon specific islands, teleport to coordinates, or cycle phases instantly.
 
 ---
 

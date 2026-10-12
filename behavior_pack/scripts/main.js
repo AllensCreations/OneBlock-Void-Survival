@@ -1067,15 +1067,82 @@ function clearScoreboardObjective() {
 }
 
 // =========================================================================
-// ADMIN ISLAND INSPECTOR & GENERATION HUB
+// ADMIN AUTO-BREAK TESTING RUNNER & ISLAND INSPECTOR
 // =========================================================================
+
+let isAutoBreakRunning = false;
+
+export function toggleAdminAutoBreak(player) {
+  try {
+    const isAdminWorld = world.getDynamicProperty("is_admin_world");
+    if (!isAdminWorld && !player.hasTag("admin")) {
+      player.sendMessage("§c[Admin Command] This command can only be used in the Admin World or by tagged admins!");
+      return;
+    }
+
+    isAutoBreakRunning = !isAutoBreakRunning;
+
+    if (isAutoBreakRunning) {
+      player.sendMessage("\n§a⚡ [Admin Auto-Break] Started fast auto-mining runner! (10 blocks/sec)");
+      player.sendMessage("§eRapidly breaking OneBlock, progressing through phases, and summoning secret islands!");
+      player.sendMessage("§7Type §b!run§7 or §brun§7 again anytime to stop.\n");
+      player.playSound("random.levelup", { pitch: 1.5, volume: 1.0 });
+    } else {
+      player.sendMessage("\n§c⏹ [Admin Auto-Break] Stopped auto-break simulation.");
+      player.sendMessage("§7Auto-mining runner halted.\n");
+      player.playSound("random.fizz", { pitch: 1.0, volume: 1.0 });
+    }
+  } catch (err) {}
+}
+
+// Fast Auto-Break Runner Tick Loop (runs every 2 ticks / 0.1s -> 10 blocks/sec)
+system.runInterval(() => {
+  if (!isAutoBreakRunning) return;
+  try {
+    for (const player of world.getAllPlayers()) {
+      const dimension = player.dimension;
+      if (!dimension) continue;
+      const dimKey = getDimKey(dimension.id);
+
+      // Clear block at ONEBLOCK_POS to simulate rapid mining
+      const b = dimension.getBlock(ONEBLOCK_POS);
+      if (b && !b.isAir && b.typeId !== "minecraft:air") {
+        try {
+          b.setType("minecraft:air");
+        } catch (e1) {}
+      }
+
+      // Execute automated block destruction & advance progression
+      handleAutomatedBlockDestruction(dimension);
+
+      // Audio & Particle feedback
+      try {
+        dimension.spawnParticle("minecraft:wax_particle", { x: ONEBLOCK_POS.x + 0.5, y: ONEBLOCK_POS.y + 1.2, z: ONEBLOCK_POS.z + 0.5 });
+      } catch (pe) {}
+
+      // Live HUD Actionbar status
+      const state = getDimensionState(dimKey);
+      const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
+      const spawnedCount = ISLAND_THEMES.filter(t => (t.dimension || "overworld") === targetDim && world.getDynamicProperty(`island_spawned_${t.id}`)).length;
+      const totalDimIslands = ISLAND_THEMES.filter(t => (t.dimension || "overworld") === targetDim).length;
+
+      player.onScreenDisplay.setActionBar(
+        `§6[Auto-Break Active] §eMined: §b${state.count} §7| §ePhase: §a${state.phaseIndex + 1} §7| §eIslands: §d${spawnedCount}/${totalDimIslands} §7(Type !run to stop)`
+      );
+      break; // Run once per tick interval
+    }
+  } catch (err) {}
+}, 2);
+
 export function openAdminIslandMenu(player) {
   try {
     const form = new ActionFormData();
     form.title("§6§lISLAND INSPECTOR (ADMIN)§r");
     form.body("§eSelect an island to inspect in Creative Mode.\n§7Clicking an island generates it in the void and teleports you directly there!\n§bTotal: 42 Secret Themed Islands");
 
+    const runnerLabel = isAutoBreakRunning ? "§c§l⏹ STOP AUTO-BREAK RUNNER§r\n§8(Click to halt auto-mining)" : "§a§l▶ START AUTO-BREAK RUNNER§r\n§8(Rapidly mine & summon islands)";
     form.button("§c§l⚡ PRE-BUILD ALL 42 ISLANDS§r\n§8(Generates all void islands)", "textures/ui/refresh_light");
+    form.button(runnerLabel, "textures/ui/speed_effect");
     form.button("§d§l✦ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live announcement & particle trail)", "textures/ui/portal_icon");
 
     for (let i = 0; i < ISLAND_THEMES.length; i++) {
@@ -1116,6 +1183,12 @@ export function openAdminIslandMenu(player) {
       }
 
       if (response.selection === 1) {
+        // Toggle Auto-Break Runner
+        toggleAdminAutoBreak(player);
+        return;
+      }
+
+      if (response.selection === 2) {
         // Test live manifestation announcement, sounds & particle trail on OneBlock
         materializeIsland(player.dimension, ISLAND_THEMES[0], 0, 10);
         player.sendMessage("§d[Admin] ★ Triggered live Rift Manifestation announcement, celestial sounds & starlight trail!");
@@ -1123,7 +1196,7 @@ export function openAdminIslandMenu(player) {
       }
 
       // Specific Island Selected
-      const themeIndex = response.selection - 2;
+      const themeIndex = response.selection - 3;
       const theme = ISLAND_THEMES[themeIndex];
       if (!theme) return;
 
@@ -1838,6 +1911,7 @@ world.afterEvents.playerSpawn.subscribe((event) => {
         if (isAdminWorld || player.hasTag("admin")) {
           giveAdminInspectorTool(player);
           player.sendMessage("§6[Admin Tool] Island Inspector Compass delivered! Right-click or type !admin to inspect all 42 islands.");
+          player.sendMessage("§e[Admin Fast-Test] Type §b!run§e or §brun§e in chat to start/stop rapid auto-mining to test phase & island spawns!");
         }
 
         // Welcome introduction & creator thank you
@@ -1853,7 +1927,7 @@ world.afterEvents.playerSpawn.subscribe((event) => {
     });
 });
 
-// Chat command helpers (!hud, !admin, !islands)
+// Chat command helpers (!hud, !admin, !islands, !run)
 world.beforeEvents.chatSend.subscribe((event) => {
   const { message, sender } = event;
   const msg = message.trim().toLowerCase();
@@ -1872,6 +1946,11 @@ world.beforeEvents.chatSend.subscribe((event) => {
     event.cancel = true;
     system.run(() => {
       openAdminIslandMenu(sender);
+    });
+  } else if (msg === "!run" || msg === "run" || msg === "/run") {
+    event.cancel = true;
+    system.run(() => {
+      toggleAdminAutoBreak(sender);
     });
   }
 });
