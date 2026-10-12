@@ -1517,35 +1517,35 @@ export function getIslandLocation(index, total, theme, lastPos = null) {
     }
 
     if (slotIdx < 6) {
-      // Ring 1: 6 islands @ 72m
+      // Ring 1: 6 islands @ 72m (Offset 0°: 0°, 60°, 120°, 180°, 240°, 300° -> 0% diagonals, min diff 26m)
       distance = 72;
-      angle = 15 + slotIdx * (360 / 6);
+      angle = slotIdx * (360 / 6);
     } else if (slotIdx < 14) {
-      // Ring 2: 8 islands @ 125m
+      // Ring 2: 8 islands @ 125m (Offset 22.5°: 22.5°, 67.5°, 112.5°... -> 0% diagonals, min diff 67m)
       distance = 125;
-      angle = 30 + (slotIdx - 6) * (360 / 8);
+      angle = 22.5 + (slotIdx - 6) * (360 / 8);
     } else if (slotIdx < 24) {
-      // Ring 3: 10 islands @ 180m
+      // Ring 3: 10 islands @ 180m (Offset 0°: 0°, 36°, 72°, 108°... -> 0% diagonals, min diff 40m)
       distance = 180;
-      angle = 18 + (slotIdx - 14) * (360 / 10);
+      angle = (slotIdx - 14) * (360 / 10);
     } else {
-      // Ring 4: 9 islands @ 240m
+      // Ring 4: 9 islands @ 240m (Offset 0°: 0°, 40°, 80°, 120°... -> 0% diagonals, min diff 30m)
       distance = 240;
-      angle = 45 + (slotIdx - 24) * (360 / 9);
+      angle = (slotIdx - 24) * (360 / 9);
     }
   } else if (targetDim === "nether") {
     const netherThemes = ISLAND_THEMES.filter(t => t.dimension === "nether");
     let nIdx = theme ? netherThemes.findIndex(t => t.id === theme.id) : index;
     if (nIdx < 0) nIdx = index % 7;
     distance = 75;
-    angle = 12 + nIdx * (360 / 7);
+    angle = nIdx * (360 / 7);
   } else {
-    // The End (3 islands: end_city_tower, void_gateway_outpost, elytra_hangar)
+    // The End (3 islands: end_city_tower, void_gateway_outpost, elytra_hangar @ 30°, 150°, 270°)
     const endThemes = ISLAND_THEMES.filter(t => t.dimension === "the_end");
     let eIdx = theme ? endThemes.findIndex(t => t.id === theme.id) : index;
     if (eIdx < 0) eIdx = index % 3;
     distance = 85;
-    angle = eIdx * 120;
+    angle = 30 + eIdx * 120;
   }
 
   const rad = (angle * Math.PI) / 180;
@@ -2066,8 +2066,8 @@ function buildMicroCave(dimension, theme, center, seed) {
     const maxDripstones = 1 + (seed % 2); // strictly 1 to 2 dripstones
     const dripCandidates = [
       { ox: 0, oz: 0 },
-      { ox: 1, oz: -1 },
-      { ox: -1, oz: 1 }
+      { ox: 1, oz: 0 },
+      { ox: -1, oz: -1 }
     ];
     for (const cand of dripCandidates) {
       if (dripstonePlaced >= maxDripstones) break;
