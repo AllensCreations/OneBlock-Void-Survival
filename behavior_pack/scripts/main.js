@@ -255,6 +255,26 @@ function spawnScatteredLootInChest(container, chestItems = []) {
   } catch (err) {}
 }
 
+// Finds players who broke the block or are near the island (radius 48 blocks) for clean multiplayer notifications
+function getNearbyIslandPlayers(dimension, loc, maxDistance = 48, breakerPlayer = null) {
+  const nearby = new Set();
+  if (breakerPlayer) nearby.add(breakerPlayer);
+  try {
+    for (const p of world.getAllPlayers()) {
+      if (p.dimension.id === dimension.id) {
+        const dx = p.location.x - loc.x;
+        const dy = p.location.y - loc.y;
+        const dz = p.location.z - loc.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist <= maxDistance) {
+          nearby.add(p);
+        }
+      }
+    }
+  } catch (e) {}
+  return Array.from(nearby);
+}
+
 // Handles breaking of an Island Mini-OneBlock Core (30-50 blocks capacity)
 function handleIslandOneBlockBreak(dimension, loc, player) {
   try {
@@ -345,9 +365,10 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
         dimension.spawnParticle("minecraft:dragon_breath_fire", { x: loc.x + 0.5, y: loc.y + 1.2, z: loc.z + 0.5 });
       } catch (e) {}
 
-      if (player) {
-        player.onScreenDisplay.setActionBar(`§5✦ Bedrock Core Exposed! Stabilizing terrain... (3s) ✦`);
-        player.sendMessage(`\n${matchedTheme.color}✦ [Core Reached] §fThe Island Core has struck Bedrock! Stabilizing into natural terrain in 3 seconds...`);
+      const targetAudience = getNearbyIslandPlayers(dimension, loc, 48, player);
+      for (const p of targetAudience) {
+        p.onScreenDisplay.setActionBar(`§5✦ Bedrock Core Exposed! Stabilizing terrain... (3s) ✦`);
+        p.sendMessage(`\n${matchedTheme.color}✦ [Core Reached] §fThe Island Core has struck Bedrock! Stabilizing into natural terrain in 3 seconds...`);
       }
 
       // Pulsing stabilization particles during the 3-second countdown
@@ -390,7 +411,9 @@ function handleIslandOneBlockBreak(dimension, loc, player) {
           dimension.playSound("random.levelup", loc, { pitch: 1.2, volume: 1.0 });
           dimension.playSound("random.totem", loc, { pitch: 1.0, volume: 0.8 });
 
-          for (const p of world.getAllPlayers()) {
+          // Message only shown to the player who mined it or players near the island (clean for multiplayer)
+          const finishAudience = getNearbyIslandPlayers(dimension, loc, 48, player);
+          for (const p of finishAudience) {
             p.sendMessage(`${matchedTheme.color}★ [Island Core Conquered] §fThe Bedrock core has stabilized into the island's natural floor! The Sacred Treasure Chest has manifested!\n`);
           }
         } catch (e) {}
