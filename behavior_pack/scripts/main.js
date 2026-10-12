@@ -934,17 +934,59 @@ function incrementDimensionCount(dimKey, dimension) {
   return { newCount, newPhaseIdx: newState.phaseIndex };
 }
 
-// Adjacent cardinal offsets around ONEBLOCK_POS where a pushed block could land
-const ADJACENT_PUSH_OFFSETS = [
-  { x: 1, y: 0, z: 0 },
-  { x: -1, y: 0, z: 0 },
-  { x: 0, y: 0, z: 1 },
-  { x: 0, y: 0, z: -1 },
-  { x: 0, y: 1, z: 0 }
-];
-
 const lastKnownOneBlockType = {};
 const blockBrokenByPlayer = {};
+
+// Handles automated block destruction/removal by Pistons, TNT, Creepers, or Environmental causes
+function handleAutomatedBlockDestruction(dimension) {
+  try {
+    const dimKey = getDimKey(dimension.id);
+    if (activeCountdowns.get(dimKey)) return;
+
+    const block = dimension.getBlock(ONEBLOCK_POS);
+    const isLiquid = block && (block.typeId === "minecraft:water" || block.typeId === "minecraft:flowing_water" || block.typeId === "minecraft:lava" || block.typeId === "minecraft:flowing_lava");
+    const isMissing = !block || block.isAir || block.typeId === "minecraft:air" || isLiquid;
+    if (!isMissing) return;
+
+    const state = getDimensionState(dimKey);
+    const phase = state.phase;
+
+    // Advance progression for automated destruction (TNT, Piston, etc.)
+    incrementDimensionCount(dimKey, dimension);
+
+    // Roll lucky chest spawn (5% chance)
+    const rollChest = Math.random();
+    if (rollChest < 0.05 && phase && phase.chests && phase.chests.length > 0) {
+      const items = [];
+      const numItems = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numItems; i++) {
+        const entry = pickWeighted(phase.chests);
+        const count = Math.floor(Math.random() * (entry.max - entry.min + 1)) + entry.min;
+        try {
+          items.push(new ItemStack(entry.id, count));
+        } catch (ie) {}
+      }
+      spawnOneBlockChest(dimension, items);
+      dimension.playSound("random.chestopen", ONEBLOCK_POS, { pitch: 1.0, volume: 1.0 });
+    }
+
+    // Determine next block to regenerate
+    let nextBlockType;
+    if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
+      nextBlockType = TUTORIAL_BLOCKS[state.count].block;
+    } else {
+      nextBlockType = pickWeighted(phase.blocks).id;
+    }
+
+    try {
+      const b = dimension.getBlock(ONEBLOCK_POS);
+      if (b) {
+        b.setType(nextBlockType);
+        lastKnownOneBlockType[dimKey] = nextBlockType;
+      }
+    } catch (pe) {}
+  } catch (err) {}
+}
 
 function ensureOneBlock(dimension) {
   try {
@@ -965,45 +1007,30 @@ function ensureOneBlock(dimension) {
     const isLiquid = block && (block.typeId === "minecraft:water" || block.typeId === "minecraft:flowing_water" || block.typeId === "minecraft:lava" || block.typeId === "minecraft:flowing_lava");
     const isMissing = !block || block.isAir || block.typeId === "minecraft:air" || isLiquid;
 
-    // 2. Piston Anti-Duplication Protection:
-    // If the OneBlock was displaced without a playerBreakBlock event, it was pushed by a piston!
-    if (isMissing && !blockBrokenByPlayer[dimKey] && lastKnownOneBlockType[dimKey]) {
-      const pushedType = lastKnownOneBlockType[dimKey];
-      for (const offset of ADJACENT_PUSH_OFFSETS) {
-        try {
-          const adjPos = { x: ONEBLOCK_POS.x + offset.x, y: ONEBLOCK_POS.y + offset.y, z: ONEBLOCK_POS.z + offset.z };
-          const adjBlock = dimension.getBlock(adjPos);
-          if (adjBlock && (adjBlock.typeId === pushedType || adjBlock.typeId === "minecraft:moving_block")) {
-            // Decay displaced block into cobblestone so players cannot duplicate valuable ores/blocks!
-            adjBlock.setType("minecraft:cobblestone");
-            dimension.playSound("random.fizz", adjPos, { volume: 0.8, pitch: 1.2 });
-            dimension.spawnParticle("minecraft:smoke_particle", { x: adjPos.x + 0.5, y: adjPos.y + 0.5, z: adjPos.z + 0.5 });
-            for (const p of world.getAllPlayers()) {
-              p.sendMessage("§e[OneBlock] Piston movement detected! The pushed block decayed into Cobblestone to prevent duplication.");
-            }
-            break;
-          }
-        } catch (pe) {}
+    // 2. Automated Destruction Handling (TNT explosions, Piston push, environmental):
+    if (isMissing) {
+      if (!blockBrokenByPlayer[dimKey]) {
+        handleAutomatedBlockDestruction(dimension);
+      } else {
+        // Player break already handled count increment; regenerate if still missing
+        const state = getDimensionState(dimKey);
+        let chosenId;
+        if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
+          chosenId = TUTORIAL_BLOCKS[state.count].block;
+        } else {
+          chosenId = pickWeighted(state.phase.blocks).id;
+        }
+        if (block) {
+          block.setType(chosenId);
+          lastKnownOneBlockType[dimKey] = chosenId;
+        }
       }
+    } else if (block) {
+      lastKnownOneBlockType[dimKey] = block.typeId;
     }
 
     // Reset player break flag
     blockBrokenByPlayer[dimKey] = false;
-
-    // 3. Regenerate OneBlock if missing or flooded with liquid
-    if (isMissing) {
-      const state = getDimensionState(dimKey);
-      let chosenId;
-      if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
-        chosenId = TUTORIAL_BLOCKS[state.count].block;
-      } else {
-        chosenId = pickWeighted(state.phase.blocks).id;
-      }
-      block.setType(chosenId);
-      lastKnownOneBlockType[dimKey] = chosenId;
-    } else if (block) {
-      lastKnownOneBlockType[dimKey] = block.typeId;
-    }
   } catch (err) {}
 }
 
@@ -1409,7 +1436,7 @@ world.beforeEvents.itemUseOn.subscribe((event) => {
   } catch (e) {}
 });
 
-// Piston Movement Hook: Detect if a piston is extending to manipulate the OneBlock
+// Piston Movement Hook: When a piston pushes the OneBlock, allow it without decay and advance progression
 try {
   if (world.beforeEvents && world.beforeEvents.pistonActivate) {
     world.beforeEvents.pistonActivate.subscribe((event) => {
@@ -1421,6 +1448,13 @@ try {
           if (loc.x === ONEBLOCK_POS.x && loc.y === ONEBLOCK_POS.y && loc.z === ONEBLOCK_POS.z) {
             const dimKey = getDimKey(event.dimension.id);
             blockBrokenByPlayer[dimKey] = false;
+            // Piston is pushing the OneBlock!
+            // Wait 2 ticks for the push animation to complete, then regenerate the next block & advance!
+            system.runTimeout(() => {
+              try {
+                handleAutomatedBlockDestruction(event.dimension);
+              } catch (e) {}
+            }, 2);
             break;
           }
         }

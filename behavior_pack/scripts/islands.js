@@ -934,34 +934,46 @@ export const ISLAND_THEMES = [
   }
 ];
 
-// Computes non-overlapping coordinates in void space (80 to 125 blocks away)
-// Calculates distance to guarantee no new island is placed near the previously materialized island!
+// Computes deterministic fixed locations around the central base (0, 64, 0):
+// - Overworld: 32 islands arranged in a staggered 2-ring rosette (16 inner at 42m, 16 outer at 60m)
+// - Nether: 7 islands arranged in a 45m ring around the Nether base
+// - The End: 3 islands arranged in a 45m ring around The End altar
 export function getIslandLocation(index, total, theme, lastPos = null) {
-  // Golden Angle spiral (137.508°): Guaranteed to distribute points as far apart as possible
-  // so each consecutive island appears in an entirely different cardinal quadrant!
-  const GOLDEN_ANGLE = 137.50776405;
-  let angle = (index * GOLDEN_ANGLE) % 360;
+  const targetDim = (theme && theme.dimension) || "overworld";
+  const dimThemes = ISLAND_THEMES.filter(t => (t.dimension || "overworld") === targetDim);
+  let themeIdx = theme ? dimThemes.findIndex(t => t.id === theme.id) : index;
+  if (themeIdx < 0) themeIdx = index % (dimThemes.length || 1);
 
-  // Stagger radial distance between 85 and 120 blocks
-  let distance = 85 + (index % 4) * 11;
-  let rad = (angle * Math.PI) / 180;
-  let cx = Math.round(distance * Math.cos(rad));
-  let cz = Math.round(distance * Math.sin(rad));
+  let distance;
+  let angle;
 
-  // Distance validation against last materialized island:
-  // If too close to previous island (< 100 blocks), rotate angle by 90 degrees
-  if (lastPos && typeof lastPos.x === "number" && typeof lastPos.z === "number") {
-    let separation = Math.sqrt(Math.pow(cx - lastPos.x, 2) + Math.pow(cz - lastPos.z, 2));
-    if (separation < 100) {
-      angle = (angle + 90) % 360;
-      rad = (angle * Math.PI) / 180;
-      cx = Math.round(distance * Math.cos(rad));
-      cz = Math.round(distance * Math.sin(rad));
+  if (targetDim === "overworld") {
+    // 32 islands: Staggered 2-ring rosette
+    if (themeIdx < 16) {
+      // Inner ring: 16 islands at 42 blocks
+      distance = 42;
+      angle = themeIdx * (360 / 16);
+    } else {
+      // Outer ring: 16 islands at 60 blocks, offset by 11.25 degrees into the gaps
+      distance = 60;
+      angle = 11.25 + (themeIdx - 16) * (360 / 16);
     }
+  } else if (targetDim === "nether") {
+    // 7 islands: 45 blocks ring
+    distance = 45;
+    angle = themeIdx * (360 / 7);
+  } else {
+    // The End: 3 islands at 45 blocks ring
+    distance = 45;
+    angle = themeIdx * (360 / 3);
   }
 
-  // Thematic Y Level: Skyblock height kept accessible (Y=62 to Y=74)
-  const cy = (theme && typeof theme.y === "number") ? Math.min(74, Math.max(62, theme.y)) : 64;
+  const rad = (angle * Math.PI) / 180;
+  const cx = Math.round(distance * Math.cos(rad));
+  const cz = Math.round(distance * Math.sin(rad));
+
+  // Thematic Y Level: Skyblock height kept accessible (Y=60 to Y=72)
+  const cy = (theme && typeof theme.y === "number") ? Math.min(72, Math.max(60, theme.y)) : 64;
 
   let cardinal = "North";
   if (Math.abs(cx) > Math.abs(cz)) {
