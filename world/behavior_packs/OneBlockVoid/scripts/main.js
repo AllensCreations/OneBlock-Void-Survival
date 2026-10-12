@@ -1,4 +1,4 @@
-import { world, system, ItemStack, DisplaySlotId } from "@minecraft/server";
+import { world, system, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { OVERWORLD_PHASES, NETHER_PHASES, END_PHASES } from "./phases.js";
 import { RARITY_TIERS, DIMENSION_TRADE_POOLS } from "./rarities.js";
@@ -812,103 +812,111 @@ function ensureOneBlock(dimension) {
   } catch (err) {}
 }
 
-let previousScoreboardLines = [];
-
-// Modern RPG Sidebar Scoreboard following the Player's Username & Live Stats
-function updateScoreboard() {
+// Cleanly removes any lingering scoreboard sidebar from the game
+function clearScoreboardObjective() {
+  try { world.scoreboard.removeObjective("oneblock_stats"); } catch (e) {}
   try {
-    const players = world.getAllPlayers();
-    const primaryPlayer = players.length > 0 ? players[0] : null;
-    const playerName = primaryPlayer ? primaryPlayer.name : "Survivor";
-
-    const owState = getDimensionState("overworld");
-    const netherState = getDimensionState("nether");
-    const endState = getDimensionState("end");
-    const totalMined = owState.count + netherState.count + endState.count;
-
-    let currentDimKey = "overworld";
-    if (primaryPlayer) {
-      currentDimKey = getDimKey(primaryPlayer.dimension.id);
+    const ow = world.getDimension("overworld");
+    if (ow) {
+      ow.runCommand("scoreboard objectives remove oneblock_stats");
     }
-    const activeState = getDimensionState(currentDimKey);
-    const activePhase = activeState.phase;
-    const phaseName = activePhase?.name || `Phase ${activeState.phaseIndex + 1}`;
+  } catch (ce) {}
+}
 
-    // Blocks mined towards next island pity guarantee (150 blocks)
-    const lastMineCount = world.getDynamicProperty("last_island_mine_count") ?? 0;
-    const pityMined = Math.min(150, Math.max(0, owState.count - lastMineCount));
+// =========================================================================
+// ADMIN ISLAND INSPECTOR & GENERATION HUB
+// =========================================================================
+export function openAdminIslandMenu(player) {
+  try {
+    const form = new ActionFormData();
+    form.title("§6§lISLAND INSPECTOR (ADMIN)§r");
+    form.body("§eSelect an island to inspect in Creative Mode.\n§7Clicking an island generates it in the void and teleports you directly there!\n§bTotal: 42 Secret Themed Islands");
 
-    // Modern RPG Scoreboard Layout (Player-following):
-    const lines = [
-      "§7-----------------",
-      `§fPlayer: §a${playerName}`,
-      `§ePhase: §f${phaseName}`,
-      `§7Progress: §b${activeState.phaseProgress}§7/§b${activeState.currentPhaseLength}`,
-      `§6Total Mined: §e${totalMined}`,
-      `§dNext Island: §e${pityMined}/150 §7(0.8%)`,
-      "§7------------------"
-    ];
+    form.button("§c§l⚡ PRE-BUILD ALL 42 ISLANDS§r\n§8(Generates all void islands)", "textures/ui/refresh_light");
 
-    const title = "§l§dOne§5Blocked §r§8[§bAllensCreations§8]";
+    for (let i = 0; i < ISLAND_THEMES.length; i++) {
+      const theme = ISLAND_THEMES[i];
+      const tierLabel = theme.tier === 1 ? "Starter" : (theme.tier === 2 ? "Mining" : (theme.tier === 3 ? "Nether" : "Relic"));
+      const sizeLabel = theme.size ? theme.size.toUpperCase() : "MED";
+      const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
+      form.button(`${theme.color}§l${theme.name}§r\n§8[T${theme.tier}: ${tierLabel}] ${sizeLabel} • ${traitLabel}`);
+    }
 
-    let success = false;
-    try {
-      let objective = world.scoreboard.getObjective("oneblock_stats");
-      if (!objective) {
-        objective = world.scoreboard.addObjective("oneblock_stats", title);
-      } else {
-        objective.displayName = title;
+    form.show(player).then((response) => {
+      if (response.canceled || response.selection === undefined) return;
+
+      if (response.selection === 0) {
+        // Pre-build all 42 islands across the void
+        player.sendMessage("\n§e[Admin] Generating all 42 Themed Islands into the void...");
+        let count = 0;
+        for (let i = 0; i < ISLAND_THEMES.length; i++) {
+          const theme = ISLAND_THEMES[i];
+          const loc = getIslandLocation(i, 42, theme);
+          system.runTimeout(() => {
+            try {
+              buildThemedIsland(player.dimension, theme, loc.center);
+              world.setDynamicProperty(`island_built_${theme.id}`, true);
+              world.setDynamicProperty(`island_spawned_${theme.id}`, true);
+              world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
+              world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
+              world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
+            } catch (e) {}
+          }, i * 2);
+          count++;
+        }
+        system.runTimeout(() => {
+          player.sendMessage(`§a[Admin] ★ All ${count} Secret Islands successfully materialized in the void!`);
+          player.playSound("random.levelup", { pitch: 1.2, volume: 1.0 });
+        }, count * 2 + 5);
+        return;
       }
 
-      // DisplaySlotId check: supports string "sidebar" and DisplaySlotId enum
-      const slot = (typeof DisplaySlotId !== "undefined" && DisplaySlotId.sidebar) ? DisplaySlotId.sidebar : "sidebar";
-      world.scoreboard.setObjectiveAtDisplaySlot(slot, { objective: objective });
+      // Specific Island Selected
+      const themeIndex = response.selection - 1;
+      const theme = ISLAND_THEMES[themeIndex];
+      if (!theme) return;
 
-      // Clean up previous lines that are no longer present
+      const loc = getIslandLocation(themeIndex, 42, theme);
+      const targetPos = { x: loc.center.x, y: loc.center.y + 3, z: loc.center.z };
+
+      // Ensure island is built in that loaded chunk
       try {
-        const participants = objective.getParticipants();
-        for (const p of participants) {
-          const idName = (typeof p === "string") ? p : (p.displayName || p.id);
-          if (idName && !lines.includes(idName)) {
-            objective.removeParticipant(p);
-          }
-        }
-      } catch (pe) {}
+        buildThemedIsland(player.dimension, theme, loc.center);
+        world.setDynamicProperty(`island_built_${theme.id}`, true);
+        world.setDynamicProperty(`island_spawned_${theme.id}`, true);
+        world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
+        world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
+        world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
+      } catch (e) {}
 
-      let scoreVal = lines.length;
-      for (const line of lines) {
-        objective.setScore(line, scoreVal--);
-      }
-      success = true;
-    } catch (apiErr) {
-      success = false;
-    }
+      // Teleport player and grant Creative Mode + Night Vision
+      try {
+        player.teleport(targetPos, { dimension: player.dimension, checkForBlocks: false });
+        try { player.setGameMode("creative"); } catch (e) {}
+        try { player.addEffect("night_vision", 999999, { showParticles: false }); } catch (e) {}
+      } catch (tpe) {}
 
-    // Command fallback (Rock-solid across all Bedrock engine versions)
-    if (!success) {
-      const ow = world.getDimension("overworld");
-      if (ow) {
-        try { ow.runCommand(`scoreboard objectives add oneblock_stats dummy "${title}"`); } catch (e) {}
-        try { ow.runCommand(`scoreboard objectives setdisplay sidebar oneblock_stats`); } catch (e) {}
-
-        // Remove old lines that changed to prevent ghost entries and avoid flickering
-        for (const oldLine of previousScoreboardLines) {
-          if (!lines.includes(oldLine)) {
-            try { ow.runCommand(`scoreboard players reset "${oldLine}" oneblock_stats`); } catch (e) {}
-          }
-        }
-
-        let scoreVal = lines.length;
-        for (const line of lines) {
-          try {
-            ow.runCommand(`scoreboard players set "${line}" oneblock_stats ${scoreVal--}`);
-          } catch (e) {}
-        }
-      }
-    }
-
-    previousScoreboardLines = [...lines];
+      player.sendMessage(`\n${theme.color}★ [Admin Inspector] Teleported to §l${theme.name}§r${theme.color}!`);
+      player.sendMessage(`§eCoordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`);
+      player.sendMessage(`§7Tier: ${theme.tier} | Size: ${theme.size} | Trait: ${theme.trait} | Floor: ${theme.floor}\n`);
+      player.playSound("mob.endermen.portal", { pitch: 1.2, volume: 1.0 });
+    });
   } catch (err) {}
+}
+
+export function giveAdminInspectorTool(player) {
+  try {
+    const item = new ItemStack("minecraft:compass", 1);
+    item.nameTag = "§6§lIsland Inspector Compass§r";
+    item.setLore([
+      "§e[Admin Inspection Tool]",
+      "§aRight-click to open Island Inspector GUI!",
+      "§bTeleport to any of the 42 secret void islands",
+      "§dor pre-generate all of them with 1 click."
+    ]);
+    const inv = player.getComponent("minecraft:inventory")?.container;
+    if (inv) inv.addItem(item);
+  } catch (e) {}
 }
 
 // 8 perimeter positions around (0, 64, 0)
@@ -1499,18 +1507,26 @@ world.afterEvents.playerSpawn.subscribe((event) => {
         } catch (e) {}
 
         // Enforce Pure Survival on joining player
-        try {
-          if (player.getGameMode && player.getGameMode() !== "survival") {
-            player.setGameMode("survival");
+        // Enforce Pure Survival on joining player if not in Admin World
+        const isAdminWorld = world.getDynamicProperty("is_admin_world");
+        if (!isAdminWorld && !player.hasTag("admin")) {
+          try {
+            if (player.getGameMode && player.getGameMode() !== "survival") {
+              player.setGameMode("survival");
+            }
+          } catch (gme) {
+            try { player.runCommand("gamemode survival @s"); } catch (e2) {}
           }
-        } catch (gme) {
-          try { player.runCommand("gamemode survival @s"); } catch (e2) {}
         }
 
-        // Initialize Scoreboard for the joining player
-        try {
-          updateScoreboard();
-        } catch (sbe) {}
+        // Cleanly wipe any lingering scoreboard sidebar
+        clearScoreboardObjective();
+
+        // Check if admin map or admin player: grant Island Inspector Tool
+        if (isAdminWorld || player.hasTag("admin")) {
+          giveAdminInspectorTool(player);
+          player.sendMessage("§6[Admin Tool] Island Inspector Compass delivered! Right-click or type !admin to inspect all 42 islands.");
+        }
 
         // Welcome introduction & creator thank you
         player.sendMessage("\n§6==================================================");
@@ -1526,7 +1542,7 @@ world.afterEvents.playerSpawn.subscribe((event) => {
   }
 });
 
-// Chat command helper for players (!hud)
+// Chat command helpers (!hud, !admin, !islands)
 world.beforeEvents.chatSend.subscribe((event) => {
   const { message, sender } = event;
   const msg = message.trim().toLowerCase();
@@ -1541,7 +1557,25 @@ world.beforeEvents.chatSend.subscribe((event) => {
         sender.sendMessage("§e[HUD] Actionbar HUD hidden!");
       }
     });
+  } else if (msg === "!admin" || msg === "!islands") {
+    event.cancel = true;
+    system.run(() => {
+      openAdminIslandMenu(sender);
+    });
   }
+});
+
+// Item use hook for Island Inspector Compass
+world.beforeEvents.itemUse.subscribe((event) => {
+  try {
+    const { itemStack, source } = event;
+    if (itemStack && itemStack.nameTag && itemStack.nameTag.includes("Island Inspector")) {
+      event.cancel = true;
+      system.run(() => {
+        openAdminIslandMenu(source);
+      });
+    }
+  } catch (e) {}
 });
 
 // Fast Block Health-Check Loop (runs every 5 ticks / 0.25s) to guarantee the OneBlock never stays air
@@ -1570,10 +1604,9 @@ system.runInterval(() => {
 
     try { tickDimensionShifters(); } catch (e) {}
 
-    try { updateScoreboard(); } catch (e) {}
-
-    // Permanently Lock World Difficulty to Hard
-    if (tickCounter % 10 === 0) {
+    // Permanently Lock World Difficulty to Hard in survival world
+    const isAdminWorld = world.getDynamicProperty("is_admin_world");
+    if (!isAdminWorld && tickCounter % 10 === 0) {
       try {
         const ow = world.getDimension("overworld");
         if (ow) ow.runCommand("difficulty hard");
@@ -1583,14 +1616,16 @@ system.runInterval(() => {
     // QoL: Actionbar HUD & Compass Nav-Radar
     for (const player of world.getAllPlayers()) {
       try {
-        // Permanently Lock Player GameMode to Pure Survival
-        try {
-          if (player.getGameMode && player.getGameMode() !== "survival") {
-            player.setGameMode("survival");
-            player.sendMessage("§c[World Settings Locked] This world is permanently locked to Pure Survival on Hard difficulty!");
+        // Permanently Lock Player GameMode to Pure Survival in official survival world
+        if (!isAdminWorld && !player.hasTag("admin")) {
+          try {
+            if (player.getGameMode && player.getGameMode() !== "survival") {
+              player.setGameMode("survival");
+              player.sendMessage("§c[World Settings Locked] This world is permanently locked to Pure Survival on Hard difficulty!");
+            }
+          } catch (ge) {
+            try { player.runCommand("gamemode survival @s[m=!survival]"); } catch (e2) {}
           }
-        } catch (ge) {
-          try { player.runCommand("gamemode survival @s[m=!survival]"); } catch (e2) {}
         }
         if (!player.hasTag("hide_hud")) {
           const dimKey = getDimKey(player.dimension.id);
