@@ -81,7 +81,7 @@ export const DIMENSION_TRADE_POOLS = {
     { id: "minecraft:diamond_block", count: 1 },               // 9: Rare
     { id: "minecraft:end_crystal", count: 2 },                 // 10: Elite
     { id: "minecraft:dragon_breath", count: 4 },               // 11: Superior
-    { id: "minecraft:shulker_box", count: 1 },                 // 12: Exceptional
+    { id: "minecraft:undyed_shulker_box", count: 1 },          // 12: Exceptional
     { id: "minecraft:totem_of_undying", count: 1 },            // 13: Pristine
     { id: "minecraft:nether_star", count: 1 },                 // 14: Exotic
     { id: "minecraft:dragon_head", count: 1 },                 // 15: Heroic

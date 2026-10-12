@@ -41,7 +41,6 @@ const PICKAXE_STATS = {
   "minecraft:iron_pickaxe": { durability: 250, interval: 20 },
   "minecraft:golden_pickaxe": { durability: 32, interval: 10 },
   "minecraft:diamond_pickaxe": { durability: 1561, interval: 12 },
-  "minecraft:netherrite_pickaxe": { durability: 2031, interval: 8 },
   "minecraft:netherite_pickaxe": { durability: 2031, interval: 8 }
 };
 
@@ -1365,7 +1364,7 @@ function tickDimensionShifters() {
         state.trades = trades;
 
         try {
-          const stallMaterial = key === "nether" ? "minecraft:nether_brick" : key === "end" ? "minecraft:end_stone_bricks" : "minecraft:oak_planks";
+          const stallMaterial = key === "nether" ? "minecraft:nether_brick" : key === "end" ? "minecraft:end_bricks" : "minecraft:oak_planks";
           for (let x = 2; x <= 4; x++) {
             for (let z = -1; z <= 1; z++) {
               const b = dim.getBlock({ x, y: 63, z });
@@ -1813,7 +1812,7 @@ world.afterEvents.playerDimensionChange.subscribe((event) => {
   if (dimKey === "nether" || dimKey === "end") {
     system.run(() => {
       try {
-        const padMaterial = dimKey === "nether" ? "minecraft:nether_brick" : "minecraft:end_stone_bricks";
+        const padMaterial = dimKey === "nether" ? "minecraft:nether_brick" : "minecraft:end_bricks";
         for (let dx = -1; dx <= 1; dx++) {
           for (let dz = -1; dz <= 1; dz++) {
             const loc = { x: dx, y: 63, z: dz };

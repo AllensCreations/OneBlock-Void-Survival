@@ -173,7 +173,7 @@ export const ISLAND_THEMES = [
     name: "Badlands Gold Mesa",
     color: "§6",
     floor: "minecraft:red_sand",
-    subfloor: "minecraft:terracotta",
+    subfloor: "minecraft:hardened_clay",
     base: "minecraft:stone",
     feature: "gold_core",
     mob: null,
@@ -194,7 +194,7 @@ export const ISLAND_THEMES = [
     y: 96,
     name: "Glacial Ice Spire",
     color: "§b",
-    floor: "minecraft:snow_block",
+    floor: "minecraft:snow",
     subfloor: "minecraft:packed_ice",
     base: "minecraft:stone",
     feature: "ice_spike",
@@ -643,7 +643,7 @@ export const ISLAND_THEMES = [
       { id: "minecraft:string", count: 16 },
       { id: "minecraft:spider_eye", count: 6 },
       { id: "minecraft:fermented_spider_eye", count: 3 },
-      { id: "minecraft:cobweb", count: 4 }
+      { id: "minecraft:web", count: 4 }
     ]
   },
   {
@@ -920,7 +920,7 @@ export const ISLAND_THEMES = [
     y: 86,
     name: "Void Gateway Shrine",
     color: "§5",
-    floor: "minecraft:end_stone_bricks",
+    floor: "minecraft:end_bricks",
     subfloor: "minecraft:purpur_pillar",
     base: "minecraft:obsidian",
     feature: "gateway_beam",
@@ -1041,7 +1041,7 @@ function getOreBlock(theme, depth, dx, dz, seed) {
   const isNether = theme.biome.includes("nether") || theme.biome.includes("valley") || theme.biome.includes("deltas");
   if (isNether) {
     const no = Math.abs((dx * 19 + dz * 23 + seed) % 100);
-    if (no < 50) return "minecraft:nether_quartz_ore";
+    if (no < 50) return "minecraft:quartz_ore";
     if (no < 90) return "minecraft:nether_gold_ore";
     return theme.tier >= 3 ? "minecraft:ancient_debris" : "minecraft:nether_gold_ore";
   }
@@ -1079,7 +1079,7 @@ function getSubsoilBlock(theme, dx, dz, seed) {
   const sh = Math.random() * 100;
   if (sh < 65) return "minecraft:dirt";
   if (sh < 80) return "minecraft:coarse_dirt";
-  if (sh < 92) return "minecraft:rooted_dirt";
+  if (sh < 92) return "minecraft:dirt_with_roots";
   return "minecraft:gravel";
 }
 
@@ -1263,7 +1263,7 @@ function buildSatelliteIslet(dimension, theme, center, maxR, seed, index) {
       const chainX = Math.round(mainEdgeX + (sx - mainEdgeX) * t);
       const chainZ = Math.round(mainEdgeZ + (sz - mainEdgeZ) * t);
       const sag = Math.round(Math.sin(t * Math.PI) * 1.2);
-      safeAirOnlySetBlock(dimension, { x: chainX, y: cy - sag, z: chainZ }, "minecraft:chain");
+      safeAirOnlySetBlock(dimension, { x: chainX, y: cy - sag, z: chainZ }, "minecraft:iron_chain");
     }
   }
 
@@ -1304,10 +1304,10 @@ export function getIslandBlockPool(theme) {
     cherry_sanctuary: ["minecraft:cherry_log", "minecraft:cherry_leaves", "minecraft:cherry_planks", "minecraft:cherry_wood", "minecraft:bee_nest", "minecraft:honey_block"],
     pale_garden_spire: ["minecraft:dark_oak_log", "minecraft:dark_oak_planks", "minecraft:dark_oak_leaves", "minecraft:moss_block", "minecraft:podzol", "minecraft:deepslate"],
     mushroom_haven: ["minecraft:mycelium", "minecraft:red_mushroom_block", "minecraft:brown_mushroom_block", "minecraft:mushroom_stem", "minecraft:dirt"],
-    badlands_mesa: ["minecraft:red_sand", "minecraft:terracotta", "minecraft:orange_terracotta", "minecraft:yellow_terracotta", "minecraft:gold_ore", "minecraft:raw_gold_block"],
-    ice_spike_peak: ["minecraft:snow_block", "minecraft:packed_ice", "minecraft:blue_ice", "minecraft:ice"],
+    badlands_mesa: ["minecraft:red_sand", "minecraft:hardened_clay", "minecraft:orange_terracotta", "minecraft:yellow_terracotta", "minecraft:gold_ore", "minecraft:raw_gold_block"],
+    ice_spike_peak: ["minecraft:snow", "minecraft:packed_ice", "minecraft:blue_ice", "minecraft:ice"],
     jungle_temple: ["minecraft:jungle_log", "minecraft:jungle_leaves", "minecraft:bamboo_block", "minecraft:mossy_cobblestone", "minecraft:chiseled_stone_bricks"],
-    nether_fortress_spire: ["minecraft:nether_brick", "minecraft:red_nether_brick", "minecraft:nether_quartz_ore", "minecraft:nether_gold_ore", "minecraft:soul_sand"],
+    nether_fortress_spire: ["minecraft:nether_brick", "minecraft:red_nether_brick", "minecraft:quartz_ore", "minecraft:nether_gold_ore", "minecraft:soul_sand"],
     bastion_treasury: ["minecraft:blackstone", "minecraft:polished_blackstone_bricks", "minecraft:gilded_blackstone", "minecraft:gold_block", "minecraft:crying_obsidian"],
     crimson_forest_isle: ["minecraft:crimson_nylium", "minecraft:crimson_stem", "minecraft:crimson_hyphae", "minecraft:shroomlight", "minecraft:nether_wart_block"],
     warped_forest_isle: ["minecraft:warped_nylium", "minecraft:warped_stem", "minecraft:warped_hyphae", "minecraft:shroomlight", "minecraft:warped_wart_block"],
@@ -1320,16 +1320,16 @@ export function getIslandBlockPool(theme) {
     deepslate_forge: ["minecraft:deepslate", "minecraft:deepslate_iron_ore", "minecraft:raw_iron_block", "minecraft:blast_furnace", "minecraft:iron_block"],
     ocean_monument_shrine: ["minecraft:prismarine", "minecraft:prismarine_bricks", "minecraft:dark_prismarine", "minecraft:sea_lantern", "minecraft:sponge"],
     glowstone_meteor: ["minecraft:glowstone", "minecraft:basalt", "minecraft:blackstone", "minecraft:magma", "minecraft:obsidian"],
-    end_city_tower: ["minecraft:purpur_block", "minecraft:purpur_pillar", "minecraft:end_stone_bricks", "minecraft:diamond_ore", "minecraft:end_stone"],
-    fossil_excavation: ["minecraft:bone_block", "minecraft:coarse_dirt", "minecraft:rooted_dirt", "minecraft:coal_ore", "minecraft:iron_ore"],
+    end_city_tower: ["minecraft:purpur_block", "minecraft:purpur_pillar", "minecraft:end_bricks", "minecraft:diamond_ore", "minecraft:end_stone"],
+    fossil_excavation: ["minecraft:bone_block", "minecraft:coarse_dirt", "minecraft:dirt_with_roots", "minecraft:coal_ore", "minecraft:iron_ore"],
     blacksmith_workshop: ["minecraft:smooth_stone", "minecraft:iron_ore", "minecraft:raw_iron_block", "minecraft:iron_block", "minecraft:furnace"],
     library_observatory: ["minecraft:bookshelf", "minecraft:chiseled_bookshelf", "minecraft:stone_bricks", "minecraft:lapis_ore", "minecraft:lapis_block"],
     alchemist_laboratory: ["minecraft:podzol", "minecraft:redstone_block", "minecraft:gold_ore", "minecraft:redstone_ore", "minecraft:glass"],
     spider_nest: ["minecraft:mossy_stone_bricks", "minecraft:cobblestone", "minecraft:infested_stone", "minecraft:iron_ore"],
     creeper_dungeon: ["minecraft:mossy_cobblestone", "minecraft:tnt", "minecraft:mossy_stone_bricks", "minecraft:cobblestone", "minecraft:sand"],
-    slime_biosphere: ["minecraft:moss_block", "minecraft:clay", "minecraft:slime_block", "minecraft:mud"],
+    slime_biosphere: ["minecraft:moss_block", "minecraft:clay", "minecraft:slime", "minecraft:mud"],
     bee_apiary: ["minecraft:bee_nest", "minecraft:honeycomb_block", "minecraft:honey_block", "minecraft:yellow_terracotta", "minecraft:hay_block"],
-    pumpkin_patch: ["minecraft:pumpkin", "minecraft:carved_pumpkin", "minecraft:jack_o_lantern", "minecraft:hay_block", "minecraft:dirt"],
+    pumpkin_patch: ["minecraft:pumpkin", "minecraft:carved_pumpkin", "minecraft:lit_pumpkin", "minecraft:hay_block", "minecraft:dirt"],
     melon_greenhouse: ["minecraft:melon_block", "minecraft:glass", "minecraft:dirt", "minecraft:grass_block", "minecraft:jungle_log"],
     sculk_laboratory: ["minecraft:sculk", "minecraft:sculk_catalyst", "minecraft:deepslate_tiles", "minecraft:deepslate", "minecraft:reinforced_deepslate"],
     armory_vault: ["minecraft:stone_bricks", "minecraft:iron_block", "minecraft:raw_iron_block", "minecraft:chiseled_stone_bricks", "minecraft:cracked_stone_bricks"],
@@ -1338,7 +1338,7 @@ export function getIslandBlockPool(theme) {
     tuff_golem_sanctuary: ["minecraft:tuff", "minecraft:polished_tuff", "minecraft:deepslate", "minecraft:chiseled_stone_bricks", "minecraft:stone"],
     meteorite_crater: ["minecraft:blackstone", "minecraft:crying_obsidian", "minecraft:obsidian", "minecraft:magma", "minecraft:ancient_debris"],
     golden_pantheon: ["minecraft:quartz_block", "minecraft:smooth_quartz", "minecraft:gold_block", "minecraft:raw_gold_block", "minecraft:sea_lantern"],
-    void_gateway_outpost: ["minecraft:end_stone_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:purpur_pillar"]
+    void_gateway_outpost: ["minecraft:end_bricks", "minecraft:purpur_block", "minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:purpur_pillar"]
   };
   return pools[theme.id] || [theme.floor, theme.subfloor, theme.base];
 }
@@ -1359,7 +1359,7 @@ function decorateSteppingPaths(dimension, theme, center, seed) {
     const b = dimension.getBlock(p);
     if (b && b.typeId === theme.floor) {
       if (Math.random() < 0.5) {
-        b.setType("minecraft:dirt_path");
+        b.setType("minecraft:grass_path");
       } else {
         b.setType(theme.biome.includes("nether") ? "minecraft:blackstone" : "minecraft:cobblestone");
       }
@@ -1454,7 +1454,7 @@ function getIslandTreePlacement(theme, center) {
     case "end_city_tower":
       return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:purpur_pillar", leaves: "minecraft:purpur_block" };
     case "void_gateway_outpost":
-      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:end_stone_bricks", leaves: "minecraft:purpur_block" };
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:end_bricks", leaves: "minecraft:purpur_block" };
     default:
       return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:oak_log", leaves: "minecraft:oak_leaves" };
   }
@@ -1722,7 +1722,7 @@ export function buildThemedIsland(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy + 1, z: hz + 3 }, "minecraft:glass_pane");
 
       // Interior furniture: Bed, Crafting Table, Furnace, Torch
-      safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy, z: hz + 2 }, "minecraft:red_bed");
+      safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy, z: hz + 2 }, "minecraft:bed");
       safeAirOnlySetBlock(dimension, { x: hx + 1, y: hy, z: hz + 2 }, "minecraft:crafting_table");
       safeAirOnlySetBlock(dimension, { x: hx + 2, y: hy, z: hz + 1 }, "minecraft:furnace");
       safeAirOnlySetBlock(dimension, { x: hx + 1, y: hy + 2, z: hz + 1 }, "minecraft:torch");
@@ -1789,9 +1789,9 @@ export function buildThemedIsland(dimension, theme, center) {
       for (let yDrop = 0; yDrop <= 5; yDrop++) {
         safeAirOnlySetBlock(dimension, { x: wx - 3, y: cy - yDrop, z: wz }, "minecraft:water");
       }
-      safeAirOnlySetBlock(dimension, { x: wx, y: cy + 1, z: wz + 1 }, "minecraft:sugar_cane");
-      safeAirOnlySetBlock(dimension, { x: wx, y: cy + 2, z: wz + 1 }, "minecraft:sugar_cane");
-      safeAirOnlySetBlock(dimension, { x: wx - 1, y: cy + 1, z: wz }, "minecraft:lily_pad");
+      safeAirOnlySetBlock(dimension, { x: wx, y: cy + 1, z: wz + 1 }, "minecraft:reeds");
+      safeAirOnlySetBlock(dimension, { x: wx, y: cy + 2, z: wz + 1 }, "minecraft:reeds");
+      safeAirOnlySetBlock(dimension, { x: wx - 1, y: cy + 1, z: wz }, "minecraft:waterlily");
 
     } else if (tr === "lava_spring") {
       // Volcanic fissure with bubbling lava cascading down cliff into void!
@@ -1831,7 +1831,7 @@ export function buildThemedIsland(dimension, theme, center) {
       safeAirOnlySetBlock(dimension, { x: dx - 1, y: cy + 1, z: dz + 1 }, "minecraft:iron_bars");
       safeAirOnlySetBlock(dimension, { x: dx + 1, y: cy + 1, z: dz + 1 }, "minecraft:iron_bars");
       safeAirOnlySetBlock(dimension, { x: dx, y: cy + 1, z: dz }, "minecraft:chiseled_stone_bricks");
-      safeAirOnlySetBlock(dimension, { x: dx, y: cy + 2, z: dz }, "minecraft:cobweb");
+      safeAirOnlySetBlock(dimension, { x: dx, y: cy + 2, z: dz }, "minecraft:web");
 
       if (theme.mob) {
         try {

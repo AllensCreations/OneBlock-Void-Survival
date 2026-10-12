@@ -149,7 +149,7 @@ export const OVERWORLD_PHASES = [
       { id: "minecraft:mangrove_leaves", weight: 20 },
       { id: "minecraft:mud", weight: 25 },
       { id: "minecraft:clay", weight: 15 },
-      { id: "minecraft:lily_pad", weight: 10 }
+      { id: "minecraft:waterlily", weight: 10 }
     ],
     chests: [
       { id: "minecraft:mangrove_propagule", min: 1, max: 3, weight: 25 },
@@ -215,7 +215,7 @@ export const OVERWORLD_PHASES = [
   {
     name: "Snowy Tundra & Ice Peaks",
     blocks: [
-      { id: "minecraft:snow_block", weight: 35 },
+      { id: "minecraft:snow", weight: 35 },
       { id: "minecraft:powder_snow", weight: 15 },
       { id: "minecraft:ice", weight: 25 },
       { id: "minecraft:packed_ice", weight: 15 },
@@ -282,7 +282,7 @@ export const NETHER_PHASES = [
       { id: "minecraft:fire_charge", min: 1, max: 3, weight: 20 },
       { id: "minecraft:cooked_porkchop", min: 2, max: 4, weight: 10 }
     ],
-    mobs: ["minecraft:zombified_piglin", "minecraft:magma_cube"]
+    mobs: ["minecraft:zombie_pigman", "minecraft:magma_cube"]
   },
   {
     name: "Crimson Forest",
@@ -378,7 +378,7 @@ export const NETHER_PHASES = [
       { id: "minecraft:netherite_upgrade_smithing_template", min: 1, max: 1, weight: 15 },
       { id: "minecraft:ancient_debris", min: 1, max: 2, weight: 25 },
       { id: "minecraft:gold_ingot", min: 3, max: 8, weight: 25 },
-      { id: "minecraft:spectral_arrow", min: 4, max: 12, weight: 15 }
+      { id: "minecraft:arrow", min: 4, max: 12, weight: 15 }
     ],
     mobs: ["minecraft:piglin_brute", "minecraft:piglin"]
   }
@@ -390,7 +390,7 @@ export const END_PHASES = [
     name: "End Highlands",
     blocks: [
       { id: "minecraft:end_stone", weight: 65 },
-      { id: "minecraft:end_stone_bricks", weight: 25 },
+      { id: "minecraft:end_bricks", weight: 25 },
       { id: "minecraft:obsidian", weight: 10 }
     ],
     chests: [
@@ -419,7 +419,7 @@ export const END_PHASES = [
     blocks: [
       { id: "minecraft:purpur_block", weight: 40 },
       { id: "minecraft:purpur_pillar", weight: 25 },
-      { id: "minecraft:end_stone_bricks", weight: 20 },
+      { id: "minecraft:end_bricks", weight: 20 },
       { id: "minecraft:end_rod", weight: 15 }
     ],
     chests: [
