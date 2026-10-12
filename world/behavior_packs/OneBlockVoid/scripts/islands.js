@@ -1061,6 +1061,160 @@ function placeSurfaceVegetation(dimension, theme, loc, seed) {
   } catch (e) {}
 }
 
+// =========================================================================
+// ADVANCED TERRAFORMING: MICRO-CAVERNS, SATELLITE ISLETS & PATHS
+// =========================================================================
+
+function buildMicroCave(dimension, theme, center, seed) {
+  const { x: cx, y: cy, z: cz } = center;
+  const caveAngle = ((seed * 17) % 360) * (Math.PI / 180);
+  const caveDist = theme.size === "huge" ? 3.5 : 2.5;
+  const caveX = cx + Math.round(caveDist * Math.cos(caveAngle));
+  const caveZ = cz + Math.round(caveDist * Math.sin(caveAngle));
+  const caveY = cy - 3; // 3 blocks below surface, safely inside rock mantle
+
+  const caveRadius = theme.size === "huge" ? 2.6 : 2.0;
+
+  // Carve hollow ellipsoid cavern
+  for (let dx = -3; dx <= 3; dx++) {
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dz = -3; dz <= 3; dz++) {
+        const d = Math.sqrt(dx * dx + (dy * 1.4) * (dy * 1.4) + dz * dz);
+        if (d <= caveRadius) {
+          const block = dimension.getBlock({ x: caveX + dx, y: caveY + dy, z: caveZ + dz });
+          if (block && !block.isAir && block.typeId !== "minecraft:lodestone" && block.typeId !== "minecraft:chest") {
+            block.setType("minecraft:air");
+          }
+        }
+      }
+    }
+  }
+
+  // Populate Cave Features: Pointed dripstones, glowing lichen, and high-value ore veins!
+  try {
+    // Ceiling & Floor Stalactites / Stalagmites
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oz = -1; oz <= 1; oz++) {
+        if ((ox + oz + seed) % 2 === 0) {
+          const ceilBlock = dimension.getBlock({ x: caveX + ox, y: caveY + 2, z: caveZ + oz });
+          if (ceilBlock && !ceilBlock.isAir) {
+            safeAirOnlySetBlock(dimension, { x: caveX + ox, y: caveY + 1, z: caveZ + oz }, "minecraft:pointed_dripstone");
+          }
+          const floorBlock = dimension.getBlock({ x: caveX + ox, y: caveY - 2, z: caveZ + oz });
+          if (floorBlock && !floorBlock.isAir) {
+            safeAirOnlySetBlock(dimension, { x: caveX + ox, y: caveY - 1, z: caveZ + oz }, "minecraft:pointed_dripstone");
+          }
+        }
+      }
+    }
+
+    // Exposed Rare Ore Clump in Cave Wall
+    const rareOre = theme.tier >= 3 ? "minecraft:deepslate_diamond_ore" : (theme.tier === 2 ? "minecraft:deepslate_gold_ore" : "minecraft:deepslate_iron_ore");
+    safeAirOnlySetBlock(dimension, { x: caveX + 2, y: caveY, z: caveZ }, rareOre);
+    safeAirOnlySetBlock(dimension, { x: caveX + 2, y: caveY + 1, z: caveZ }, rareOre);
+
+    // Subtle cave glow (Glow lichen)
+    safeAirOnlySetBlock(dimension, { x: caveX, y: caveY - 1, z: caveZ }, "minecraft:glow_lichen");
+    safeAirOnlySetBlock(dimension, { x: caveX, y: caveY, z: caveZ - 2 }, "minecraft:glow_lichen");
+  } catch (ce) {}
+}
+
+function buildSatelliteIslet(dimension, theme, center, maxR, seed, index) {
+  const { x: cx, y: cy, z: cz } = center;
+  const angle = (((seed * 37 + index * 131) % 360) * Math.PI) / 180;
+  const distance = maxR + 5 + (seed % 3);
+  const sx = cx + Math.round(distance * Math.cos(angle));
+  const sz = cz + Math.round(distance * Math.sin(angle));
+  const sy = cy - (index === 0 ? 1 : 2);
+
+  const satR = index === 0 ? 2.4 : 1.8;
+
+  // Build mini asteroid rock
+  for (let dx = -3; dx <= 3; dx++) {
+    for (let dz = -3; dz <= 3; dz++) {
+      const d = Math.sqrt(dx * dx + dz * dz);
+      if (d <= satR) {
+        // Surface
+        safeAirOnlySetBlock(dimension, { x: sx + dx, y: sy, z: sz + dz }, theme.floor);
+        // Subsurface depth
+        const satDepth = Math.max(1, Math.round((satR - d) * 1.5));
+        for (let dy = 1; dy <= satDepth; dy++) {
+          const mat = dy === 1 ? getSubsoilBlock(theme, dx, dz, seed) : getRockBlock(theme, dx, dz, dy, seed);
+          safeAirOnlySetBlock(dimension, { x: sx + dx, y: sy - dy, z: sz + dz }, mat);
+        }
+        // Hanging stalactite tip
+        if (d <= 1.0) {
+          safeAirOnlySetBlock(dimension, { x: sx + dx, y: sy - satDepth - 1, z: sz + dz }, "minecraft:cobbled_deepslate");
+        }
+      }
+    }
+  }
+
+  // Hanging Iron Chains Tether (connecting edge of main island to satellite)
+  if (index === 0) {
+    const mainEdgeX = cx + Math.round((maxR - 0.5) * Math.cos(angle));
+    const mainEdgeZ = cz + Math.round((maxR - 0.5) * Math.sin(angle));
+    const steps = 4;
+    for (let s = 1; s <= steps; s++) {
+      const t = s / (steps + 1);
+      const chainX = Math.round(mainEdgeX + (sx - mainEdgeX) * t);
+      const chainZ = Math.round(mainEdgeZ + (sz - mainEdgeZ) * t);
+      const sag = Math.round(Math.sin(t * Math.PI) * 1.2);
+      safeAirOnlySetBlock(dimension, { x: chainX, y: cy - sag, z: chainZ }, "minecraft:chain");
+    }
+  }
+
+  // Thematic Feature on Satellite:
+  try {
+    const tr = theme.trait;
+    if (tr === "ore_rich") {
+      // Raw mineral boulder
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, theme.tier >= 3 ? "minecraft:raw_gold_block" : "minecraft:raw_iron_block");
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:lantern");
+    } else if (tr === "village" || tr === "animals") {
+      // Abandoned campsite
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:campfire");
+      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy + 1, z: sz }, "minecraft:barrel");
+      safeAirOnlySetBlock(dimension, { x: sx - 1, y: sy + 1, z: sz }, "minecraft:lantern");
+    } else if (tr === "dungeon" || theme.biome.includes("nether")) {
+      // Spire with crying obsidian & soul lantern
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:crying_obsidian");
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:soul_lantern");
+    } else if (tr === "ancient_shrine") {
+      // Quartz monolith
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:chiseled_quartz_block");
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 2, z: sz }, "minecraft:sea_lantern");
+    } else {
+      // Flowering azalea bonsai or wild flora
+      safeAirOnlySetBlock(dimension, { x: sx, y: sy + 1, z: sz }, "minecraft:flowering_azalea");
+      safeAirOnlySetBlock(dimension, { x: sx + 1, y: sy + 1, z: sz }, "minecraft:lantern");
+    }
+  } catch (fe) {}
+}
+
+function decorateSteppingPaths(dimension, theme, center, seed) {
+  const { x: cx, y: cy, z: cz } = center;
+  const pathBlocks = [
+    { x: cx, y: cy, z: cz + 1 },
+    { x: cx, y: cy, z: cz - 1 },
+    { x: cx + 1, y: cy, z: cz },
+    { x: cx - 1, y: cy, z: cz },
+    { x: cx - 2, y: cy, z: cz - 1 },
+    { x: cx + 2, y: cy, z: cz + 1 }
+  ];
+  for (let i = 0; i < pathBlocks.length; i++) {
+    const p = pathBlocks[i];
+    const b = dimension.getBlock(p);
+    if (b && b.typeId === theme.floor) {
+      if ((i + seed) % 2 === 0) {
+        b.setType("minecraft:dirt_path");
+      } else {
+        b.setType(theme.biome.includes("nether") ? "minecraft:blackstone" : "minecraft:cobblestone");
+      }
+    }
+  }
+}
+
 export function buildThemedIsland(dimension, theme, center) {
   const { x: cx, y: cy, z: cz } = center;
 
@@ -1160,6 +1314,16 @@ export function buildThemedIsland(dimension, theme, center) {
             safeAirOnlySetBlock(dimension, { x: cx + dx, y: cy - depth - 2, z: cz + dz }, rootMat);
           }
         }
+
+        // Hanging underside foliage (roots & vines under soil/rock overhangs):
+        if (dist >= baseRadius * 0.45 && (dx + dz + seed) % 4 === 0) {
+          const hangLoc = { x: cx + dx, y: cy - depth - 1, z: cz + dz };
+          if (theme.biome.includes("nether") || theme.biome.includes("crimson")) {
+            safeAirOnlySetBlock(dimension, hangLoc, "minecraft:weeping_vines");
+          } else if (theme.floor === "minecraft:grass_block" || theme.floor === "minecraft:podzol") {
+            safeAirOnlySetBlock(dimension, hangLoc, "minecraft:hanging_roots");
+          }
+        }
       }
     }
   }
@@ -1188,6 +1352,22 @@ export function buildThemedIsland(dimension, theme, center) {
       }
     }
   } catch (e) {}
+
+  // 6b. ORGANIC STEPPING PATHS:
+  decorateSteppingPaths(dimension, theme, center, seed);
+
+  // 6c. HOLLOW MICRO-CAVERN (For Huge & Big Islands):
+  if (theme.size === "huge" || theme.size === "big") {
+    buildMicroCave(dimension, theme, center, seed);
+  }
+
+  // 6d. SATELLITE MICRO-ISLETS & HANGING CHAINS (For Huge & Big Islands):
+  if (theme.size === "huge" || theme.size === "big") {
+    buildSatelliteIslet(dimension, theme, center, maxR, seed, 0);
+    if (theme.size === "huge") {
+      buildSatelliteIslet(dimension, theme, center, maxR, seed, 1);
+    }
+  }
 
   // 7. THEMATIC SPECIAL STRUCTURES / TRAITS:
   try {
