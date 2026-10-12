@@ -1,129 +1,93 @@
-# 🌌 OneBlock Void Survival [by AllensCreations] - Bedrock Edition
+# 🌌 OneBlock Void Survival v1.0 [by AllensCreations] - Bedrock Edition
 
-**Created by**: AllensCreations  
-**Supported Versions**: Minecraft Bedrock v1.20 – v1.26+ (MCPE, Windows 10/11, iOS, Android, Xbox, PlayStation, Switch)  
-**Game Mode**: Hardcore Survival (Locked Pure Hardcore Mode)  
-**World Generation**: Infinite Void World Generator (`generator_type: "void"`)  
-**Vanilla Purity**: 100% Pure Vanilla Survival (`experiments_ever_used: 0` — **Achievements Compatible & No Experimental Flags!**)
+Welcome to **OneBlock Void Survival v1.0**, the ultimate Minecraft Bedrock skyblock adventure! You awaken floating above an infinite, starry void with only a single magical block beneath your feet. Mine it to progress through iconic biome phases, manifest secret floating micro-continents, automate your empire with redstone machinery, and conquer the void in true Hardcore Survival!
+
+> 💬 *"Thank you so much for checking out OneBlock Void Survival! Endless love and care went into balancing every phase, island, and event to deliver the cleanest Bedrock Skyblock adventure. Share with your friends, leave a rating on MCPEDL, and enjoy the journey into the void!"* — **AllensCreations**
 
 ---
 
-## 🌟 Introduction & Welcome
-Welcome to **OneBlock Void Survival**, the definitive Minecraft Bedrock skyblock adventure where you start floating in a vast, infinite empty void with only a single magical block beneath your feet. Mine it or automate it with redstone to progress through unique biome phases, uncover hidden secret islands, build your dream floating kingdom, and conquer the endless sky in true Hardcore Survival!
+## 🌟 What's New in Version 1.0
 
-This map is packed with handcrafted progression, dynamic events, dimension-isolated secret islands, treasure-filled ruins, vibrant biomes, and rewards around every corner. With a smooth 15-step starter tutorial, full Redstone AFK automation support (Pistons & TNT blast chambers), and a compact 2-ring rosette island layout, OneBlock Void Survival delivers the ultimate Bedrock skyblock experience!
-
-> 💬 *"Thank you so much for playing my map! I put endless love and care into balancing every single phase, tutorial step, and island exploration to give you the ultimate Bedrock Skyblock experience. Please leave a rating on MCPEDL.COM and share with your friends!"* — **AllensCreations**
-
----
-
-## 🔥 Key Features
-
-### 🛠️ 1. Smart 15-Step Auto-Build Starter Tutorial
-Never fall into the void on your first minute again!
-- **Blocks 1 to 8 (Auto-Platform Construction)**: Every piece of dirt you mine automatically places into one of the 8 perimeter spots around the center, assembling a secure 3×3 platform foundation under your feet without dropping duplicate items.
-- **Blocks 9 to 11 (Starter Wood)**: Oak logs for your Crafting Table, Sticks, and Wooden Pickaxe.
-- **Blocks 12 to 14 (Cobblestone Mining)**: Smooth stone blocks to craft a sturdy Stone Pickaxe.
-- **Block 15 (Tutorial Milestone)**: Spawns Coal Ore for torches, unlocks Phase 1, and gifts a Starter Chest with **2x Ice Blocks** to create an infinite water source pool!
+- ⚡ **Instant 0-Delay Auto-Renewal Engine**: The OneBlock immediately auto-renews at 20Hz if it ever turns to air or liquid—never lose your block to flowing water or void clearing!
+- 📸 **Admin Photography & Inspector Studio**: Complete studio suite in the Admin World (`OneBlock_Void_Survival_Admin.mcworld`) with auto-manifested islands, elevated 3/4 panoramic isometric camera viewpoints, and instant lighting controls (High Noon, Golden Sunset, Starry Midnight).
+- 🧭 **Attuned Explorer Compass & Rift Announcements**: When a new secret island manifests across the void, experience resonant celestial chimes, an on-screen title alert, a 30-block starlight particle beam shooting toward the island, and an Explorer Compass showing the exact coordinates!
+- 🏝️ **43 Handcrafted Secret Void Islands**: Non-diagonal, organic radial layouts spanning Overworld, Nether, and The End with unique geological strata, authentic ore veins, micro-caverns, and natural biome flora.
+- 🧰 **Upgraded Starter Kit**: Tutorial milestone chest now awards **2x Ice Blocks and 1x Lava Bucket** for an instant infinite cobblestone generator and water pool.
 
 ---
 
-### ⚙️ 2. Full Redstone AFK Automation (Pistons, TNT, & Blast Chambers)
-Automate your OneBlock progression like a true technical Minecraft pro!
-- **Any Destruction Method Advances the OneBlock**: Mine manually with pickaxes, push blocks with pistons into conveyor belts, or detonate with TNT blast chambers. Any removal of the OneBlock advances your phase progression and regenerates the next block!
-- **Piston Feeder Support**: Pistons can freely push the OneBlock without penalty. The pushed block retains its original identity (Ores, Logs, Minerals) so you can build automated stone generators, blast chambers, or tree farms!
-- **Pure Vanilla Blast Physics**: TNT explosives destroy and drop blocks according to vanilla Minecraft blast mechanics, allowing you to build fully autonomous AFK TNT quarries!
+## 🎮 How to Play
 
----
+### 1. ⛏️ Mine Your OneBlock
+- Look straight down at the glowing block at `(0, 64, 0)` and start breaking it.
+- **Auto-Platform Foundation (Blocks 1–8)**: The first 8 dirt blocks you mine automatically place themselves around you, creating a safe 3×3 platform under your feet so you can't fall into the void!
+- **Wood & Cobblestone (Blocks 9–14)**: Collect your starter oak logs and smooth stone to craft a Crafting Table and tools.
+- **Tutorial Milestone (Block 15)**: Spawns Coal Ore, unlocks Phase 1, and gifts a Starter Chest containing **2x Ice Blocks and 1x Lava Bucket**.
 
-### 🗺️ 3. 42 Unique Secret Islands with Deterministic Fixed Locations
-Every island that materializes is a unique, natural floating micro-continent positioned at a **fixed, deterministic coordinate** around your base:
-- **Compact Staggered 2-Ring Rosette (Overworld - 32 Islands)**:
-  - **Inner Ring (16 Islands at 42m)**: Easily visible and reachable with simple bridges directly from your starter platform.
-  - **Outer Ring (16 Islands at 60m)**: Staggered by $11.25^\circ$ into the gaps of the inner ring to ensure islands never collide or merge.
-- **Nether Archipelago (7 Islands at 45m)**: Fortress Outposts, Bastion Piglin Treasuries, Crimson & Warped Groves, and Soul Sand Catacombs spawn only in the Nether.
-- **The End Outposts (3 Islands at 45m)**: Stronghold End Chambers, End City Spires, and Void Gateway Shrines spawn only in The End.
-- **Thematic Biome Trees on All 42 Islands**: Every single island features full vanilla trees with 5-tall wood trunks, lush canopies (~33 leaves), and matching foliage (Cherry, Pale Oak, Acacia, Jungle, Spruce, Mangrove, Nether Fungi, Chorus, etc.).
-- **Natural Geological Strata & Ore Veins**: Built from authentic rock layers and embedded mineral veins (Coal, Iron, Gold, Diamond, Ancient Debris) scaled to island tier.
+### 2. 🌊 Set Up Your Cobblestone & Water Generators
+- Combine your **2x Ice Blocks** into a 2×2 infinite water pool.
+- Combine water and your **Lava Bucket** to construct an infinite Cobblestone Generator for building expansive bridges across the void!
 
----
+### 3. 🌿 Advance Through Dynamic Biome Phases
+- Every block you break brings you closer to the next phase!
+- Watch your **Actionbar HUD** for live progress:
+  `[Overworld] Phase 1: Plains [12/50] Total: 12`
+- Progress through all Overworld phases: Plains, Forest, Taiga, Jungle, Badlands Mesa, Cherry Grove, Deep Dark Sculk, and Ancient Trials.
+- Each phase introduces richer ores, exotic trees, rare seeds, and unique building materials.
 
-### 🌌 4. Dimension-Isolated Materialization & Celestial Particle Signals
-- **Dimension Isolation**: Nether islands ONLY appear while mining in the Nether; End islands ONLY appear while mining in The End; Overworld islands ONLY appear in the Overworld.
-- **Starlight Particle Beam**: When an island materializes, a radiant 30-step starlight particle trail shoots from `(0, 65, 0)` toward the new island across the void!
-- **Resonating Amethyst Chimes**: Accompanied by celestial Amethyst chimes and a clean cardinal chat alert pointing you in the right direction (North, South, East, West).
-- **No Cluttered Compasses**: No inventory clutter or tracking items required—islands are close, visible, and permanently placed!
+### 4. 🧭 Discover 43 Secret Void Islands
+- As you mine, mysterious rifts will tear open in the void!
+- Follow the **Starlight Particle Beam** and use your **Attuned Explorer Compass** to bridge out toward newly manifested islands.
+- Explore 43 handcrafted floating islands across all 3 dimensions:
+  - **Overworld**: Bamboo Monasteries, Cherry Sanctuaries, Desert Crypts, Trial Vaults, Mushroom Havens, and Stronghold End Chambers.
+  - **Nether**: Fortress Outposts, Bastion Piglin Treasuries, Crimson Groves, and Warped Spires.
+  - **The End**: End City Towers, Void Gateway Outposts, and Elytra Flight Hangars.
+- Each island features a **Mini-OneBlock Core** (30–50 bonus thematic blocks), thematic mobs, chests, and authentic ore veins!
 
----
+### 5. ⚙️ Automate with Pistons & Redstone
+- Build piston conveyors to push the OneBlock into automated stone generators or tree farms.
+- Set up automated TNT blast chambers for autonomous AFK mining.
+- Every break method—pickaxe, piston push, or TNT explosion—advances your phase progress!
 
-### 📊 5. Clean Actionbar HUD & In-Game Progression
-- **Minimalist Actionbar HUD**: Shows current dimension, phase name, phase block progress, and total mined blocks:
-  `§a[Overworld] §ePhase 3: §fCherry Grove §7[§b24§7/§b50§7] §eTotal: §6124`
-- **Toggle Command**: Type `!hud` in chat anytime to toggle the Actionbar HUD on or off.
-- **Admin Inspector & Zero-Item Testing Suite**: In admin worlds (`OneBlock_Void_Survival_Admin.mcworld`):
-  - 🕹️ **Zero-Item Physical Console at Spawn `(3, 65, -2..1)`**:
-    - **Button 1 `[⚡ Auto-Break]`**: Toggles rapid automated mining runner (10 blocks/sec).
-    - **Button 2 `[✦ Next Island]`**: Instantly summons and materializes the next secret island.
-    - **Button 3 `[🌟 Summon All]`**: Summons and builds all 42 islands across the void.
-    - **Button 4 `[📜 Admin Menu]`**: Opens the full interactive modal GUI.
-  - 🧎 **Double-Crouch Anywhere**: Double-tap Sneak (crouch) anywhere in the world to instantly pop up the Admin Inspector GUI!
-  - 💬 **Plain Chat Commands (No Slash Needed)**:
-    - Type `run` to start / stop the Auto-Break runner.
-    - Type `run all` to summon all 42 islands AND start the Auto-Break runner!
-    - Type `all` to materialize all 42 secret void islands.
-    - Type `next` to summon the next secret island.
-    - Type `menu` to open the Admin GUI form.
-  - ⌨️ **Native Bedrock Commands**: `/scriptevent ob:run`, `/scriptevent ob:all`, `/scriptevent ob:menu`.
+### 6. ⚔️ Survive Dynamic Events & Mini-Bosses
+- **Loot Chests (5% Chance)**: Grab instant phase-themed wooden chests right on your OneBlock.
+- **Lucky Rush (0.5% Chance)**: 10 seconds of non-stop golden and diamond ore blocks!
+- **Jackpot & Relic Chests (0.1% Chance)**: Super rare drops of Ancient Enchantment Books (Mending, Unbreaking III) and Totems of Undying.
+- **Dimension Shifter**: A mysterious wandering trader that visits periodically offering rare saplings, seeds, and fabled relics.
+- **Phase Climax Mini-Bosses**: Slay the Zombie King, Skeleton Captain, and Nether Warlord to conquer late phases.
 
----
-
-### 💎 6. Dynamic Events & Phase Climax Mini-Bosses
-- **Physical Loot Chests (5% Chance)**: Wooden chests spawn directly on the OneBlock with phase-themed loot.
-- **Jackpot & Relic Chests (0.1% Chance)**: Rare drops of mineral blocks, Ancient Enchantment Books (Mending, Unbreaking III), and Totems.
-- **Lucky Rush (0.5% Chance)**: 10 seconds of pure golden/mineral block frenzies!
-- **Dimension Shifter (Wandering Merchant)**: Arrives every 10–15 minutes carrying rare biome trades, saplings, and fabled treasures!
-- **Phase Climax Mini-Bosses**: Defeat the Zombie King, Skeleton Captain, or Nether Warlord in late phases to advance!
-- **Endgame Victory**: Complete all phases in The End to defeat the Ender Dragon and claim the permanent **`[Void Champion]`** title!
+### 7. 🌌 Slay the Ender Dragon & Claim `[Void Champion]`
+- Construct your Nether Portal to unlock Nether phases and the 7 Nether islands.
+- Step through the End Portal on the Stronghold Island to enter The End.
+- Defeat the Ender Dragon in the void to claim the permanent **`[Void Champion]`** prestige title!
 
 ---
 
 ## 🏆 10 Fun In-Game Challenges
-1. 🌉 **Void Architect**: Connect your main base to 3 different secret islands with aesthetic bridges.
+
+1. 🌉 **Void Architect**: Connect your main base to 3 different secret void islands with aesthetic bridges.
 2. ⚙️ **Redstone Engineer**: Build an automated piston conveyor or TNT blast chamber to mine the OneBlock automatically.
 3. 🚜 **Self-Sustaining Colony**: Build an automated tree, crop, and animal farm using Tier 1 Island resources.
-4. 💰 **Trader’s Fortune**: Complete 3 trades with the Dimension Shifter.
-5. 🌋 **Into the Depths**: Enter the Nether portal and advance to Nether Phase 2.
+4. 💰 **Trader’s Fortune**: Complete 3 trades with the Dimension Shifter merchant.
+5. 🌋 **Into the Depths**: Ignite a Nether portal and advance to Nether Phase 2.
 6. ⚔️ **Climax Conqueror**: Defeat a Phase Climax Mini-Boss without falling into the void.
 7. ⏱️ **Golden Rush Hour**: Mine at least 8 mineral blocks during a single Lucky Rush event.
-8. 🛡️ **Tier 4 Relic Hunter**: Claim loot from the Trial Vault or Piglin Treasury and obtain a Heavy Core.
+8. 🛡️ **Relic Hunter**: Raid a Trial Vault or Piglin Treasury and claim a Heavy Core or Ancient Debris.
 9. 🌌 **Prestige of the Void**: Conquer all Overworld, Nether, and End phases to unlock `[Void Champion]`.
 10. 🪽 **Master of Flight**: Glide with the Elytra from the Void Gateway Shrine all the way back to spawn!
 
 ---
 
-## 📥 How to Install & Play
+## 📸 Island Photography Studio & Inspector (Admin World)
 
-### Option 1: Automatic `.mcworld` Import (Easiest)
-1. Download **`OneBlock_Void_Survival.mcworld`**.
-2. Open or tap the file on your device (Android, iOS, Windows 10/11, Xbox, etc.).
-3. Minecraft will launch automatically and import the world into your Worlds list.
-4. Tap Play and enjoy your Hardcore Void journey!
-
-### Option 2: Add Behavior Pack (`.mcpack`) to an Existing World
-1. Download **`OneBlock_Void_Survival.mcpack`**.
-2. Open the file to import the behavior pack into Minecraft.
-3. Edit your world settings > **Behavior Packs** > Activate **OneBlock Void Survival**.
-4. Set your world spawn at `(0, 65, 0)` and start mining at `(0, 64, 0)`!
+In `OneBlock_Void_Survival_Admin.mcworld`:
+- **Auto-Manifestation**: All 43 islands automatically spawn across Overworld, Nether, and The End.
+- **Double-Crouch Anywhere**: Double-tap Sneak (crouch) to open the Island Photo Studio & Inspector GUI!
+- **📸 Scenic Photo Viewpoints**: Teleport directly into elevated 3/4 isometric panoramic camera angles framing the entire island volume and satellites.
+- **Studio Lighting**: Toggle High Noon, Golden Hour Sunset, Midnight, or Night Vision with one click.
+- **Chat Shortcuts**: Type `photo`, `day`, `sunset`, `night`, `run`, `all`, or `menu` directly in chat!
 
 ---
 
-## 🔒 Vanilla Compatibility & Performance
-- **Zero Experimental Flags Needed** (`experiments_ever_used: 0`).
-- **Achievements Compatible**: Safe for vanilla survival gameplay.
-- **Lightweight**: Optimized Script API execution designed for smooth 60 FPS performance on mobile devices and consoles.
-- **Multiplayer Ready**: Fully supports LAN, Realms, and Dedicated Bedrock Servers!
-
----
-
-**Map Created by AllensCreations**  
-*Don't forget to leave a review and rate ⭐⭐⭐⭐⭐ on MCPEDL.COM if you enjoyed your void adventure!*
+**Map Created with ❤️ by AllensCreations**  
+*Enjoy your journey into the endless sky!*
