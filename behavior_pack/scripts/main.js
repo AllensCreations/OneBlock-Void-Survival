@@ -1323,50 +1323,93 @@ export function summonNextIslandAdmin(player) {
   } catch (e) {}
 }
 
+// Photography Camera Angle Calculation for scenic 3/4 isometric panoramic framing
+export function getIslandPhotoViewpoint(theme, center) {
+  const { x: cx, y: cy, z: cz } = center;
+  const distFromSpawn = Math.hypot(cx, cz);
+  let camX, camY, camZ;
+
+  if (distFromSpawn < 10) {
+    // Center island
+    camX = cx + 14;
+    camY = cy + 9;
+    camZ = cz + 14;
+  } else {
+    // Frame from radial vector shifted 25 degrees for optimal 3/4 elevation angle
+    const angle = Math.atan2(cz, cx);
+    const camAngle = angle + (25 * Math.PI / 180);
+    const camDist = theme.size === "huge" ? 22 : (theme.size === "big" ? 18 : 15);
+    camX = Math.round(cx + camDist * Math.cos(camAngle));
+    camY = cy + (theme.size === "huge" ? 10 : 8);
+    camZ = Math.round(cz + camDist * Math.sin(camAngle));
+  }
+
+  return {
+    cameraPos: { x: camX, y: camY, z: camZ },
+    lookAt: { x: cx, y: cy + 1, z: cz }
+  };
+}
+
 export function summonAllIslandsAdmin(player) {
   try {
-    player.sendMessage("\n§e[Admin] Summoning all 43 Secret Islands into the void...");
-    let count = 0;
-    for (let i = 0; i < ISLAND_THEMES.length; i++) {
+    if (player) {
+      player.sendMessage("\n§6=== [ADMIN SHOWCASE] MANIFESTING ALL 43 ISLANDS FOR PHOTOGRAPHY ===");
+      player.sendMessage("§ePreloading chunks and generating all 43 themed islands across Overworld, Nether, and The End...");
+    }
+
+    const total = ISLAND_THEMES.length;
+
+    // Process each island sequentially with ticking area preloading
+    for (let i = 0; i < total; i++) {
       const theme = ISLAND_THEMES[i];
-      const loc = getIslandLocation(i, ISLAND_THEMES.length, theme);
+      const loc = getIslandLocation(i, total, theme);
+      const targetDimName = theme.dimension || "overworld";
+
       world.setDynamicProperty(`island_spawned_${theme.id}`, true);
       world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
       world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
       world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
 
-      // Staggered builder with 3-chunk ticking area preloading (rotating slots 0-7)
-      const staggerDelay = i * 15;
+      const delay = i * 16;
       system.runTimeout(() => {
         try {
-          const areaSlot = i % 8;
-          const areaName = `isl_run_${areaSlot}`;
-          try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e1) {}
-          try { player.dimension.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.y} ${loc.center.z} 3 ${areaName} true`); } catch (e2) {}
+          const dim = world.getDimension(targetDimName);
+          if (!dim) return;
+
+          const areaSlot = i % 6;
+          const areaName = `isl_photo_${areaSlot}`;
+          try { dim.runCommand(`tickingarea remove ${areaName}`); } catch (e1) {}
+          try { dim.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.y} ${loc.center.z} 3 ${areaName} true`); } catch (e2) {}
+
           system.runTimeout(() => {
             try {
-              if (!isIslandPhysicallyBuilt(player.dimension, loc.center)) {
-                const placed = buildThemedIsland(player.dimension, theme, loc.center);
+              if (!isIslandPhysicallyBuilt(dim, loc.center)) {
+                const placed = buildThemedIsland(dim, theme, loc.center);
                 if (placed > 0) world.setDynamicProperty(`island_built_${theme.id}`, true);
               }
-            } catch (e3) {}
-            try { player.dimension.runCommand(`tickingarea remove ${areaName}`); } catch (e4) {}
-          }, 15);
+            } catch (be) {}
+            try { dim.runCommand(`tickingarea remove ${areaName}`); } catch (e3) {}
+          }, 14);
         } catch (e) {}
-      }, staggerDelay);
-      count++;
+      }, delay);
     }
+
+    world.setDynamicProperty("admin_islands_manifested", true);
+
     system.runTimeout(() => {
-      player.sendMessage(`§a[Admin] ★ All ${count} Secret Islands successfully summoned & registered in the void!`);
-      player.playSound("random.levelup", { pitch: 1.2, volume: 1.0 });
-    }, count * 12 + 20);
+      for (const p of world.getAllPlayers()) {
+        p.sendMessage(`\n§a[Admin Showcase] ★ All ${total} Secret Islands successfully manifested and ready for photography!`);
+        p.sendMessage("§eDouble-crouch or chat 'photo' to open the Photography Studio teleporter.");
+        p.playSound("random.levelup", { pitch: 1.2, volume: 1.0 });
+      }
+    }, total * 16 + 25);
   } catch (e) {}
 }
 
 export function setupAdminStation(dimension) {
   if (!IS_ADMIN_BUILD) return;
   try {
-    for (let z = -2; z <= 1; z++) {
+    for (let z = -2; z <= 2; z++) {
       // Bedrock foundation underneath walkway and podium
       const bUnderWalk = dimension.getBlock({ x: 2, y: 63, z });
       if (bUnderWalk && bUnderWalk.typeId !== "minecraft:bedrock") bUnderWalk.setType("minecraft:bedrock");
@@ -1419,87 +1462,158 @@ export function openAdminIslandMenu(player) {
   try {
     if (!isAdmin(player)) return;
     const form = new ActionFormData();
-    form.title("§6§lISLAND INSPECTOR (ADMIN)§r");
-    form.body("§eSelect an action or island to inspect in Creative Mode.\n§7Zero-item controls: Buttons at spawn, Double-Crouch, or chat 'run'!\n§bTotal: 42 Secret Themed Islands");
+    form.title("§6§lISLAND PHOTO STUDIO & INSPECTOR§r");
+    form.body("§eChoose studio lighting or select an island to take panoramic screenshots in Creative Mode.\n§7Tip: Double-tap Sneak or chat 'photo' anytime to open this studio!");
 
-    const runnerLabel = isAutoBreakRunning ? "§c§l⏹ STOP AUTO-BREAK RUNNER§r\n§8(Click to halt auto-mining)" : "§a§l▶ START AUTO-BREAK RUNNER§r\n§8(Rapidly mine & summon islands)";
-    form.button(runnerLabel, "textures/ui/speed_effect");
-    form.button("§6§l🌟 SUMMON ALL 42 ISLANDS§r\n§8(Materialize all void islands)", "textures/ui/refresh_light");
-    form.button("§d§l✦ SUMMON NEXT ISLAND§r\n§8(Instantly manifest next secret island)", "textures/ui/icon_recipe_nature");
-    form.button("§b§l⚡ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live celestial sounds & starlight trail)", "textures/ui/portal_icon");
+    form.button("§6§l🌟 MANIFEST ALL 43 ISLANDS§r\n§8(Preload & build all islands into the void)", "textures/ui/refresh_light");
+    form.button("§e§l☀️ PHOTO LIGHTING: HIGH NOON§r\n§8(Clear sky & bright overhead sunlight)", "textures/ui/weather_clear");
+    form.button("§6§l🌅 PHOTO LIGHTING: GOLDEN HOUR§r\n§8(Dramatic sunset & warm horizon glow)", "textures/ui/icon_recipe_nature");
+    form.button("§9§l🌌 PHOTO LIGHTING: STARRY NIGHT§r\n§8(Clear starry night & glowing lanterns)", "textures/ui/portal_icon");
+    form.button("§b§l👁️ TOGGLE NIGHT VISION & FLIGHT§r\n§8(Crystal-clear void visibility)", "textures/ui/accessibility_glyph_color");
+    form.button("§c§l▶ TOGGLE AUTO-BREAK RUNNER§r\n§8(Rapidly mine & test progression)", "textures/ui/speed_effect");
 
     for (let i = 0; i < ISLAND_THEMES.length; i++) {
       const theme = ISLAND_THEMES[i];
-      const tierLabel = theme.tier === 1 ? "Starter" : (theme.tier === 2 ? "Mining" : (theme.tier === 3 ? "Nether" : "Relic"));
+      const dimPrefix = theme.dimension === "nether" ? "§c[Nether]" : (theme.dimension === "the_end" ? "§d[End]" : "§a[Overworld]");
+      let ringLabel = "";
+      if (theme.dimension === "overworld") {
+        const orderIdx = OVERWORLD_ISLAND_ORDER.indexOf(theme.id);
+        if (orderIdx < 6) ringLabel = "Ring 1 (72m)";
+        else if (orderIdx < 14) ringLabel = "Ring 2 (125m)";
+        else if (orderIdx < 24) ringLabel = "Ring 3 (180m)";
+        else ringLabel = "Ring 4 (240m)";
+      } else {
+        ringLabel = theme.dimension === "nether" ? "Nether (75m)" : "End (85m)";
+      }
       const sizeLabel = theme.size ? theme.size.toUpperCase() : "MED";
-      const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
-      form.button(`${theme.color}§l${theme.name}§r\n§8[T${theme.tier}: ${tierLabel}] ${sizeLabel} • ${traitLabel}`);
+      form.button(`${theme.color}§l${theme.name}§r\n§8${dimPrefix} ${ringLabel} • ${sizeLabel}`);
     }
 
     form.show(player).then((response) => {
       if (response.canceled || response.selection === undefined) return;
 
       if (response.selection === 0) {
+        summonAllIslandsAdmin(player);
+        return;
+      }
+      if (response.selection === 1) {
+        try {
+          player.dimension.runCommand("time set noon");
+          player.dimension.runCommand("weather clear");
+          player.sendMessage("§a[Photo Studio] Studio lighting set to High Noon (Bright Sunlight)!");
+          player.playSound("random.orb", { pitch: 1.2, volume: 0.8 });
+        } catch (e) {}
+        return;
+      }
+      if (response.selection === 2) {
+        try {
+          player.dimension.runCommand("time set 12000");
+          player.dimension.runCommand("weather clear");
+          player.sendMessage("§6[Photo Studio] Studio lighting set to Golden Hour Sunset!");
+          player.playSound("random.orb", { pitch: 1.2, volume: 0.8 });
+        } catch (e) {}
+        return;
+      }
+      if (response.selection === 3) {
+        try {
+          player.dimension.runCommand("time set 18000");
+          player.dimension.runCommand("weather clear");
+          player.sendMessage("§9[Photo Studio] Studio lighting set to Starry Midnight!");
+          player.playSound("random.orb", { pitch: 1.2, volume: 0.8 });
+        } catch (e) {}
+        return;
+      }
+      if (response.selection === 4) {
+        try {
+          player.addEffect("night_vision", 999999, { showParticles: false });
+          player.setGameMode("creative");
+          player.sendMessage("§b[Photo Studio] Night Vision & Creative Flight refreshed!");
+          player.playSound("random.orb", { pitch: 1.2, volume: 0.8 });
+        } catch (e) {}
+        return;
+      }
+      if (response.selection === 5) {
         toggleAdminAutoBreak(player);
         return;
       }
 
-      if (response.selection === 1) {
-        summonAllIslandsAdmin(player);
-        return;
-      }
-
-      if (response.selection === 2) {
-        summonNextIslandAdmin(player);
-        return;
-      }
-
-      if (response.selection === 3) {
-        materializeIsland(player.dimension, ISLAND_THEMES[0], 0, 10);
-        player.sendMessage("§d[Admin] ★ Triggered live Rift Manifestation announcement, celestial sounds & starlight trail!");
-        return;
-      }
-
-      // Specific Island Selected
-      const themeIndex = response.selection - 4;
+      // Island Selected: Open Sub-Form with Photography Angles
+      const themeIndex = response.selection - 6;
       const theme = ISLAND_THEMES[themeIndex];
       if (!theme) return;
 
-      const loc = getIslandLocation(themeIndex, 42, theme);
-      const targetPos = { x: loc.center.x, y: loc.center.y + 3, z: loc.center.z };
-
-      // Record island target dynamic properties
-      world.setDynamicProperty(`island_spawned_${theme.id}`, true);
-      world.setDynamicProperty(`island_target_x_${theme.id}`, loc.center.x);
-      world.setDynamicProperty(`island_target_y_${theme.id}`, loc.center.y);
-      world.setDynamicProperty(`island_target_z_${theme.id}`, loc.center.z);
-
-      // TELEPORT FIRST so chunk loads around player!
-      try {
-        player.teleport(targetPos, { dimension: player.dimension, checkForBlocks: false });
-        try { player.setGameMode("creative"); } catch (e) {}
-        try { player.addEffect("night_vision", 999999, { showParticles: false }); } catch (e) {}
-      } catch (tpe) {}
-
-      // Build island once chunk has loaded around newly teleported player
-      system.runTimeout(() => {
-        try {
-          const center = { x: loc.center.x, y: loc.center.y, z: loc.center.z };
-          if (!isIslandPhysicallyBuilt(player.dimension, center)) {
-            const placed = buildThemedIsland(player.dimension, theme, center);
-            if (placed > 0) {
-              world.setDynamicProperty(`island_built_${theme.id}`, true);
-            }
-          }
-        } catch (be) {}
-      }, 4);
-
-      player.sendMessage(`\n${theme.color}★ [Admin Inspector] Teleported to §l${theme.name}§r${theme.color}!`);
-      player.sendMessage(`§eCoordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`);
-      player.sendMessage(`§7Tier: ${theme.tier} | Size: ${theme.size} | Trait: ${theme.trait} | Floor: ${theme.floor}\n`);
-      player.playSound("mob.endermen.portal", { pitch: 1.2, volume: 1.0 });
+      openIslandPhotoSubMenu(player, theme, themeIndex);
     });
   } catch (err) {}
+}
+
+function openIslandPhotoSubMenu(player, theme, themeIndex) {
+  try {
+    const loc = getIslandLocation(themeIndex, ISLAND_THEMES.length, theme);
+    const photoView = getIslandPhotoViewpoint(theme, loc.center);
+    const targetDimName = theme.dimension || "overworld";
+
+    const subForm = new ActionFormData();
+    subForm.title(`${theme.color}§l${theme.name}§r`);
+    subForm.body(
+      `§eDimension: §f${targetDimName.toUpperCase()}\n` +
+      `§eBiome: §f${theme.biome}\n` +
+      `§eCenter Location: §b(${loc.center.x}, ${loc.center.y}, ${loc.center.z})\n` +
+      `§eDistance from Spawn: §a${loc.distance}m\n\n` +
+      `§7Select how you would like to view this island for photography:`
+    );
+
+    subForm.button("§6§l📸 SCENIC PHOTO VIEWPOINT§r\n§8(Elevated 3/4 panoramic isometric camera angle)", "textures/ui/camera");
+    subForm.button("§a§l📍 LAND ON ISLAND CORE§r\n§8(Teleport directly onto OneBlock surface)", "textures/ui/portal_icon");
+    subForm.button("§d§l🔨 RE-GENERATE ISLAND§r\n§8(Force procedural build of this island)", "textures/ui/icon_recipe_nature");
+    subForm.button("§7🔙 Back to Studio List", "textures/ui/undo");
+
+    subForm.show(player).then((subResp) => {
+      if (subResp.canceled || subResp.selection === undefined) return;
+
+      if (subResp.selection === 3) {
+        openAdminIslandMenu(player);
+        return;
+      }
+
+      const targetDim = world.getDimension(targetDimName) || player.dimension;
+      const isPhotoAngle = subResp.selection === 0;
+      const destPos = isPhotoAngle ? photoView.cameraPos : { x: loc.center.x, y: loc.center.y + 2, z: loc.center.z };
+
+      // Teleport player & setup creative mode + night vision
+      try {
+        player.teleport(destPos, { dimension: targetDim, checkForBlocks: false });
+        player.setGameMode("creative");
+        player.addEffect("night_vision", 999999, { showParticles: false });
+      } catch (tpe) {}
+
+      // Preload chunk and ensure physically built
+      const areaName = `temp_view_${theme.id.slice(0, 6)}`;
+      try { targetDim.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
+      try { targetDim.runCommand(`tickingarea add circle ${loc.center.x} ${loc.center.y} ${loc.center.z} 3 ${areaName} true`); } catch (e) {}
+
+      system.runTimeout(() => {
+        try {
+          if (subResp.selection === 2 || !isIslandPhysicallyBuilt(targetDim, loc.center)) {
+            const placed = buildThemedIsland(targetDim, theme, loc.center);
+            if (placed > 0) world.setDynamicProperty(`island_built_${theme.id}`, true);
+          }
+        } catch (be) {}
+        try { targetDim.runCommand(`tickingarea remove ${areaName}`); } catch (e) {}
+      }, 10);
+
+      if (isPhotoAngle) {
+        player.sendMessage(`\n${theme.color}📸 [Photo Studio] Teleported to §l${theme.name}§r${theme.color} Scenic Viewpoint!`);
+        player.sendMessage(`§eCamera: §b(${destPos.x}, ${destPos.y}, ${destPos.z}) §7looking towards center §b(${loc.center.x}, ${loc.center.y}, ${loc.center.z})`);
+        player.sendMessage(`§aTip: Hide HUD (F1 or Settings) and adjust FOV to 70° for magazine-quality screenshots!\n`);
+      } else if (subResp.selection === 1) {
+        player.sendMessage(`\n${theme.color}📍 [Island Inspector] Landed on §l${theme.name}§r${theme.color} core at (${destPos.x}, ${destPos.y}, ${destPos.z})!\n`);
+      } else {
+        player.sendMessage(`\n${theme.color}🔨 [Island Inspector] Re-generated §l${theme.name}§r${theme.color}!\n`);
+      }
+      player.playSound("mob.endermen.portal", { pitch: 1.2, volume: 1.0 });
+    });
+  } catch (e) {}
 }
 
 export function giveAdminInspectorTool(player) {
@@ -2226,13 +2340,28 @@ world.afterEvents.playerSpawn.subscribe((event) => {
       // Check if admin map or admin player: setup physical station & display zero-item control guide
       if (isAdmin(player)) {
         if (IS_ADMIN_BUILD) {
-          try { setupAdminStation(player.dimension); } catch (se) {}
+          try {
+            setupAdminStation(player.dimension);
+            player.setGameMode("creative");
+            player.addEffect("night_vision", 999999, { showParticles: false });
+            player.dimension.runCommand("weather clear");
+            player.dimension.runCommand("time set noon");
+          } catch (se) {}
+
+          // Auto-manifest all 43 islands for photography on first world join
+          if (!world.getDynamicProperty("admin_islands_manifested")) {
+            system.runTimeout(() => {
+              try {
+                summonAllIslandsAdmin(player);
+              } catch (me) {}
+            }, 25);
+          }
         }
-        player.sendMessage("\n§6=== ONEBLOCK ADMIN CONTROLS (ZERO ITEMS NEEDED) ===");
-        player.sendMessage("§e1. Physical Buttons: §7Console at (3, 65, -2..1) right beside spawn");
-        player.sendMessage("§e2. Double-Crouch: §7Double-tap Sneak anywhere to open Admin GUI");
-        player.sendMessage("§e3. Chat Commands: §7Type §brun§7, §brun all§7, §ball§7, or §bmenu§7 (no slash!)");
-        player.sendMessage("§e4. Bedrock Command: §7Type §b/scriptevent ob:run§7 or §b/scriptevent ob:menu§r\n");
+        player.sendMessage("\n§6=== ONEBLOCK PHOTOGRAPHY & ADMIN STUDIO (ZERO ITEMS NEEDED) ===");
+        player.sendMessage("§e1. Physical Buttons: §7Console at (3, 65, -2..2) right beside spawn");
+        player.sendMessage("§e2. Double-Crouch: §7Double-tap Sneak anywhere to open Photo Studio & Inspector");
+        player.sendMessage("§e3. Chat Commands: §7Type §bphoto§7, §bday§7, §bsunset§7, §bnight§7, §ball§7, or §bmenu§7 (no slash!)");
+        player.sendMessage("§e4. Bedrock Command: §7Type §b/scriptevent ob:menu§7 or §b/scriptevent ob:all§r\n");
       }
 
         // Welcome introduction & creator thank you
@@ -2311,16 +2440,55 @@ world.beforeEvents.chatSend.subscribe((event) => {
       return;
     }
 
+    if (msg === "photo" || msg === "!photo" || msg === "camera" || msg === "!camera" || msg === "studio" || msg === "!studio") {
+      event.cancel = true;
+      system.run(() => {
+        openAdminIslandMenu(sender);
+      });
+      return;
+    }
+
+    if (msg === "day" || msg === "noon" || msg === "!day" || msg === "!noon") {
+      event.cancel = true;
+      system.run(() => {
+        sender.dimension.runCommand("time set noon");
+        sender.dimension.runCommand("weather clear");
+        sender.sendMessage("§a[Photo Studio] Studio lighting set to High Noon!");
+      });
+      return;
+    }
+
+    if (msg === "sunset" || msg === "golden" || msg === "!sunset" || msg === "!golden") {
+      event.cancel = true;
+      system.run(() => {
+        sender.dimension.runCommand("time set 12000");
+        sender.dimension.runCommand("weather clear");
+        sender.sendMessage("§6[Photo Studio] Studio lighting set to Golden Hour Sunset!");
+      });
+      return;
+    }
+
+    if (msg === "night" || msg === "!night" || msg === "midnight") {
+      event.cancel = true;
+      system.run(() => {
+        sender.dimension.runCommand("time set 18000");
+        sender.dimension.runCommand("weather clear");
+        sender.sendMessage("§9[Photo Studio] Studio lighting set to Starry Midnight!");
+      });
+      return;
+    }
+
     if (msg === "help" || msg === "!help" || msg === "commands") {
       event.cancel = true;
       system.run(() => {
-        sender.sendMessage("\n§6=== ADMIN COMMANDS (ZERO ITEMS NEEDED) ===");
+        sender.sendMessage("\n§6=== ADMIN & PHOTO STUDIO COMMANDS ===");
+        sender.sendMessage("§b• photo / menu §7- Open Island Photography & Inspector Studio");
+        sender.sendMessage("§b• day / noon §7- Set bright High Noon studio lighting");
+        sender.sendMessage("§b• sunset / golden §7- Set dramatic Golden Hour lighting");
+        sender.sendMessage("§b• night §7- Set Starry Midnight lighting");
+        sender.sendMessage("§b• all §7- Manifest all 43 secret islands into the void");
         sender.sendMessage("§b• run §7- Start / Stop fast Auto-Break runner");
-        sender.sendMessage("§b• run all §7- Summon all 42 islands AND start Auto-Break");
-        sender.sendMessage("§b• all §7- Summon all 42 secret islands into the void");
-        sender.sendMessage("§b• next §7- Summon next secret island");
-        sender.sendMessage("§b• menu §7- Open Admin Island Inspector GUI");
-        sender.sendMessage("§b• Double-Crouch §7- Double-tap sneak anywhere to open GUI\n");
+        sender.sendMessage("§b• Double-Crouch §7- Double-tap sneak anywhere to open Studio\n");
       });
       return;
     }
@@ -2360,6 +2528,15 @@ world.afterEvents.buttonPush.subscribe((event) => {
         summonAllIslandsAdmin(source);
       } else if (loc.z === 1) {
         openAdminIslandMenu(source);
+      } else if (loc.z === 2) {
+        // Photo lighting quick toggle: High Noon
+        try {
+          source.dimension.runCommand("time set noon");
+          source.dimension.runCommand("weather clear");
+          source.addEffect("night_vision", 999999, { showParticles: false });
+          source.sendMessage("§a[Photo Studio] Studio lighting set to High Noon with Night Vision!");
+          source.playSound("random.orb", { pitch: 1.2, volume: 0.8 });
+        } catch (le) {}
       }
     }
   } catch (e) {}
