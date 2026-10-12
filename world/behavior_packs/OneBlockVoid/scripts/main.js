@@ -143,6 +143,17 @@ function calculateNavIndicator(pPos, pRotation, targetPos) {
   }
 }
 
+function getCardinalFromCoords(dx, dz) {
+  try {
+    const deg = ((Math.atan2(dz, dx) * 180) / Math.PI + 360) % 360;
+    const directions = ["East", "South-East", "South", "South-West", "West", "North-West", "North", "North-East"];
+    const cardinalIdx = Math.round(deg / 45) % 8;
+    return directions[cardinalIdx];
+  } catch (e) {
+    return "North";
+  }
+}
+
 // Drops item precisely hovering above OneBlock at (0.5, 65.2, 0.5) with zero velocity
 function hoverDropAboveOneBlock(dimension, itemStack) {
   try {
@@ -588,16 +599,51 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
       try {
         buildThemedIsland(dimension, theme, islandLoc.center);
 
-        // Subtle Ambient Discovery: Audio chime, action bar notification, and chat coordinates (NO full screen title)
+        const cardinal = getCardinalFromCoords(islandLoc.center.x, islandLoc.center.z);
+
+        // Shooting Starlight Trail: Particle stream shooting 25 blocks from OneBlock towards the new island
+        try {
+          const dx = islandLoc.center.x;
+          const dz = islandLoc.center.z;
+          const dist = Math.sqrt(dx * dx + dz * dz) || 1;
+          const normX = dx / dist;
+          const normZ = dz / dist;
+          for (let step = 1; step <= 25; step++) {
+            system.runTimeout(() => {
+              try {
+                const px = 0.5 + normX * step;
+                const py = 65.5 + Math.sin((step / 25) * Math.PI) * 4;
+                const pz = 0.5 + normZ * step;
+                dimension.spawnParticle("minecraft:endrod", { x: px, y: py, z: pz });
+                dimension.spawnParticle("minecraft:portal_particle", { x: px, y: py, z: pz });
+              } catch (e) {}
+            }, Math.floor(step * 1.5));
+          }
+        } catch (pe) {}
+
         for (const p of world.getAllPlayers()) {
-          p.playSound("random.levelup", { pitch: 1.2, volume: 0.8 });
-          p.playSound("block.amethyst_block.chime", { pitch: 1.1, volume: 1.0 });
+          // Celestial Rift Sound FX
+          p.playSound("respawn_anchor.charge", { pitch: 0.8, volume: 1.0 });
+          p.playSound("block.amethyst_block.resonate", { pitch: 1.1, volume: 1.0 });
+          p.playSound("ambient.weather.wind", { pitch: 0.9, volume: 0.7 });
 
-          p.onScreenDisplay.setActionBar(`§e⚡ A secret island (${theme.name}) has materialized! Check your compass!`);
+          // Dramatic Title & Subtitle announcement
+          try {
+            p.onScreenDisplay.setTitle("§5§l✦ RIFT MANIFESTED ✦§r", {
+              subtitle: `§dSomewhere in the distant §b${cardinal}§d... a new island has manifested!`,
+              fadeInDuration: 10,
+              stayDuration: 70,
+              fadeOutDuration: 20
+            });
+          } catch (te) {}
 
-          p.sendMessage(`\n${theme.color}⚡ [Secret Island Materialized] §fThe mysterious §l${theme.name}§r ${theme.color}has appeared in the void!`);
-          p.sendMessage(`§eA mystical Compass has been delivered! §6Target Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y} §bZ: ${islandLoc.center.z}`);
-          p.sendMessage(`§7(Coordinates are inscribed directly on the Compass item tooltip / lore!)\n`);
+          // Action bar toast
+          p.onScreenDisplay.setActionBar(`§e⚡ An anomaly stirs in the §b${cardinal}§e... Adventure and find it!`);
+
+          // Atmospheric semi-announcement chat (Mysterious, poetic, hints cardinal direction instead of exact coords spam)
+          p.sendMessage(`\n§d✦ §lSomewhere in the World...§r §da new island has manifested!`);
+          p.sendMessage(`§eA mysterious energy stirs in the distant §b§l${cardinal}§r§e... Adventure and find it!`);
+          p.sendMessage(`§7(An attuned Explorer Compass has been placed in your inventory!)\n`);
 
           // Award Mystical Tracking Compass directly into player inventory (or hovering at OneBlock)
           try {
@@ -611,7 +657,7 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
               `§7Mystical Island Explorer Compass`,
               `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
               `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
-              `§6Coordinates: §bX: ${islandLoc.center.x} §aY: ${islandLoc.center.y} §bZ: ${islandLoc.center.z}`,
+              `§6Direction: §b${cardinal} §7(X: ${islandLoc.center.x}, Z: ${islandLoc.center.z})`,
               `§7-----------------------`,
               `§aHold in hand for Radar HUD & Light Trail!`,
               `§bRight-Click for Interactive Sonar Ping!`,
