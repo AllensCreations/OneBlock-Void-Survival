@@ -739,13 +739,64 @@ function incrementDimensionCount(dimKey, dimension) {
   return { newCount, newPhaseIdx: newState.phaseIndex };
 }
 
+// Adjacent cardinal offsets around ONEBLOCK_POS where a pushed block could land
+const ADJACENT_PUSH_OFFSETS = [
+  { x: 1, y: 0, z: 0 },
+  { x: -1, y: 0, z: 0 },
+  { x: 0, y: 0, z: 1 },
+  { x: 0, y: 0, z: -1 },
+  { x: 0, y: 1, z: 0 }
+];
+
+const lastKnownOneBlockType = {};
+const blockBrokenByPlayer = {};
+
 function ensureOneBlock(dimension) {
   try {
     const dimKey = getDimKey(dimension.id);
     if (activeCountdowns.get(dimKey)) return;
 
+    // 1. Bedrock foundation at (0, 63, 0) directly below the OneBlock:
+    // Guarantees gravity blocks (sand, gravel, concrete powder) never fall into the void!
+    const bedrockPos = { x: ONEBLOCK_POS.x, y: ONEBLOCK_POS.y - 1, z: ONEBLOCK_POS.z };
+    try {
+      const bFloor = dimension.getBlock(bedrockPos);
+      if (bFloor && bFloor.typeId !== "minecraft:bedrock") {
+        bFloor.setType("minecraft:bedrock");
+      }
+    } catch (bfe) {}
+
     const block = dimension.getBlock(ONEBLOCK_POS);
-    if (!block || block.isAir || block.typeId === "minecraft:air") {
+    const isLiquid = block && (block.typeId === "minecraft:water" || block.typeId === "minecraft:flowing_water" || block.typeId === "minecraft:lava" || block.typeId === "minecraft:flowing_lava");
+    const isMissing = !block || block.isAir || block.typeId === "minecraft:air" || isLiquid;
+
+    // 2. Piston Anti-Duplication Protection:
+    // If the OneBlock was displaced without a playerBreakBlock event, it was pushed by a piston!
+    if (isMissing && !blockBrokenByPlayer[dimKey] && lastKnownOneBlockType[dimKey]) {
+      const pushedType = lastKnownOneBlockType[dimKey];
+      for (const offset of ADJACENT_PUSH_OFFSETS) {
+        try {
+          const adjPos = { x: ONEBLOCK_POS.x + offset.x, y: ONEBLOCK_POS.y + offset.y, z: ONEBLOCK_POS.z + offset.z };
+          const adjBlock = dimension.getBlock(adjPos);
+          if (adjBlock && (adjBlock.typeId === pushedType || adjBlock.typeId === "minecraft:moving_block")) {
+            // Decay displaced block into cobblestone so players cannot duplicate valuable ores/blocks!
+            adjBlock.setType("minecraft:cobblestone");
+            dimension.playSound("random.fizz", adjPos, { volume: 0.8, pitch: 1.2 });
+            dimension.spawnParticle("minecraft:smoke_particle", { x: adjPos.x + 0.5, y: adjPos.y + 0.5, z: adjPos.z + 0.5 });
+            for (const p of world.getAllPlayers()) {
+              p.sendMessage("§e[OneBlock] Piston movement detected! The pushed block decayed into Cobblestone to prevent duplication.");
+            }
+            break;
+          }
+        } catch (pe) {}
+      }
+    }
+
+    // Reset player break flag
+    blockBrokenByPlayer[dimKey] = false;
+
+    // 3. Regenerate OneBlock if missing or flooded with liquid
+    if (isMissing) {
       const state = getDimensionState(dimKey);
       let chosenId;
       if (dimKey === "overworld" && state.count < TUTORIAL_BLOCKS.length) {
@@ -754,6 +805,9 @@ function ensureOneBlock(dimension) {
         chosenId = pickWeighted(state.phase.blocks).id;
       }
       block.setType(chosenId);
+      lastKnownOneBlockType[dimKey] = chosenId;
+    } else if (block) {
+      lastKnownOneBlockType[dimKey] = block.typeId;
     }
   } catch (err) {}
 }
@@ -1126,6 +1180,44 @@ world.afterEvents.entityHurt.subscribe((event) => {
   }
 });
 
+// Liquid Protection: Prevent placing water, lava, or powder snow directly into the OneBlock space at (0, 64, 0)
+world.beforeEvents.itemUseOn.subscribe((event) => {
+  try {
+    const { itemStack, block, player } = event;
+    if (!itemStack || !block) return;
+
+    const loc = block.location;
+    const isBucket = itemStack.typeId === "minecraft:water_bucket" || itemStack.typeId === "minecraft:lava_bucket" || itemStack.typeId === "minecraft:powder_snow_bucket";
+    if (isBucket && loc.x === ONEBLOCK_POS.x && loc.y === ONEBLOCK_POS.y && loc.z === ONEBLOCK_POS.z) {
+      event.cancel = true;
+      if (player) {
+        player.sendMessage("§c[Liquid Protection] Liquids cannot be poured directly into the Sacred OneBlock Core!");
+        player.playSound("note.bass", player.location, { volume: 0.8, pitch: 0.8 });
+      }
+    }
+  } catch (e) {}
+});
+
+// Piston Movement Hook: Detect if a piston is extending to manipulate the OneBlock
+try {
+  if (world.beforeEvents && world.beforeEvents.pistonActivate) {
+    world.beforeEvents.pistonActivate.subscribe((event) => {
+      try {
+        if (!event.isExpanding) return;
+        const blocks = typeof event.getAttachedBlocks === "function" ? event.getAttachedBlocks() : [];
+        for (const b of blocks) {
+          const loc = b.location;
+          if (loc.x === ONEBLOCK_POS.x && loc.y === ONEBLOCK_POS.y && loc.z === ONEBLOCK_POS.z) {
+            const dimKey = getDimKey(event.dimension.id);
+            blockBrokenByPlayer[dimKey] = false;
+            break;
+          }
+        }
+      } catch (e) {}
+    });
+  }
+} catch (e) {}
+
 // Handle block destruction via playerBreakBlock afterEvent
 world.afterEvents.playerBreakBlock.subscribe((event) => {
   const { block, player, dimension } = event;
@@ -1137,6 +1229,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
   }
 
   const dimKey = getDimKey(dimension.id);
+  blockBrokenByPlayer[dimKey] = true;
   if (activeCountdowns.get(dimKey)) return;
 
   const state = getDimensionState(dimKey);
@@ -1207,14 +1300,22 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
     const targetBlock = dimension.getBlock(ONEBLOCK_POS);
     if (targetBlock && !activeCountdowns.get(dimKey)) {
       targetBlock.setType(nextBlockType);
+      lastKnownOneBlockType[dimKey] = nextBlockType;
     }
   } catch (e) {}
 
   system.run(() => {
     try {
+      // Ensure bedrock foundation directly below OneBlock
+      const bFloor = dimension.getBlock({ x: ONEBLOCK_POS.x, y: ONEBLOCK_POS.y - 1, z: ONEBLOCK_POS.z });
+      if (bFloor && bFloor.typeId !== "minecraft:bedrock") {
+        bFloor.setType("minecraft:bedrock");
+      }
+
       const targetBlock = dimension.getBlock(ONEBLOCK_POS);
       if (targetBlock && !activeCountdowns.get(dimKey)) {
         targetBlock.setType(nextBlockType);
+        lastKnownOneBlockType[dimKey] = nextBlockType;
       }
     } catch (e) {}
   });
