@@ -276,8 +276,11 @@ function getNearbyIslandPlayers(dimension, loc, maxDistance = 48, breakerPlayer 
 // Handles breaking of an Island Mini-OneBlock Core (30-50 blocks capacity)
 function handleIslandOneBlockBreak(dimension, loc, player) {
   try {
+    const dimKey = getDimKey(dimension.id);
+    const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
     let matchedTheme = null;
     for (const theme of ISLAND_THEMES) {
+      if ((theme.dimension || "overworld") !== targetDim) continue;
       const completed = world.getDynamicProperty(`island_ob_completed_${theme.id}`);
       if (completed) continue;
       const obX = world.getDynamicProperty(`island_ob_x_${theme.id}`);
@@ -733,87 +736,64 @@ function startPhaseTransition(dimKey, dimension, newPhaseIdx, isGameComplete) {
 
 function materializeIsland(dimension, theme, phaseIndex, totalCount) {
   try {
-    const lastX = world.getDynamicProperty("last_island_x");
-    const lastZ = world.getDynamicProperty("last_island_z");
+    const dimKey = getDimKey(dimension.id);
+    const lastX = world.getDynamicProperty(`last_island_x_${dimKey}`) ?? world.getDynamicProperty("last_island_x");
+    const lastZ = world.getDynamicProperty(`last_island_z_${dimKey}`) ?? world.getDynamicProperty("last_island_z");
     const lastPos = (lastX !== undefined && lastZ !== undefined) ? { x: lastX, z: lastZ } : null;
 
     const islandLoc = getIslandLocation(phaseIndex + Math.floor(totalCount / 100), 42, theme, lastPos);
 
-    // Record this island as the last materialized island
+    // Record this island as the last materialized island in dimension & globally
+    world.setDynamicProperty(`last_island_x_${dimKey}`, islandLoc.center.x);
+    world.setDynamicProperty(`last_island_z_${dimKey}`, islandLoc.center.z);
     world.setDynamicProperty("last_island_x", islandLoc.center.x);
     world.setDynamicProperty("last_island_z", islandLoc.center.z);
 
-    // Store active island target in world dynamic properties for radar navigation
+    // Store active island target in world dynamic properties for navigation/arrival
     world.setDynamicProperty(`island_target_x_${theme.id}`, islandLoc.center.x);
     world.setDynamicProperty(`island_target_y_${theme.id}`, islandLoc.center.y);
     world.setDynamicProperty(`island_target_z_${theme.id}`, islandLoc.center.z);
 
     const cardinal = getCardinalFromCoords(islandLoc.center.x, islandLoc.center.z);
 
-    // 1. GUARANTEED IMMEDIATE ANNOUNCEMENT & COMPASS AWARD (NEVER BLOCKED BY REMOTE CHUNK STATE)
-    for (const p of world.getAllPlayers()) {
+    // 1. GUARANTEED IMMEDIATE ANNOUNCEMENT & CELESTIAL AMETHYST CHIME (COMPASS COMPLETELY REMOVED)
+    const dimPlayers = world.getAllPlayers().filter(p => p.dimension.id === dimension.id);
+    for (const p of dimPlayers) {
       try {
-        // Celestial Rift Sound FX
-        p.playSound("respawn_anchor.charge", { pitch: 0.8, volume: 1.0 });
-        p.playSound("block.amethyst_block.resonate", { pitch: 1.1, volume: 1.0 });
-        p.playSound("ambient.weather.wind", { pitch: 0.9, volume: 0.7 });
+        // Celestial Rift Sound FX & Amethyst Chime
+        p.playSound("block.amethyst_block.chime", { pitch: 1.0, volume: 1.0 });
+        p.playSound("block.amethyst_block.resonate", { pitch: 1.1, volume: 0.8 });
+        p.playSound("ambient.weather.wind", { pitch: 0.9, volume: 0.5 });
 
         // Dramatic Title & Subtitle announcement
         p.onScreenDisplay.setTitle("§5§l✦ RIFT MANIFESTED ✦§r", {
-          subtitle: `§dSomewhere in the distant §b${cardinal}§d... a new island has manifested!`,
+          subtitle: `§dSomewhere in the distant §b${cardinal}§d... a new island has materialized!`,
           fadeInDuration: 10,
           stayDuration: 70,
           fadeOutDuration: 20
         });
 
         // Action bar toast
-        p.onScreenDisplay.setActionBar(`§e⚡ Somewhere in the distant §b${cardinal}§e... a new island has manifested, Adventure and find it!`);
+        p.onScreenDisplay.setActionBar(`§e⚡ A distant island has materialized in the §b${cardinal}§e! Follow the starlight trail.`);
 
-        // Atmospheric semi-announcement chat (Mysterious, poetic, hints cardinal direction instead of exact coords spam)
-        p.sendMessage(`\n§d✦ §lSomewhere in the World...§r §da new island has manifested!`);
-        p.sendMessage(`§eA mysterious energy stirs in the distant §b§l${cardinal}§r§e... Adventure and find it!`);
-        p.sendMessage(`§7(An attuned Explorer Compass has been placed in your inventory!)\n`);
-
-        // Award Mystical Tracking Compass directly into player inventory (or hovering at OneBlock)
-        try {
-          const compass = new ItemStack("minecraft:compass", 1);
-          const tierLabel = theme.tier === 1 ? "Tier 1: Starter" : (theme.tier === 2 ? "Tier 2: Mining" : (theme.tier === 3 ? "Tier 3: Nether/Magic" : "Tier 4: Relic/End"));
-          const sizeLabel = theme.size ? (theme.size.charAt(0).toUpperCase() + theme.size.slice(1)) : "Medium";
-          const traitLabel = theme.trait ? theme.trait.replace("_", " ").toUpperCase() : "ISLAND";
-          compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
-          compass.setLore([
-            `§7Mystical Island Explorer Compass`,
-            `§eIsland: §f${theme.name} §7(§6${tierLabel}§7)`,
-            `§dScale: §f${sizeLabel} §8| §bTrait: §f${traitLabel}`,
-            `§6Direction: §b${cardinal} §7(X: ${islandLoc.center.x}, Z: ${islandLoc.center.z})`,
-            `§7-----------------------`,
-            `§aHold in hand for Radar HUD & Light Trail!`,
-            `§bRight-Click for Interactive Sonar Ping!`,
-            `§eAuto-dissolves when you reach the island!`
-          ]);
-
-          const inv = p.getComponent("minecraft:inventory")?.container;
-          if (inv && inv.emptySlotsCount > 0) {
-            inv.addItem(compass);
-          } else {
-            hoverDropAboveOneBlock(dimension, compass);
-          }
-        } catch (ce) {}
+        // Clean atmospheric chat announcement
+        p.sendMessage(`\n§d✦ §lSomewhere in the Void...§r §da new island has materialized!`);
+        p.sendMessage(`§e★ A distant island has materialized in the void! Look for the starlight trail in the §b§l${cardinal}§r§e.\n`);
       } catch (pe) {}
     }
 
-    // 2. Shooting Starlight Trail: Particle stream shooting 25 blocks from OneBlock towards the new island
+    // 2. Shooting Starlight Trail: Particle stream shooting 30 blocks from OneBlock towards the new island
     try {
       const dx = islandLoc.center.x;
       const dz = islandLoc.center.z;
       const dist = Math.sqrt(dx * dx + dz * dz) || 1;
       const normX = dx / dist;
       const normZ = dz / dist;
-      for (let step = 1; step <= 25; step++) {
+      for (let step = 1; step <= 30; step++) {
         system.runTimeout(() => {
           try {
             const px = 0.5 + normX * step;
-            const py = 65.5 + Math.sin((step / 25) * Math.PI) * 4;
+            const py = 65.5 + Math.sin((step / 30) * Math.PI) * 4;
             const pz = 0.5 + normZ * step;
             dimension.spawnParticle("minecraft:endrod", { x: px, y: py, z: pz });
             dimension.spawnParticle("minecraft:portal_particle", { x: px, y: py, z: pz });
@@ -839,18 +819,25 @@ function materializeIsland(dimension, theme, phaseIndex, totalCount) {
 
 function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
   try {
-    // Avoid triggering island rifts during the tutorial
-    if (totalCount < TUTORIAL_BLOCKS.length) return;
+    const dimKey = getDimKey(dimension.id);
+    const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
 
-    // 1. Determine player's active tier based on phase:
-    // Phase 1-4 (idx 0-3): Tier 1
-    // Phase 5-8 (idx 4-7): Tier 2
-    // Phase 9-12 (idx 8-11): Tier 3
-    // Phase 13+ (idx 12+): Tier 4
-    const currentTier = phaseIndex < 4 ? 1 : (phaseIndex < 8 ? 2 : (phaseIndex < 12 ? 3 : 4));
+    // Avoid triggering island rifts during the tutorial in overworld
+    if (dimKey === "overworld" && totalCount < TUTORIAL_BLOCKS.length) return;
 
-    // 2. Track blocks mined since last island spawn:
-    const lastMineCount = world.getDynamicProperty("last_island_mine_count") ?? 0;
+    // 1. Determine active tier for current dimension:
+    let currentTier;
+    if (targetDim === "nether") {
+      currentTier = phaseIndex < 4 ? 3 : 4;
+    } else if (targetDim === "the_end") {
+      currentTier = 4;
+    } else {
+      currentTier = phaseIndex < 4 ? 1 : (phaseIndex < 8 ? 2 : (phaseIndex < 12 ? 3 : 4));
+    }
+
+    // 2. Track blocks mined since last island spawn in this dimension:
+    const lastMineProp = `last_island_mine_count_${dimKey}`;
+    const lastMineCount = world.getDynamicProperty(lastMineProp) ?? 0;
     const blocksSinceLast = totalCount - lastMineCount;
 
     // 3. Dynamic Pity timer: roughly 1 island per 120 blocks mined (~0.8% chance per block)
@@ -859,11 +846,12 @@ function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
 
     if (!isPity && !isRandom) return;
 
-    // 4. Find all unspawned islands for unlocked tiers (tiers <= currentTier)
+    // 4. Find all unspawned islands strictly matching the dimension and unlocked tiers
     const unspawnedCurrentTier = [];
     const unspawnedEarlierTiers = [];
 
     for (const t of ISLAND_THEMES) {
+      if ((t.dimension || "overworld") !== targetDim) continue;
       if (t.tier > currentTier) continue; // Locked future tier!
       const isSpawned = world.getDynamicProperty(`island_spawned_${t.id}`);
       if (!isSpawned) {
@@ -893,9 +881,9 @@ function checkRandomIslandSpawn(dimension, phaseIndex, totalCount) {
 
     if (!selectedTheme) return;
 
-    // Mark spawned and record mine count
+    // Mark spawned and record mine count for this dimension
     world.setDynamicProperty(`island_spawned_${selectedTheme.id}`, true);
-    world.setDynamicProperty("last_island_mine_count", totalCount);
+    world.setDynamicProperty(lastMineProp, totalCount);
 
     materializeIsland(dimension, selectedTheme, phaseIndex, totalCount);
   } catch (err) {}
@@ -911,10 +899,8 @@ function incrementDimensionCount(dimKey, dimension) {
   const newState = getDimensionState(dimKey);
   const phases = getPhasesForDim(dimKey);
 
-  // Random Chance Island Materialization with Pity Timer in Overworld
-  if (dimKey === "overworld") {
-    checkRandomIslandSpawn(dimension, newState.phaseIndex, newCount);
-  }
+  // Random Chance Island Materialization with Pity Timer in current dimension
+  checkRandomIslandSpawn(dimension, newState.phaseIndex, newCount);
 
   // Check if phase climax was just reached
   if (newState.phaseIndex > prevState.phaseIndex) {
@@ -1042,7 +1028,7 @@ export function openAdminIslandMenu(player) {
     form.body("§eSelect an island to inspect in Creative Mode.\n§7Clicking an island generates it in the void and teleports you directly there!\n§bTotal: 42 Secret Themed Islands");
 
     form.button("§c§l⚡ PRE-BUILD ALL 42 ISLANDS§r\n§8(Generates all void islands)", "textures/ui/refresh_light");
-    form.button("§d§l✦ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live announcement & compass on OneBlock)", "textures/ui/portal_icon");
+    form.button("§d§l✦ TEST RIFT ANNOUNCEMENT & TRAIL§r\n§8(Test live announcement & particle trail)", "textures/ui/portal_icon");
 
     for (let i = 0; i < ISLAND_THEMES.length; i++) {
       const theme = ISLAND_THEMES[i];
@@ -1082,9 +1068,9 @@ export function openAdminIslandMenu(player) {
       }
 
       if (response.selection === 1) {
-        // Test live manifestation announcement, sounds, particle trail & compass on OneBlock
+        // Test live manifestation announcement, sounds & particle trail on OneBlock
         materializeIsland(player.dimension, ISLAND_THEMES[0], 0, 10);
-        player.sendMessage("§d[Admin] ★ Triggered live Rift Manifestation announcement, celestial sounds, starlight trail & compass!");
+        player.sendMessage("§d[Admin] ★ Triggered live Rift Manifestation announcement, celestial sounds & starlight trail!");
         return;
       }
 
@@ -1112,21 +1098,6 @@ export function openAdminIslandMenu(player) {
         try { player.setGameMode("creative"); } catch (e) {}
         try { player.addEffect("night_vision", 999999, { showParticles: false }); } catch (e) {}
       } catch (tpe) {}
-
-      // Award tracking compass for easy navigation testing
-      try {
-        const compass = new ItemStack("minecraft:compass", 1);
-        const tierLabel = theme.tier === 1 ? "Starter" : (theme.tier === 2 ? "Mining" : (theme.tier === 3 ? "Nether" : "Relic"));
-        compass.nameTag = `${theme.color}§l[${tierLabel}] ${theme.name}§r`;
-        compass.setLore([
-          `§7Mystical Island Explorer Compass`,
-          `§eIsland: §f${theme.name}`,
-          `§6Coordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`,
-          `§7Hold in hand for Radar HUD & Sonar ping!`
-        ]);
-        const inv = player.getComponent("minecraft:inventory")?.container;
-        if (inv) inv.addItem(compass);
-      } catch (ce) {}
 
       player.sendMessage(`\n${theme.color}★ [Admin Inspector] Teleported to §l${theme.name}§r${theme.color}!`);
       player.sendMessage(`§eCoordinates: §bX: ${loc.center.x} §aY: ${loc.center.y} §bZ: ${loc.center.z}`);
@@ -1865,7 +1836,10 @@ world.beforeEvents.itemUse.subscribe((event) => {
 
 // Fast Health-Check & Auto-Repair for all Island OneBlocks across loaded chunks
 function ensureIslandOneBlocks(dimension) {
+  const dimKey = getDimKey(dimension.id);
+  const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
   for (const theme of ISLAND_THEMES) {
+    if ((theme.dimension || "overworld") !== targetDim) continue;
     try {
       const completed = world.getDynamicProperty(`island_ob_completed_${theme.id}`);
       if (completed) continue;
@@ -1982,7 +1956,7 @@ system.runInterval(() => {
       } catch (de) {}
     }
 
-    // QoL: Actionbar HUD & Compass Nav-Radar
+    // QoL: Actionbar HUD
     for (const player of world.getAllPlayers()) {
       try {
         // Permanently Lock Player GameMode in official survival world
@@ -2015,190 +1989,29 @@ system.runInterval(() => {
           const phaseName = state.phase ? state.phase.name : "Starting";
           const dimPrefix = dimKey === "nether" ? "§c[Nether]" : (dimKey === "end" ? "§d[End]" : "§a[Overworld]");
 
-          // Check if player is holding a Secret Island Compass in main hand
-          let navHUD = "";
-          try {
-            const equippable = player.getComponent("minecraft:equippable");
-            const heldItem = equippable?.getEquipment("Mainhand");
-            const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
-            if (isCompass && heldItem.nameTag) {
-              const heldName = heldItem.nameTag || "";
-              const matchedTheme = ISLAND_THEMES.find(t => heldName.toLowerCase().includes(t.name.toLowerCase()));
-            if (matchedTheme) {
-              const targetX = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
-              const targetY = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
-              const targetZ = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
-              if (targetX !== undefined && targetZ !== undefined) {
-                const nav = calculateNavIndicator(player.location, player.getRotation(), { x: targetX, y: targetY, z: targetZ });
-                navHUD = ` §e| §6[Radar: §e${nav.arrow} §b${nav.dist}m §7(${nav.cardinal}) §6${matchedTheme.name}]`;
-
-                // Proactive Materialization: If player is within 60 blocks of island target, ensure island blocks are materialized in the newly loaded chunk!
-                if (nav.dist <= 60 && !world.getDynamicProperty(`island_built_${matchedTheme.id}`)) {
-                  world.setDynamicProperty(`island_built_${matchedTheme.id}`, true);
-                  try {
-                    buildThemedIsland(player.dimension, matchedTheme, { x: targetX, y: targetY - 1, z: targetZ });
-                  } catch (pbe) {}
-                }
-              }
-            }
-          }
-        } catch (ne) {}
-
-        player.onScreenDisplay.setActionBar(
-          `${dimPrefix} §ePhase ${state.phaseIndex + 1}: §f${phaseName} §7[§b${progressInPhase}§7/§b${BLOCKS_PER_PHASE}§7] §eTotal: §6${state.count}${navHUD}`
-        );
-      }
-    } catch (e) {}
-  }
-
-  if (tickCounter % 2 === 0) {
-    try {
-      const nether = world.getDimension("nether");
-      if (nether) nether.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
-    } catch (e) {}
-    try {
-      const end = world.getDimension("the_end");
-      if (end) end.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
-    } catch (e) {}
-    // Compass Particle Guide: emit a trail of shining particles extending in front of player towards island
-    try {
-      for (const player of world.getAllPlayers()) {
-        const equippable = player.getComponent("minecraft:equippable");
-        const heldItem = equippable?.getEquipment("Mainhand");
-        const isCompass = heldItem && (heldItem.typeId === "minecraft:compass" || heldItem.typeId === "minecraft:lodestone_compass");
-        if (isCompass && heldItem.nameTag) {
-          const heldName = heldItem.nameTag || "";
-          const matchedTheme = ISLAND_THEMES.find(t => heldName.toLowerCase().includes(t.name.toLowerCase()));
-          if (matchedTheme) {
-            const tx = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
-            const ty = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 64;
-              const tz = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
-              if (tx !== undefined && tz !== undefined) {
-                const px = player.location.x;
-                const py = player.location.y + 1.2;
-                const pz = player.location.z;
-                const dx = tx - px;
-                const dy = ty - py;
-                const dz = tz - pz;
-                const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                if (len > 0.1) {
-                  const ux = dx / len;
-                  const uy = dy / len;
-                  const uz = dz / len;
-                  // Spawn 5 particle steps extending out from player
-                  for (let step = 1; step <= 5; step++) {
-                    const d = step * 1.5;
-                    player.dimension.spawnParticle("minecraft:endrod", {
-                      x: px + ux * d,
-                      y: py + uy * d,
-                      z: pz + uz * d
-                    });
-                  }
-                }
-              }
-            }
-          }
+          player.onScreenDisplay.setActionBar(
+            `${dimPrefix} §ePhase ${state.phaseIndex + 1}: §f${phaseName} §7[§b${progressInPhase}§7/§b${BLOCKS_PER_PHASE}§7] §eTotal: §6${state.count}`
+          );
         }
-      } catch (pe) {}
+      } catch (e) {}
+    }
+
+    if (tickCounter % 2 === 0) {
+      try {
+        const nether = world.getDimension("nether");
+        if (nether) nether.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
+      } catch (e) {}
+      try {
+        const end = world.getDimension("the_end");
+        if (end) end.spawnParticle("minecraft:endrod", { x: 0.5, y: 65.5, z: 0.5 });
+      } catch (e) {}
     }
   } catch (err) {}
 }, 20);
 
 // =========================================================================
-// INTERACTIVE COMPASS & AUTO-DISSOLVING ISLAND DISCOVERY SYSTEM
+// ISLAND DISCOVERY & ARRIVAL REGISTRATION SYSTEM
 // =========================================================================
-
-// Completely removes island compasses from player inventory, mainhand, and offhand
-function removeIslandCompassFromPlayer(player, theme) {
-  let removed = 0;
-  try {
-    // 1. Scan player inventory slots (0 - 35)
-    const inv = player.getComponent("minecraft:inventory")?.container;
-    if (inv) {
-      for (let slot = 0; slot < inv.size; slot++) {
-        const item = inv.getItem(slot);
-        if (item && (item.typeId === "minecraft:compass" || item.typeId === "minecraft:lodestone_compass")) {
-          const name = item.nameTag || "";
-          if (!theme || name.toLowerCase().includes(theme.name.toLowerCase()) || name.includes("Secret") || name.includes("Island")) {
-            inv.setItem(slot, undefined);
-            removed++;
-          }
-        }
-      }
-    }
-
-    // 2. Scan equippable slots (Mainhand & Offhand)
-    const equippable = player.getComponent("minecraft:equippable");
-    if (equippable) {
-      for (const slotId of ["Mainhand", "Offhand"]) {
-        try {
-          const eqItem = equippable.getEquipment(slotId);
-          if (eqItem && (eqItem.typeId === "minecraft:compass" || eqItem.typeId === "minecraft:lodestone_compass")) {
-            const name = eqItem.nameTag || "";
-            if (!theme || name.toLowerCase().includes(theme.name.toLowerCase()) || name.includes("Secret") || name.includes("Island")) {
-              equippable.setEquipment(slotId, undefined);
-              removed++;
-            }
-          }
-        } catch (eqe) {}
-      }
-    }
-  } catch (err) {}
-  return removed;
-}
-
-// Interactive Compass Sonar Ping on Right-Click
-world.afterEvents.itemUse.subscribe((event) => {
-  try {
-    const { itemStack, source: player } = event;
-    if (!itemStack || !player) return;
-
-    if (itemStack.typeId === "minecraft:compass" || itemStack.typeId === "minecraft:lodestone_compass") {
-      const name = itemStack.nameTag || "";
-      const matchedTheme = ISLAND_THEMES.find(t => name.toLowerCase().includes(t.name.toLowerCase()));
-      if (matchedTheme) {
-        const tx = world.getDynamicProperty(`island_target_x_${matchedTheme.id}`);
-        const ty = world.getDynamicProperty(`island_target_y_${matchedTheme.id}`) ?? 65;
-        const tz = world.getDynamicProperty(`island_target_z_${matchedTheme.id}`);
-
-        if (tx !== undefined && tz !== undefined) {
-          const pLoc = player.location;
-          const nav = calculateNavIndicator(pLoc, player.getRotation(), { x: tx, y: ty, z: tz });
-
-          // Sonar Audio Feedback
-          player.playSound("block.amethyst_block.chime", { pitch: 1.5, volume: 1.0 });
-          player.playSound("note.harp", { pitch: 1.8, volume: 0.9 });
-
-          // Shoot Sonar Particle Beam towards target island
-          const dx = tx - pLoc.x;
-          const dy = ty - (pLoc.y + 1.2);
-          const dz = tz - pLoc.z;
-          const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-          if (len > 0.1) {
-            const ux = dx / len;
-            const uy = dy / len;
-            const uz = dz / len;
-            for (let step = 1; step <= 10; step++) {
-              const d = step * 1.5;
-              player.dimension.spawnParticle("minecraft:endrod", {
-                x: pLoc.x + ux * d,
-                y: pLoc.y + 1.2 + uy * d,
-                z: pLoc.z + uz * d
-              });
-            }
-          }
-
-          // Sonar HUD & Chat Alert
-          const sizeStr = matchedTheme.size ? matchedTheme.size.toUpperCase() : "MEDIUM";
-          const traitStr = matchedTheme.trait ? matchedTheme.trait.replace("_", " ").toUpperCase() : "ISLAND";
-          player.onScreenDisplay.setActionBar(`§b✦ SONAR PING: §e${nav.arrow} §f${matchedTheme.name} §6${nav.dist}m §7[${nav.cardinal}]`);
-          player.sendMessage(`§b✦ [Compass Sonar Ping] §fTarget: §e§l${matchedTheme.name}§r §7(${sizeStr} | ${traitStr})`);
-          player.sendMessage(`  §8» §6Distance: §b${nav.dist} blocks §8| §6Bearing: §a${nav.cardinal} §8| §6Heading: §e${nav.arrow}`);
-        }
-      }
-    }
-  } catch (err) {}
-});
 
 function triggerIslandRegistration(player, matchedTheme, blockPos) {
   try {
@@ -2213,11 +2026,7 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
     if (world.getDynamicProperty(regKey)) return; // Already registered
     world.setDynamicProperty(regKey, true);
 
-    // 1. AUTO-DISAPPEAR COMPASS: Remove tracking compass from player inventory & hands!
-    const removedCount = removeIslandCompassFromPlayer(player, matchedTheme);
-
-
-    // 3. Launch celebration fireworks
+    // Launch celebration fireworks
     try {
       for (let i = 0; i < 5; i++) {
         system.runTimeout(() => {
@@ -2232,7 +2041,7 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
       }
     } catch (fwe) {}
 
-    // 4. Totem dissolving particles on player
+    // Totem dissolving particles on player
     try {
       dimension.spawnParticle("minecraft:totem_particle", {
         x: player.location.x,
@@ -2241,7 +2050,7 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
       });
     } catch (pe) {}
 
-    // 5. Audio & Visual Discovery Alert
+    // Audio & Visual Discovery Alert
     player.playSound("ui.toast.challenge_complete", { pitch: 1.2, volume: 1.0 });
     player.playSound("random.levelup", { pitch: 1.5, volume: 1.0 });
 
@@ -2253,16 +2062,11 @@ function triggerIslandRegistration(player, matchedTheme, blockPos) {
       subtitle: `§a${matchedTheme.name} §7(${sizeStr})`
     });
     player.sendMessage(`\n§6★ [Island Discovered] §aYou arrived at §e§l${matchedTheme.name}§r§a!`);
-    if (removedCount > 0) {
-      player.sendMessage(`§d✦ Your mystical Island Compass dissolved into starlight as you set foot on the island!`);
-    }
     player.sendMessage(`§7The island monument is now unlocked! Enjoy your rewards in the treasure chest!\n`);
   } catch (err) {}
 }
 
-
-// Method 2: Proactive Auto-Discovery on Arrival (Walking onto the Island platform)
-// Throttled to once per second (every 20 ticks) with in-memory caching to eliminate CPU lag
+// Proactive Auto-Discovery & Chunk Preloading on Arrival
 const activeIslandTargetCache = new Map();
 let lastCacheRefresh = 0;
 
@@ -2295,8 +2099,21 @@ system.runInterval(() => {
 
     for (const player of world.getAllPlayers()) {
       const pLoc = player.location;
+      const dimKey = getDimKey(player.dimension.id);
+      const targetDim = (dimKey === "nether") ? "nether" : ((dimKey === "end") ? "the_end" : "overworld");
+
       for (const [themeId, data] of activeIslands) {
+        if ((data.theme.dimension || "overworld") !== targetDim) continue;
         const dist = Math.hypot(pLoc.x - data.tx, pLoc.z - data.tz);
+
+        // Proactive building: If player is within 60 blocks of island target, ensure island blocks are materialized
+        if (dist <= 60 && !world.getDynamicProperty(`island_built_${data.theme.id}`)) {
+          world.setDynamicProperty(`island_built_${data.theme.id}`, true);
+          try {
+            buildThemedIsland(player.dimension, data.theme, { x: data.tx, y: data.ty - 1, z: data.tz });
+          } catch (pbe) {}
+        }
+
         if (dist <= data.arrivalDist) {
           triggerIslandRegistration(player, data.theme, { x: data.tx, y: data.ty, z: data.tz });
           activeIslands.delete(themeId);

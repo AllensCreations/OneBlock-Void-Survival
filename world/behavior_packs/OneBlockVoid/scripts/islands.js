@@ -7,6 +7,7 @@ import { world, ItemStack } from "@minecraft/server";
 export const ISLAND_THEMES = [
   {
     id: "sky_oasis",
+        dimension: "overworld",
     size: "huge",
     trait: "village",
     biome: "plains",
@@ -29,6 +30,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ancient_crypt",
+        dimension: "overworld",
     size: "big",
     trait: "ore_rich",
     biome: "desert",
@@ -51,6 +53,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "trial_vault",
+        dimension: "overworld",
     size: "huge",
     trait: "dungeon",
     biome: "deep_dark",
@@ -73,6 +76,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "stronghold_portal",
+        dimension: "the_end",
     size: "big",
     trait: "dungeon",
     biome: "the_end",
@@ -94,6 +98,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "cherry_sanctuary",
+        dimension: "overworld",
     size: "huge",
     trait: "lush_flora",
     biome: "cherry_grove",
@@ -115,6 +120,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pale_garden_spire",
+        dimension: "overworld",
     size: "medium",
     trait: "lush_flora",
     biome: "dark_forest",
@@ -136,6 +142,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "mushroom_haven",
+        dimension: "overworld",
     size: "huge",
     trait: "animals",
     biome: "mushroom_island",
@@ -157,6 +164,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "badlands_mesa",
+        dimension: "overworld",
     size: "huge",
     trait: "ore_rich",
     biome: "mesa",
@@ -178,6 +186,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ice_spike_peak",
+        dimension: "overworld",
     size: "big",
     trait: "animals",
     biome: "ice_plains_spikes",
@@ -199,6 +208,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "jungle_temple",
+        dimension: "overworld",
     size: "huge",
     trait: "lush_flora",
     biome: "jungle",
@@ -220,6 +230,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "nether_fortress_spire",
+        dimension: "nether",
     size: "huge",
     trait: "lava_spring",
     biome: "nether_wastes",
@@ -241,6 +252,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bastion_treasury",
+        dimension: "nether",
     size: "huge",
     trait: "ore_rich",
     biome: "nether_wastes",
@@ -262,6 +274,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "crimson_forest_isle",
+        dimension: "nether",
     size: "big",
     trait: "lush_flora",
     biome: "crimson_forest",
@@ -283,6 +296,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "warped_forest_isle",
+        dimension: "nether",
     size: "big",
     trait: "water_spring",
     biome: "warped_forest",
@@ -304,6 +318,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "soul_sand_valley",
+        dimension: "nether",
     size: "medium",
     trait: "lava_spring",
     biome: "soulsand_valley",
@@ -325,6 +340,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "amethyst_geode",
+        dimension: "overworld",
     size: "big",
     trait: "water_spring",
     biome: "lush_caves",
@@ -346,6 +362,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "witch_swamp_hut",
+        dimension: "overworld",
     size: "big",
     trait: "dungeon",
     biome: "swampland",
@@ -367,6 +384,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pillager_watchtower",
+        dimension: "overworld",
     size: "huge",
     trait: "dungeon",
     biome: "meadow",
@@ -388,6 +406,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "desert_well_oasis",
+        dimension: "overworld",
     size: "medium",
     trait: "water_spring",
     biome: "desert",
@@ -409,6 +428,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bamboo_monastery",
+        dimension: "overworld",
     size: "huge",
     trait: "animals",
     biome: "bamboo_jungle",
@@ -430,6 +450,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "deepslate_forge",
+        dimension: "overworld",
     size: "big",
     trait: "ore_rich",
     biome: "deep_dark",
@@ -451,6 +472,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "ocean_monument_shrine",
+        dimension: "overworld",
     size: "huge",
     trait: "water_spring",
     biome: "deep_ocean",
@@ -472,6 +494,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "glowstone_meteor",
+        dimension: "nether",
     size: "medium",
     trait: "lava_spring",
     biome: "basalt_deltas",
@@ -493,6 +516,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "end_city_tower",
+        dimension: "the_end",
     size: "huge",
     trait: "dungeon",
     biome: "the_end",
@@ -514,6 +538,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "fossil_excavation",
+        dimension: "overworld",
     size: "big",
     trait: "ore_rich",
     biome: "desert",
@@ -535,6 +560,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "blacksmith_workshop",
+        dimension: "overworld",
     size: "big",
     trait: "village",
     biome: "stony_peaks",
@@ -556,6 +582,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "library_observatory",
+        dimension: "overworld",
     size: "big",
     trait: "ancient_shrine",
     biome: "jagged_peaks",
@@ -577,6 +604,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "alchemist_laboratory",
+        dimension: "overworld",
     size: "medium",
     trait: "dungeon",
     biome: "dark_forest",
@@ -598,6 +626,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "spider_nest",
+        dimension: "overworld",
     size: "medium",
     trait: "dungeon",
     biome: "dripstone_caves",
@@ -619,6 +648,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "creeper_dungeon",
+        dimension: "overworld",
     size: "medium",
     trait: "dungeon",
     biome: "lush_caves",
@@ -640,6 +670,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "slime_biosphere",
+        dimension: "overworld",
     size: "big",
     trait: "water_spring",
     biome: "swampland",
@@ -661,6 +692,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bee_apiary",
+        dimension: "overworld",
     size: "big",
     trait: "animals",
     biome: "meadow",
@@ -682,6 +714,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "pumpkin_patch",
+        dimension: "overworld",
     size: "big",
     trait: "animals",
     biome: "taiga",
@@ -703,6 +736,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "melon_greenhouse",
+        dimension: "overworld",
     size: "big",
     trait: "village",
     biome: "jungle",
@@ -724,6 +758,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "sculk_laboratory",
+        dimension: "overworld",
     size: "huge",
     trait: "dungeon",
     biome: "deep_dark",
@@ -745,6 +780,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "armory_vault",
+        dimension: "overworld",
     size: "big",
     trait: "ore_rich",
     biome: "stony_peaks",
@@ -766,6 +802,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "bakery_windmill",
+        dimension: "overworld",
     size: "huge",
     trait: "village",
     biome: "plains",
@@ -787,6 +824,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "aquarium_atoll",
+        dimension: "overworld",
     size: "huge",
     trait: "water_spring",
     biome: "warm_ocean",
@@ -808,6 +846,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "tuff_golem_sanctuary",
+        dimension: "overworld",
     size: "big",
     trait: "ore_rich",
     biome: "dripstone_caves",
@@ -829,6 +868,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "meteorite_crater",
+        dimension: "nether",
     size: "huge",
     trait: "lava_spring",
     biome: "basalt_deltas",
@@ -850,6 +890,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "golden_pantheon",
+        dimension: "overworld",
     size: "huge",
     trait: "ancient_shrine",
     biome: "jagged_peaks",
@@ -871,6 +912,7 @@ export const ISLAND_THEMES = [
   },
   {
     id: "void_gateway_outpost",
+        dimension: "the_end",
     size: "huge",
     trait: "ancient_shrine",
     biome: "the_end",
@@ -1341,12 +1383,65 @@ function getIslandTreePlacement(theme, center) {
       return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:dark_oak_log", leaves: "minecraft:dark_oak_leaves" };
     case "alchemist_laboratory":
       return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:dark_oak_log", leaves: "minecraft:dark_oak_leaves" };
+    case "ancient_crypt":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
+    case "desert_well_oasis":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
+    case "fossil_excavation":
+      return { pos: { x: cx - 3, y: cy, z: cz - 3 }, log: "minecraft:bone_block", leaves: "minecraft:smooth_sandstone" };
+    case "badlands_mesa":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:acacia_log", leaves: "minecraft:acacia_leaves" };
+    case "ice_spike_peak":
+      return { pos: { x: cx - 3, y: cy, z: cz - 3 }, log: "minecraft:spruce_log", leaves: "minecraft:spruce_leaves" };
+    case "mushroom_haven":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:mushroom_stem", leaves: "minecraft:red_mushroom_block" };
+    case "amethyst_geode":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:smooth_basalt", leaves: "minecraft:amethyst_block" };
+    case "spider_nest":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:oak_log", leaves: "minecraft:oak_leaves" };
+    case "creeper_dungeon":
+      return { pos: { x: cx - 3, y: cy, z: cz - 3 }, log: "minecraft:oak_log", leaves: "minecraft:moss_block" };
+    case "deepslate_forge":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:deepslate", leaves: "minecraft:deepslate_tiles" };
+    case "sculk_laboratory":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:deepslate", leaves: "minecraft:sculk" };
+    case "trial_vault":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:polished_tuff", leaves: "minecraft:cut_copper" };
+    case "blacksmith_workshop":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:spruce_log", leaves: "minecraft:spruce_leaves" };
+    case "library_observatory":
+      return { pos: { x: cx - 3, y: cy, z: cz - 3 }, log: "minecraft:spruce_log", leaves: "minecraft:spruce_leaves" };
+    case "armory_vault":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:spruce_log", leaves: "minecraft:spruce_leaves" };
+    case "golden_pantheon":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:smooth_quartz", leaves: "minecraft:quartz_block" };
+    case "ocean_monument_shrine":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:dark_prismarine", leaves: "minecraft:prismarine_bricks" };
+    case "aquarium_atoll":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:jungle_log", leaves: "minecraft:jungle_leaves" };
+    case "tuff_golem_sanctuary":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:tuff", leaves: "minecraft:polished_tuff" };
+    case "nether_fortress_spire":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:nether_brick", leaves: "minecraft:nether_wart_block" };
+    case "bastion_treasury":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:basalt", leaves: "minecraft:gilded_blackstone" };
+    case "soul_sand_valley":
+      return { pos: { x: cx - 3, y: cy, z: cz - 3 }, log: "minecraft:bone_block", leaves: "minecraft:soul_soil" };
+    case "glowstone_meteor":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:basalt", leaves: "minecraft:glowstone" };
+    case "meteorite_crater":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:crying_obsidian", leaves: "minecraft:obsidian" };
+    case "stronghold_portal":
+      return { pos: { x: cx + 3, y: cy, z: cz - 3 }, log: "minecraft:stone_bricks", leaves: "minecraft:mossy_stone_bricks" };
+    case "end_city_tower":
+      return { pos: { x: cx - 3, y: cy, z: cz + 3 }, log: "minecraft:purpur_pillar", leaves: "minecraft:purpur_block" };
+    case "void_gateway_outpost":
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:end_stone_bricks", leaves: "minecraft:purpur_block" };
     default:
-      return null;
+      return { pos: { x: cx + 3, y: cy, z: cz + 3 }, log: "minecraft:oak_log", leaves: "minecraft:oak_leaves" };
   }
 }
 
-// Builds an authentic natural vanilla tree: exactly 5-tall wood trunk with a ~33-leaf rounded canopy
 function buildIslandNaturalTree(dimension, theme, center) {
   const treeConfig = getIslandTreePlacement(theme, center);
   if (!treeConfig) return;
