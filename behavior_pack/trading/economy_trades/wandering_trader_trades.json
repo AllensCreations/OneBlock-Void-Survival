@@ -545,7 +545,7 @@
               "wants": [
                 {
                   "item": "minecraft:diamond",
-                  "quantity": 2
+                  "quantity": 50
                 }
               ],
               "gives": [
@@ -560,7 +560,7 @@
               "wants": [
                 {
                   "item": "minecraft:diamond",
-                  "quantity": 3
+                  "quantity": 52
                 }
               ],
               "gives": [
@@ -575,12 +575,12 @@
               "wants": [
                 {
                   "item": "minecraft:diamond",
-                  "quantity": 4
+                  "quantity": 60
                 }
               ],
               "gives": [
                 {
-                  "item": "minecraft:heart_of_the_sea",
+                  "item": "minecraft:bell",
                   "quantity": 1
                 }
               ],
@@ -590,97 +590,7 @@
               "wants": [
                 {
                   "item": "minecraft:diamond",
-                  "quantity": 2
-                }
-              ],
-              "gives": [
-                {
-                  "item": "minecraft:nautilus_shell",
-                  "quantity": 2
-                }
-              ],
-              "max_uses": 4
-            },
-            {
-              "wants": [
-                {
-                  "item": "minecraft:diamond",
-                  "quantity": 5
-                }
-              ],
-              "gives": [
-                {
-                  "item": "minecraft:totem_of_undying",
-                  "quantity": 1
-                }
-              ],
-              "max_uses": 1
-            },
-            {
-              "wants": [
-                {
-                  "item": "minecraft:diamond",
-                  "quantity": 6
-                }
-              ],
-              "gives": [
-                {
-                  "item": "minecraft:enchanted_golden_apple",
-                  "quantity": 1
-                }
-              ],
-              "max_uses": 1
-            },
-            {
-              "wants": [
-                {
-                  "item": "minecraft:diamond",
-                  "quantity": 4
-                }
-              ],
-              "gives": [
-                {
-                  "item": "minecraft:echo_shard",
-                  "quantity": 2
-                }
-              ],
-              "max_uses": 2
-            },
-            {
-              "wants": [
-                {
-                  "item": "minecraft:diamond",
-                  "quantity": 5
-                }
-              ],
-              "gives": [
-                {
-                  "item": "minecraft:netherite_scrap",
-                  "quantity": 1
-                }
-              ],
-              "max_uses": 2
-            },
-            {
-              "wants": [
-                {
-                  "item": "minecraft:diamond",
-                  "quantity": 8
-                }
-              ],
-              "gives": [
-                {
-                  "item": "minecraft:elytra",
-                  "quantity": 1
-                }
-              ],
-              "max_uses": 1
-            },
-            {
-              "wants": [
-                {
-                  "item": "minecraft:diamond",
-                  "quantity": 2
+                  "quantity": 48
                 }
               ],
               "gives": [
@@ -690,6 +600,51 @@
                 }
               ],
               "max_uses": 2
+            },
+            {
+              "wants": [
+                {
+                  "item": "minecraft:diamond",
+                  "quantity": 54
+                }
+              ],
+              "gives": [
+                {
+                  "item": "minecraft:nautilus_shell",
+                  "quantity": 4
+                }
+              ],
+              "max_uses": 2
+            },
+            {
+              "wants": [
+                {
+                  "item": "minecraft:diamond",
+                  "quantity": 50
+                }
+              ],
+              "gives": [
+                {
+                  "item": "minecraft:name_tag",
+                  "quantity": 4
+                }
+              ],
+              "max_uses": 2
+            },
+            {
+              "wants": [
+                {
+                  "item": "minecraft:diamond",
+                  "quantity": 56
+                }
+              ],
+              "gives": [
+                {
+                  "item": "minecraft:blue_ice",
+                  "quantity": 16
+                }
+              ],
+              "max_uses": 4
             }
           ]
         }
