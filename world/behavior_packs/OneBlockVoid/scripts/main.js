@@ -1,4 +1,4 @@
-import { world, system, ItemStack } from "@minecraft/server";
+import { world, system, ItemStack, BlockPermutation } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { OVERWORLD_PHASES, NETHER_PHASES, END_PHASES } from "./phases.js";
 import { RARITY_TIERS, DIMENSION_TRADE_POOLS } from "./rarities.js";
@@ -47,6 +47,38 @@ const PICKAXE_STATS = {
 
 const activeCountdowns = new Map();
 const activeLuckyRush = new Map(); // dimensionKey -> secondsLeft
+
+// 8 perimeter positions around (0, 64, 0)
+const SURROUNDING_OFFSETS = [
+  { x: -1, z: -1 }, { x: 0, z: -1 }, { x: 1, z: -1 },
+  { x: -1, z: 0 },                    { x: 1, z: 0 },
+  { x: -1, z: 1 },  { x: 0, z: 1 },  { x: 1, z: 1 }
+];
+
+// 15 Total Curated Tutorial Blocks that perfectly build up the player's starter setup:
+// Steps 0-7: 8 Dirts (each auto-places at one side to build safe 3x3 platform)
+// Steps 8-10: 3 Oak Logs (1 for Crafting Table, 1 for Sticks, 1 for Pickaxe)
+// Steps 11-13: 3 Stones (mine Cobblestone for a Stone Pickaxe)
+// Step 14: 1 Coal Ore (for torches & smelting)
+const TUTORIAL_BLOCKS = [
+  { block: "minecraft:dirt", msg: "§6[Step 1/15] §eMining Dirt... §aAuto-placed 1/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 2/15] §eMining Dirt... §aAuto-placed 2/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 3/15] §eMining Dirt... §aAuto-placed 3/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 4/15] §eMining Dirt... §aAuto-placed 4/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 5/15] §eMining Dirt... §aAuto-placed 5/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 6/15] §eMining Dirt... §aAuto-placed 6/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 7/15] §eMining Dirt... §aAuto-placed 7/8 of safe platform!" },
+  { block: "minecraft:dirt", msg: "§6[Step 8/15] §aPlatform complete! Safe 3x3 foundation built!" },
+  { block: "minecraft:oak_log", msg: "§6[Step 9/15] §eWood #1! Use for a Crafting Table." },
+  { block: "minecraft:oak_log", msg: "§6[Step 10/15] §eWood #2! Use for crafting Sticks." },
+  { block: "minecraft:oak_log", msg: "§6[Step 11/15] §eWood #3! Craft a Wooden Pickaxe!" },
+  { block: "minecraft:stone", msg: "§6[Step 12/15] §eStone #1! Mine with pickaxe for Cobblestone." },
+  { block: "minecraft:stone", msg: "§6[Step 13/15] §eStone #2! Keep gathering Cobblestone." },
+  { block: "minecraft:stone", msg: "§6[Step 14/15] §eStone #3! Craft a sturdy Stone Pickaxe!" },
+  { block: "minecraft:coal_ore", msg: "§a§l[Tutorial Complete!] §eCoal for torches! Phase 1 begins!" }
+];
+
+
 
 function rollRarityTier() {
   const total = 100.0;
@@ -1143,16 +1175,55 @@ export function renewOneBlock(dimension) {
       }
     } catch (e1) {}
 
-    // Fallback 1: Dimension default block
     if (!renewed) {
       try {
-        const dimDefault = dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt");
+        block.setPermutation(BlockPermutation.resolve(nextBlockType));
+        if (!block.isAir && block.typeId !== "minecraft:air") {
+          renewed = true;
+          lastKnownOneBlockType[dimKey] = nextBlockType;
+        }
+      } catch (e1b) {}
+    }
+
+    if (!renewed) {
+      try {
+        dimension.runCommand(`setblock ${ONEBLOCK_POS.x} ${ONEBLOCK_POS.y} ${ONEBLOCK_POS.z} ${nextBlockType}`);
+        const checkB = dimension.getBlock(ONEBLOCK_POS);
+        if (checkB && !checkB.isAir && checkB.typeId !== "minecraft:air") {
+          renewed = true;
+          lastKnownOneBlockType[dimKey] = nextBlockType;
+        }
+      } catch (e1c) {}
+    }
+
+    // Fallback 1: Dimension default block
+    if (!renewed) {
+      const dimDefault = dimKey === "nether" ? "minecraft:netherrack" : (dimKey === "end" ? "minecraft:end_stone" : "minecraft:dirt");
+      try {
         block.setType(dimDefault);
         if (!block.isAir && block.typeId !== "minecraft:air") {
           renewed = true;
           lastKnownOneBlockType[dimKey] = dimDefault;
         }
       } catch (e2) {}
+
+      if (!renewed) {
+        try {
+          block.setPermutation(BlockPermutation.resolve(dimDefault));
+          if (!block.isAir && block.typeId !== "minecraft:air") {
+            renewed = true;
+            lastKnownOneBlockType[dimKey] = dimDefault;
+          }
+        } catch (e2b) {}
+      }
+
+      if (!renewed) {
+        try {
+          dimension.runCommand(`setblock ${ONEBLOCK_POS.x} ${ONEBLOCK_POS.y} ${ONEBLOCK_POS.z} ${dimDefault}`);
+          renewed = true;
+          lastKnownOneBlockType[dimKey] = dimDefault;
+        } catch (e2c) {}
+      }
     }
 
     // Fallback 2: Universal dirt
@@ -1161,7 +1232,13 @@ export function renewOneBlock(dimension) {
         block.setType("minecraft:dirt");
         lastKnownOneBlockType[dimKey] = "minecraft:dirt";
         renewed = true;
-      } catch (e3) {}
+      } catch (e3) {
+        try {
+          dimension.runCommand(`setblock ${ONEBLOCK_POS.x} ${ONEBLOCK_POS.y} ${ONEBLOCK_POS.z} dirt`);
+          lastKnownOneBlockType[dimKey] = "minecraft:dirt";
+          renewed = true;
+        } catch (e3b) {}
+      }
     }
 
     // 5. Visual/Audio auto-renew feedback
@@ -1658,36 +1735,6 @@ export function giveAdminInspectorTool(player) {
   } catch (e) {}
 }
 
-// 8 perimeter positions around (0, 64, 0)
-const SURROUNDING_OFFSETS = [
-  { x: -1, z: -1 }, { x: 0, z: -1 }, { x: 1, z: -1 },
-  { x: -1, z: 0 },                    { x: 1, z: 0 },
-  { x: -1, z: 1 },  { x: 0, z: 1 },  { x: 1, z: 1 }
-];
-
-// 15 Total Curated Tutorial Blocks that perfectly build up the player's starter setup:
-// Steps 0-7: 8 Dirts (each auto-places at one side to build safe 3x3 platform)
-// Steps 8-10: 3 Oak Logs (1 for Crafting Table, 1 for Sticks, 1 for Pickaxe)
-// Steps 11-13: 3 Stones (mine Cobblestone for a Stone Pickaxe)
-// Step 14: 1 Coal Ore (for torches & smelting)
-const TUTORIAL_BLOCKS = [
-  { block: "minecraft:dirt", msg: "§6[Step 1/15] §eMining Dirt... §aAuto-placed 1/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 2/15] §eMining Dirt... §aAuto-placed 2/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 3/15] §eMining Dirt... §aAuto-placed 3/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 4/15] §eMining Dirt... §aAuto-placed 4/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 5/15] §eMining Dirt... §aAuto-placed 5/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 6/15] §eMining Dirt... §aAuto-placed 6/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 7/15] §eMining Dirt... §aAuto-placed 7/8 of safe platform!" },
-  { block: "minecraft:dirt", msg: "§6[Step 8/15] §aPlatform complete! Safe 3x3 foundation built!" },
-  { block: "minecraft:oak_log", msg: "§6[Step 9/15] §eWood #1! Use for a Crafting Table." },
-  { block: "minecraft:oak_log", msg: "§6[Step 10/15] §eWood #2! Use for crafting Sticks." },
-  { block: "minecraft:oak_log", msg: "§6[Step 11/15] §eWood #3! Craft a Wooden Pickaxe!" },
-  { block: "minecraft:stone", msg: "§6[Step 12/15] §eStone #1! Mine with pickaxe for Cobblestone." },
-  { block: "minecraft:stone", msg: "§6[Step 13/15] §eStone #2! Keep gathering Cobblestone." },
-  { block: "minecraft:stone", msg: "§6[Step 14/15] §eStone #3! Craft a sturdy Stone Pickaxe!" },
-  { block: "minecraft:coal_ore", msg: "§a§l[Tutorial Complete!] §eCoal for torches! Phase 1 begins!" }
-];
-
 // -------------------------------------------------------------
 // Dimension Shifter Engine
 // -------------------------------------------------------------
@@ -1891,7 +1938,9 @@ function openShifterTradeModal(player, dimKey) {
 }
 
 // Player interaction with entities
-world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
+try {
+  if (world.beforeEvents && world.beforeEvents.playerInteractWithEntity && typeof world.beforeEvents.playerInteractWithEntity.subscribe === "function") {
+    world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
   const { player, target } = event;
 
   if (target.hasTag("dimension_shifter")) {
@@ -1904,6 +1953,8 @@ world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
   }
 });
 
+  }
+} catch (e) {}
 // Entity hurt event: if Dimension Shifter is attacked or damaged, vanish instantly
 world.afterEvents.entityHurt.subscribe((event) => {
   const { hurtEntity } = event;
@@ -1928,7 +1979,9 @@ world.afterEvents.entityHurt.subscribe((event) => {
 });
 
 // Liquid Protection: Prevent placing water, lava, or powder snow directly into the OneBlock space at (0, 64, 0)
-world.beforeEvents.itemUseOn.subscribe((event) => {
+try {
+  if (world.beforeEvents && world.beforeEvents.itemUseOn && typeof world.beforeEvents.itemUseOn.subscribe === "function") {
+    world.beforeEvents.itemUseOn.subscribe((event) => {
   try {
     const { itemStack, block, player } = event;
     if (!itemStack || !block) return;
@@ -1945,6 +1998,8 @@ world.beforeEvents.itemUseOn.subscribe((event) => {
   } catch (e) {}
 });
 
+  }
+} catch (e) {}
 // Piston Movement Hook: When a piston pushes the OneBlock, allow it without decay and advance progression
 try {
   if (world.beforeEvents && world.beforeEvents.pistonActivate) {
@@ -2378,7 +2433,9 @@ world.afterEvents.playerSpawn.subscribe((event) => {
 });
 
 // Chat command helpers (zero-item friendly, no slash required!)
-world.beforeEvents.chatSend.subscribe((event) => {
+try {
+  if (world.beforeEvents && world.beforeEvents.chatSend && typeof world.beforeEvents.chatSend.subscribe === "function") {
+    world.beforeEvents.chatSend.subscribe((event) => {
   const { message, sender } = event;
   const raw = message.trim();
   const msg = raw.toLowerCase();
@@ -2510,8 +2567,12 @@ world.beforeEvents.chatSend.subscribe((event) => {
   }
 });
 
+  }
+} catch (e) {}
 // Physical Button Push Listener for Admin Station
-world.afterEvents.buttonPush.subscribe((event) => {
+try {
+  if (world.afterEvents && world.afterEvents.buttonPush && typeof world.afterEvents.buttonPush.subscribe === "function") {
+    world.afterEvents.buttonPush.subscribe((event) => {
   if (!IS_ADMIN_BUILD) return;
   try {
     const { block, source } = event;
@@ -2542,8 +2603,12 @@ world.afterEvents.buttonPush.subscribe((event) => {
   } catch (e) {}
 });
 
+  }
+} catch (e) {}
 // Item use hook preserved for backward compatibility
-world.beforeEvents.itemUse.subscribe((event) => {
+try {
+  if (world.beforeEvents && world.beforeEvents.itemUse && typeof world.beforeEvents.itemUse.subscribe === "function") {
+    world.beforeEvents.itemUse.subscribe((event) => {
   try {
     const { itemStack, source } = event;
     if (!itemStack || !itemStack.nameTag) return;
@@ -2564,6 +2629,8 @@ world.beforeEvents.itemUse.subscribe((event) => {
   } catch (e) {}
 });
 
+  }
+} catch (e) {}
 // Native Bedrock ScriptEvent hook (/scriptevent run or /scriptevent ob:run)
 system.afterEvents.scriptEventReceive.subscribe((event) => {
   try {
